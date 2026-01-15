@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { clientApi, BoatDetails as ApiBoatDetails } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
+import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
 
 export default function BoatDetailsPage() {
   const params = useParams();
@@ -37,7 +38,7 @@ export default function BoatDetailsPage() {
     // Save booking data including dates, hours, and calculated prices
     const completeBookingData = {
       ...bookingData,
-      boat_image: boatData?.boat.images[0],
+      boat_image: normalizeImageUrl(boatData?.boat.images[0]),
       price_per_hour: boatData?.boat.price_per_hour,
       price_per_day: boatData?.boat.price_per_day || (boatData?.boat.price_per_hour || 0) * 8,
       max_seats: boatData?.boat.max_seats
@@ -67,6 +68,9 @@ export default function BoatDetailsPage() {
 
   const { boat, owner, reviews, reviews_summary } = boatData;
   const totalRating = reviews_summary.total_reviews;
+  
+  // Normalize image URLs for display
+  const normalizedImages = normalizeImageUrls(boat.images);
 
   return (
     <div className="bg-white">
@@ -98,17 +102,18 @@ export default function BoatDetailsPage() {
             {/* Image Gallery */}
             <div>
               <div className="grid grid-cols-4 gap-2 h-[400px]">
-                {boat.images.length > 0 ? (
+                {normalizedImages.length > 0 ? (
                   <>
                     <div className="col-span-2 row-span-2 relative rounded-lg overflow-hidden">
                       <Image
-                        src={boat.images[0]}
+                        src={normalizedImages[0]}
                         alt="Main boat"
                         fill
                         className="object-cover"
+                        priority
                       />
                     </div>
-                    {boat.images.slice(1, 5).map((img, idx) => (
+                    {normalizedImages.slice(1, 5).map((img, idx) => (
                       <div key={idx} className="relative rounded-lg overflow-hidden">
                         <Image
                           src={img}
@@ -116,10 +121,10 @@ export default function BoatDetailsPage() {
                           fill
                           className="object-cover"
                         />
-                        {idx === 3 && boat.images.length > 5 && (
+                        {idx === 3 && normalizedImages.length > 5 && (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                             <span className="text-white text-3xl font-semibold">
-                              +{boat.images.length - 5}
+                              +{normalizedImages.length - 5}
                             </span>
                           </div>
                         )}

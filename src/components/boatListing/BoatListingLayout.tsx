@@ -8,6 +8,7 @@ import FiltersPanel from "./FiltersPanel";
 import { MdOutlineTune } from "react-icons/md";
 import { clientApi, Boat, City } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { normalizeImageUrl } from "@/lib/imageUtils";
 
 export default function BoatListingLayout() {
   const router = useRouter();
@@ -663,7 +664,7 @@ export default function BoatListingLayout() {
               <BoatCard
                 key={boat.id}
                 boatId={boat.id}
-                imageUrl={boat.images?.[0] || "/images/Rectangle 3463853.png"}
+                imageUrl={normalizeImageUrl(boat.images?.[0])}
                 name={boat.name}
                 price={`${boat.price_per_hour}`}
                 location={boat.cities?.[0] || "Aswan - Egypt"}

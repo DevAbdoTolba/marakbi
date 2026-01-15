@@ -59,13 +59,12 @@ export default function BookingSidebar({
             }
         }
 
-        const serviceFee = basePrice * 0.10;
-        const total = basePrice + serviceFee;
+        const total = basePrice;
 
-        return { basePrice, serviceFee, total, days };
+        return { basePrice, total, days };
     };
 
-    const { basePrice, serviceFee, total, days } = calculatePrice();
+    const { basePrice, total, days } = calculatePrice();
 
     // Calendar helpers
     const getDaysInMonth = (date: Date) => {
@@ -139,7 +138,7 @@ export default function BookingSidebar({
                 end_date: (selectedDates[1] || selectedDates[0]).toISOString(),
                 days: days > 0 ? days : undefined,
                 base_price: basePrice,
-                service_fee: serviceFee,
+                service_fee: 0,
                 total_price: total,
             };
 
@@ -163,7 +162,7 @@ export default function BookingSidebar({
             end_date: (selectedDates[1] || selectedDates[0]).toISOString(),
             days: days > 0 ? days : undefined,
             base_price: basePrice,
-            service_fee: serviceFee,
+            service_fee: 0,
             total_price: total,
         };
 
@@ -381,14 +380,6 @@ export default function BookingSidebar({
                     </span>
                     <span className="text-neutral-950 text-base font-normal font-poppins">
                         ${basePrice.toFixed(0)}
-                    </span>
-                </div>
-                <div className="flex justify-between items-start">
-                    <span className="text-gray-500 text-base font-normal font-poppins">
-                        Service fee
-                    </span>
-                    <span className="text-neutral-950 text-base font-normal font-poppins">
-                        ${serviceFee.toFixed(0)}
                     </span>
                 </div>
                 <div className="h-px bg-black/10"></div>
