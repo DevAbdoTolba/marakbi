@@ -271,6 +271,7 @@ export interface Order {
     price_per_day: number;
     total_reviews: number;
     created_at: string;
+    images?: string[]; // Boat images from API
   };
   profile?: Record<string, unknown>;
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { customerApi, Order } from "@/lib/api";
+import { normalizeImageUrl } from "@/lib/imageUtils";
 
 interface BookingCardProps {
   order: Order;
@@ -42,7 +43,7 @@ function BookingCard({ order }: BookingCardProps) {
       {/* Boat Image */}
       <div className="relative w-full h-[240px] rounded-t-[10px] overflow-hidden">
         <Image
-          src="/images/Rectangle 3463853.png"
+          src={normalizeImageUrl(order.boat.images?.[0] || null)}
           alt={order.boat.name}
           fill
           className="object-cover"
@@ -128,7 +129,7 @@ function BookingCard({ order }: BookingCardProps) {
 }
 
 export default function MyBookingsPage() {
-  const [activeTab, setActiveTab] = useState<"ongoing" | "past">("past");
+  const [activeTab, setActiveTab] = useState<"ongoing" | "past">("ongoing");
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -151,14 +152,25 @@ export default function MyBookingsPage() {
   }, []);
 
   // Filter orders based on activeTab
-  // Ongoing: end_date is in the future
-  // Past: end_date is in the past
+  // Ongoing: end_date is in the future AND status is not cancelled
+  // Past: end_date is in the past OR status is cancelled or completed
   const filteredOrders = orders.filter((order) => {
     const endDate = new Date(order.end_date);
     const now = new Date();
-    const isOngoing = endDate > now;
-
-    return activeTab === "ongoing" ? isOngoing : !isOngoing;
+    
+    // Check if booking has ended
+    const hasEnded = endDate < now;
+    
+    // Check if booking is cancelled or completed
+    const isCancelledOrCompleted = order.status === 'cancelled' || order.status === 'completed';
+    
+    if (activeTab === "ongoing") {
+      // Ongoing: hasn't ended yet AND not cancelled/completed
+      return !hasEnded && !isCancelledOrCompleted;
+    } else {
+      // Past: has ended OR cancelled/completed
+      return hasEnded || isCancelledOrCompleted;
+    }
   });
 
   return (

@@ -13,6 +13,11 @@ export default function BoatDetailsPage() {
   const [boatData, setBoatData] = useState<ApiBoatDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [mobileImageIndex, setMobileImageIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
 
   useEffect(() => {
     const fetchBoatDetails = async () => {
@@ -34,8 +39,34 @@ export default function BoatDetailsPage() {
     }
   }, [params.id]);
 
+  // Handle keyboard navigation for image modal
+  useEffect(() => {
+    if (!isModalOpen || !boatData) return;
+
+    const normalizedImages = normalizeImageUrls(boatData.boat.images);
+    if (normalizedImages.length === 0) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+      } else if (e.key === 'ArrowRight') {
+        setCurrentImageIndex((prev) => (prev + 1) % normalizedImages.length);
+      } else if (e.key === 'ArrowLeft') {
+        setCurrentImageIndex((prev) => (prev - 1 + normalizedImages.length) % normalizedImages.length);
+      }
+    };
+
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isModalOpen, boatData]);
+
   const handleRequestToBook = (bookingData: BookingData) => {
-    // Save booking data including dates, hours, and calculated prices
     const completeBookingData = {
       ...bookingData,
       boat_image: normalizeImageUrl(boatData?.boat.images[0]),
@@ -69,8 +100,54 @@ export default function BoatDetailsPage() {
   const { boat, owner, reviews, reviews_summary } = boatData;
   const totalRating = reviews_summary.total_reviews;
   
-  // Normalize image URLs for display
   const normalizedImages = normalizeImageUrls(boat.images);
+
+  const handleImageClick = (index: number) => {
+    setCurrentImageIndex(index);
+    setIsModalOpen(true);
+  };
+
+  const handleNext = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % normalizedImages.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + normalizedImages.length) % normalizedImages.length);
+  };
+
+  const handleMobileNext = () => {
+    setMobileImageIndex((prev) => (prev + 1) % normalizedImages.length);
+  };
+
+  const handleMobilePrev = () => {
+    setMobileImageIndex((prev) => (prev - 1 + normalizedImages.length) % normalizedImages.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    
+    const endX = e.changedTouches[0].clientX;
+    const diff = startX - endX;
+    const threshold = 50;
+
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        handleMobileNext();
+      } else {
+        handleMobilePrev();
+      }
+    }
+    setIsDragging(false);
+  };
 
   return (
     <div className="bg-white">
@@ -101,10 +178,132 @@ export default function BoatDetailsPage() {
           <div className="lg:col-span-2 space-y-8">
             {/* Image Gallery */}
             <div>
-              <div className="grid grid-cols-4 gap-2 h-[400px]">
+              {/* Mobile View - Single Image Carousel */}
+              <div className="block md:hidden">
+                {normalizedImages.length > 0 ? (
+                  <div className="relative">
+                    {/* Main Image */}
+                    <div 
+                      className="relative w-full h-[400px] rounded-lg overflow-hidden cursor-pointer"
+                      onClick={() => handleImageClick(mobileImageIndex)}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                    >
+                      <Image
+                        src={normalizedImages[mobileImageIndex]}
+                        alt={`Boat image ${mobileImageIndex + 1}`}
+                        fill
+                        className="object-cover"
+                        priority
+                      />
+                      
+                      {/* Image Counter Overlay - Top Left */}
+                      {normalizedImages.length > 1 && (
+                        <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium z-10">
+                          {mobileImageIndex + 1} / {normalizedImages.length}
+                        </div>
+                      )}
+
+                      {/* Remaining Images Indicator - Bottom Right */}
+                      {normalizedImages.length > 1 && (
+                        <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium z-10">
+                          {normalizedImages.length - mobileImageIndex - 1 > 0 
+                            ? `+${normalizedImages.length - mobileImageIndex - 1} صور`
+                            : 'آخر صورة'}
+                        </div>
+                      )}
+
+                      {/* Previous Button - FORCED LEFT */}
+                      {normalizedImages.length > 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMobilePrev();
+                          }}
+                          // استخدمنا style left عشان نجبره يروح شمال بغض النظر عن اتجاه الموقع
+                          className="absolute top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full p-2.5 hover:bg-black/90 transition-colors shadow-lg z-10"
+                          style={{ left: '10px' }} 
+                          aria-label="Previous image"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 19l-7-7 7-7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Next Button - FORCED RIGHT */}
+                      {normalizedImages.length > 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMobileNext();
+                          }}
+                          // استخدمنا style right عشان نجبره يروح يمين بغض النظر عن اتجاه الموقع
+                          className="absolute top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full p-2.5 hover:bg-black/90 transition-colors shadow-lg z-10"
+                          style={{ right: '10px' }}
+                          aria-label="Next image"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Navigation Dots */}
+                    {normalizedImages.length > 1 && (
+                      <div className="flex justify-center items-center gap-2 mt-4">
+                        {normalizedImages.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setMobileImageIndex(idx)}
+                            className={`transition-all duration-300 ${
+                              idx === mobileImageIndex
+                                ? 'w-8 h-2 bg-[#106BD8] rounded-full'
+                                : 'w-2 h-2 bg-gray-300 rounded-full hover:bg-gray-400'
+                            }`}
+                            aria-label={`Go to image ${idx + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-full h-[400px] flex items-center justify-center bg-gray-200 rounded-lg">
+                    <p className="text-gray-500">No images available</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop View - Grid Layout */}
+              <div className="hidden md:grid grid-cols-4 gap-2 h-[400px]">
                 {normalizedImages.length > 0 ? (
                   <>
-                    <div className="col-span-2 row-span-2 relative rounded-lg overflow-hidden">
+                    <div 
+                      className="col-span-2 row-span-2 relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => handleImageClick(0)}
+                    >
                       <Image
                         src={normalizedImages[0]}
                         alt="Main boat"
@@ -114,7 +313,11 @@ export default function BoatDetailsPage() {
                       />
                     </div>
                     {normalizedImages.slice(1, 5).map((img, idx) => (
-                      <div key={idx} className="relative rounded-lg overflow-hidden">
+                      <div 
+                        key={idx} 
+                        className="relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => handleImageClick(idx + 1)}
+                      >
                         <Image
                           src={img}
                           alt={`Gallery ${idx + 1}`}
@@ -223,6 +426,7 @@ export default function BoatDetailsPage() {
                           alt="Star"
                           width={16}
                           height={16}
+                          className={`${i < Math.floor(reviews_summary.average_rating) ? "opacity-100" : "opacity-30"}`}
                         />
                       ))}
                     </div>
@@ -384,6 +588,121 @@ export default function BoatDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Image Gallery Modal */}
+      {isModalOpen && normalizedImages.length > 0 && (
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
+          onClick={() => setIsModalOpen(false)}
+          // هنا برضوا بنجبر اتجاه المودال عشان زرار الكلوز يظبط
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, direction: 'ltr' }}
+        >
+          {/* Close Button - FORCED RIGHT */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsModalOpen(false);
+            }}
+            // اجبار المكان بالـ style
+            className="absolute top-6 text-white hover:text-gray-300 transition-colors bg-black/60 rounded-full p-2 hover:bg-black/80"
+            style={{ right: '24px', zIndex: 10000 }}
+            aria-label="Close modal"
+          >
+            <svg
+              className="w-8 h-8"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+
+          {/* Image Container - Centered */}
+          <div 
+            className="relative w-full h-full flex items-center justify-center px-20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Previous Button - FORCED LEFT */}
+            {normalizedImages.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrev();
+                }}
+                className="absolute text-white hover:text-gray-300 transition-colors bg-black/60 rounded-full p-4 hover:bg-black/80 flex items-center justify-center"
+                style={{ left: '16px', zIndex: 10000 }}
+                aria-label="Previous image"
+              >
+                <svg
+                  className="w-10 h-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Main Image */}
+            <div className="relative w-full max-w-6xl h-full max-h-[90vh] flex items-center justify-center">
+              <Image
+                src={normalizedImages[currentImageIndex]}
+                alt={`Boat image ${currentImageIndex + 1}`}
+                width={1200}
+                height={800}
+                className="object-contain max-w-full max-h-full"
+                priority
+              />
+            </div>
+
+            {/* Next Button - FORCED RIGHT */}
+            {normalizedImages.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+                className="absolute text-white hover:text-gray-300 transition-colors bg-black/60 rounded-full p-4 hover:bg-black/80 flex items-center justify-center"
+                style={{ right: '16px', zIndex: 10000 }}
+                aria-label="Next image"
+              >
+                <svg
+                  className="w-10 h-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Image Counter - Bottom Center */}
+          {normalizedImages.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[10000] bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium">
+              {currentImageIndex + 1} / {normalizedImages.length}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

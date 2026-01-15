@@ -303,7 +303,7 @@ a,
   cursor: pointer;
   pointer-events: auto !important;
   z-index: 9999;
-  position: relative;
+  /* position: relative; */
 }
 
 /* Ensure buttons are interactive */
