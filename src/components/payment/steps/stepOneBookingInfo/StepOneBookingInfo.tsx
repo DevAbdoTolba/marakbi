@@ -93,7 +93,7 @@ export default function StepOneBookingInfo() {
             )}
             {typeof bookingData.service_fee === 'number' && (
               <div className="flex justify-between">
-                <span className="text-gray-600">Service Fee (10%)</span>
+                <span className="text-gray-600">Service Fee </span>
                 <span className="font-semibold">{bookingData.service_fee.toFixed(0)} EGP</span>
               </div>
             )}
