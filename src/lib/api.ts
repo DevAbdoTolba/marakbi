@@ -4,7 +4,9 @@
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
+// const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
+const BASE_URL = 'http://127.0.0.1:8787';
+
 
 // Toggle for verbose API logging in the console
 const ENABLE_API_LOGS = false;
@@ -300,6 +302,7 @@ export interface EditBoatData {
   cities?: number[]; // Array of city IDs
   trips?: number[]; // Array of trip IDs (optional)
   boat_images?: File[]; // Array of new image files (optional)
+  removed_images?: string[]; // Array of image URLs to remove (for edit only)
 }
 
 export interface AddBoatResponse {
@@ -725,181 +728,368 @@ export const voyagesApi = {
 };
 
 // ===== ADMIN API (Protected Admin Endpoints) =====
+
+// Admin-specific Types
+export interface AdminStats {
+  total_revenue: number;
+  monthly_revenue: number;
+  total_boats: number;
+  total_bookings: number;
+  total_users: number;
+  pending_orders: number;
+  confirmed_orders: number;
+  cancelled_orders: number;
+  completed_orders: number;
+  active_rentals: number;
+  new_boats_this_month: number;
+  new_users_this_month: number;
+  new_bookings_this_month: number;
+}
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  created_at: string | null;
+  boats_count: number;
+  bookings_count: number;
+  profile_picture: string | null;
+}
+
+export interface AdminUserDetails extends AdminUser {
+  updated_at: string | null;
+  profile: {
+    bio: string | null;
+    phone: string | null;
+    address: string | null;
+    profile_picture: string | null;
+  };
+  groups: { id: number; name: string }[];
+  boats: { id: number; name: string }[];
+}
+
+export interface AdminOrder {
+  id: number;
+  user_id: number;
+  boat_id: number;
+  username: string;
+  user_email: string | null;
+  boat_name: string;
+  boat_images: string[];
+  start_date: string;
+  end_date: string;
+  total_price: number;
+  status: string;
+  payment_status: string;
+  payment_method: string;
+  booking_type: string;
+  guest_count: number;
+  created_at: string;
+  trip_name?: string;
+}
+
+export interface AdminBoat {
+  id: number;
+  name: string;
+  price_per_hour: number;
+  price_per_day: number | null;
+  description: string;
+  categories: string[];
+  cities: string[];
+  images: string[];
+  max_seats: number;
+  max_seats_stay: number;
+  owner_username: string | null;
+  created_at: string;
+}
+
+export interface AdminTrip {
+  id: number;
+  name: string;
+  description: string;
+  total_price: number;
+  voyage_hours: number;
+  trip_type: string;
+  city_id: number;
+  city_name: string;
+  images: string[];
+  pax: number | null;
+  guests_on_board: number | null;
+  rooms_available: number | null;
+  created_at: string;
+}
+
+export interface AdminVoyage {
+  id: number;
+  boat_id: number;
+  boat_name: string | null;
+  voyage_type: string;
+  start_date: string;
+  end_date: string;
+  price_per_hour: number;
+  status: string;
+  max_seats: number;
+  current_seats_taken: number;
+  available_seats: number;
+  created_at: string;
+}
+
+export interface AdminCategory {
+  id: number;
+  name: string;
+  image: string | null;
+}
+
+export interface AdminGroup {
+  id: number;
+  name: string;
+  description: string;
+  users_count: number;
+}
+
+export interface AdminReview {
+  id: number;
+  user_id: number;
+  boat_id: number;
+  username: string;
+  boat_name: string | null;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+export interface PaginatedResponse<T> {
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
+  has_next?: boolean;
+  has_prev?: boolean;
+}
+
+// Form data helper for multipart requests
+async function adminFormRequest<T>(
+  endpoint: string,
+  formData: FormData,
+  method: 'POST' | 'PUT' = 'POST'
+): Promise<ApiResponse<T>> {
+  const url = `${BASE_URL}${endpoint}`;
+  const token = storage.getToken();
+
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, error: data.message || data.error || 'Request failed' };
+    }
+
+    return { success: true, data: data };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'An unexpected error occurred.' };
+  }
+}
+
 export const adminApi = {
-  /**
-   * Add a new boat for a specific user
-   * @param userId - The user ID who owns the boat
-   * @param boatData - Boat details and images
-   * @returns Promise with the created boat data
-   */
-  addBoat: async (userId: number, boatData: AddBoatData): Promise<ApiResponse<AddBoatResponse>> => {
-    const formData = new FormData();
-    
-    // Add text fields
-    formData.append('name', boatData.name);
-    formData.append('price_per_hour', boatData.price_per_hour.toString());
-    
-    if (boatData.price_per_day) {
-      formData.append('price_per_day', boatData.price_per_day.toString());
-    }
-    
-    if (boatData.max_seats) {
-      formData.append('max_seats', boatData.max_seats.toString());
-    }
-    
-    if (boatData.max_seats_stay) {
-      formData.append('max_seats_stay', boatData.max_seats_stay.toString());
-    }
-    
-    formData.append('description', boatData.description);
-    
-    // Add categories (multiple values)
-    boatData.categories.forEach(categoryId => {
-      formData.append('categories', categoryId.toString());
-    });
-    
-    // Add cities (multiple values)
-    boatData.cities.forEach(cityId => {
-      formData.append('cities', cityId.toString());
-    });
-    
-    // Add images
-    if (boatData.boat_images && boatData.boat_images.length > 0) {
-      boatData.boat_images.forEach(image => {
-        formData.append('boat_images', image);
-      });
-    }
-    
-    const url = `${BASE_URL}/admin/users/${userId}/boats/add`;
-    const token = storage.getToken();
-    
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: formData
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.message || data.error || 'Failed to add boat'
-        };
-      }
-      
-      return {
-        success: true,
-        data: data
-      };
-    } catch (error) {
-      console.error('Error adding boat:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'An unexpected error occurred.'
-      };
-    }
+  // Authentication
+  login: async (username: string, password: string): Promise<ApiResponse<{ access_token: string; refresh_token?: string; user: AuthUser }>> => {
+    return apiRequest('/admin/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+  },
+  logout: async (): Promise<ApiResponse<{ message: string }>> => apiRequest('/admin/logout', { method: 'POST' }),
+
+  // Dashboard Stats
+  getStats: async (): Promise<ApiResponse<AdminStats>> => apiRequest<AdminStats>('/admin/stats'),
+
+  // Orders
+  getOrders: async (page = 1, perPage = 10, filters?: { status?: string; payment_status?: string; search?: string }): Promise<ApiResponse<{ orders: AdminOrder[] } & PaginatedResponse<AdminOrder>>> => {
+    const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.payment_status) params.append('payment_status', filters.payment_status);
+    if (filters?.search) params.append('search', filters.search);
+    return apiRequest(`/admin/orders?${params.toString()}`);
+  },
+  getOrder: async (orderId: number): Promise<ApiResponse<AdminOrder>> => apiRequest(`/admin/orders/${orderId}`),
+  updateOrderStatus: async (orderId: number, data: { status?: string; payment_status?: string }): Promise<ApiResponse<AdminOrder>> => {
+    return apiRequest(`/admin/orders/${orderId}/status`, { method: 'PUT', body: JSON.stringify(data) });
   },
 
-  /**
-   * Edit an existing boat
-   * @param boatId - The boat ID to edit
-   * @param boatData - Updated boat details (all fields optional)
-   * @returns Promise with the updated boat data
-   */
+  // Users
+  getUsers: async (page = 1, perPage = 10, filters?: { search?: string; role?: string }): Promise<ApiResponse<{ users: AdminUser[] } & PaginatedResponse<AdminUser>>> => {
+    const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.role) params.append('role', filters.role);
+    return apiRequest(`/admin/users?${params.toString()}`);
+  },
+  getUser: async (userId: number): Promise<ApiResponse<AdminUserDetails>> => apiRequest(`/admin/users/${userId}`),
+  createUser: async (userData: { username: string; email: string; password: string; role?: string; bio?: string; phone?: string; address?: string }): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
+    return apiRequest('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
+  },
+  updateUser: async (userId: number, userData: { username?: string; email?: string; password?: string; role?: string; bio?: string; phone?: string; address?: string }, profilePicture?: File): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
+    if (profilePicture) {
+      const formData = new FormData();
+      Object.entries(userData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value); });
+      formData.append('profile_picture', profilePicture);
+      return adminFormRequest(`/admin/users/${userId}`, formData, 'PUT');
+    }
+    return apiRequest(`/admin/users/${userId}`, { method: 'PUT', body: JSON.stringify(userData) });
+  },
+  deleteUser: async (userId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/users/${userId}`, { method: 'DELETE' }),
+  getUserBoats: async (userId: number): Promise<ApiResponse<{ user_id: number; username: string; boats: AdminBoat[] }>> => apiRequest(`/admin/users/${userId}/boats`),
+
+  // Boats
+  getBoats: async (page = 1, perPage = 10, filters?: { search?: string; category_id?: number; city_id?: number; user_id?: number }): Promise<ApiResponse<{ boats: AdminBoat[] } & PaginatedResponse<AdminBoat>>> => {
+    const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.category_id) params.append('category_id', filters.category_id.toString());
+    if (filters?.city_id) params.append('city_id', filters.city_id.toString());
+    if (filters?.user_id) params.append('user_id', filters.user_id.toString());
+    return apiRequest(`/admin/boats?${params.toString()}`);
+  },
+  getBoat: async (boatId: number): Promise<ApiResponse<AdminBoat & { categories_full: { id: number; name: string }[]; trips: AdminTrip[]; owner: { id: number; username: string; email: string } | null }>> => {
+    return apiRequest(`/admin/boats/${boatId}`);
+  },
+  createBoat: async (userId: number, boatData: AddBoatData): Promise<ApiResponse<{ message: string; boat: AdminBoat }>> => {
+    const formData = new FormData();
+    formData.append('user_id', userId.toString());
+    formData.append('name', boatData.name);
+    formData.append('price_per_hour', boatData.price_per_hour.toString());
+    if (boatData.price_per_day) formData.append('price_per_day', boatData.price_per_day.toString());
+    if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
+    if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
+    formData.append('description', boatData.description);
+    boatData.categories.forEach(id => formData.append('categories', id.toString()));
+    boatData.cities.forEach(id => formData.append('cities', id.toString()));
+    if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
+    return adminFormRequest('/admin/boats', formData);
+  },
+  updateBoat: async (boatId: number, boatData: EditBoatData): Promise<ApiResponse<{ message: string; boat: AdminBoat }>> => {
+    const formData = new FormData();
+    if (boatData.name) formData.append('name', boatData.name);
+    if (boatData.price_per_hour) formData.append('price_per_hour', boatData.price_per_hour.toString());
+    if (boatData.price_per_day) formData.append('price_per_day', boatData.price_per_day.toString());
+    if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
+    if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
+    if (boatData.description) formData.append('description', boatData.description);
+    if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
+    if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
+    if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+    if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
+    if (boatData.removed_images) boatData.removed_images.forEach(url => formData.append('removed_images', url));
+    return adminFormRequest(`/admin/boats/${boatId}`, formData, 'PUT');
+  },
+  deleteBoat: async (boatId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/boats/${boatId}`, { method: 'DELETE' }),
+  deleteBoatImage: async (boatId: number, imageId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/boats/${boatId}/images/${imageId}`, { method: 'DELETE' }),
+
+  // Categories
+  getCategories: async (): Promise<ApiResponse<{ categories: AdminCategory[] }>> => apiRequest('/admin/categories'),
+  createCategory: async (name: string, image?: File): Promise<ApiResponse<AdminCategory>> => {
+    const formData = new FormData();
+    formData.append('name', name);
+    if (image) formData.append('image', image);
+    return adminFormRequest('/admin/categories', formData);
+  },
+  updateCategory: async (categoryId: number, name?: string, image?: File): Promise<ApiResponse<AdminCategory>> => {
+    const formData = new FormData();
+    if (name) formData.append('name', name);
+    if (image) formData.append('image', image);
+    return adminFormRequest(`/admin/categories/${categoryId}`, formData, 'PUT');
+  },
+  deleteCategory: async (categoryId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/categories/${categoryId}`, { method: 'DELETE' }),
+
+  // Cities
+  getCities: async (): Promise<ApiResponse<{ cities: { id: number; name: string; created_at: string }[] }>> => apiRequest('/admin/cities'),
+  createCity: async (name: string): Promise<ApiResponse<{ id: number; name: string }>> => apiRequest('/admin/cities', { method: 'POST', body: JSON.stringify({ name }) }),
+  updateCity: async (cityId: number, name: string): Promise<ApiResponse<{ id: number; name: string }>> => apiRequest(`/admin/cities/${cityId}`, { method: 'PUT', body: JSON.stringify({ name }) }),
+  deleteCity: async (cityId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/cities/${cityId}`, { method: 'DELETE' }),
+
+  // Trips
+  getTrips: async (page = 1, perPage = 10, filters?: { city_id?: number; trip_type?: string }): Promise<ApiResponse<{ trips: AdminTrip[] } & PaginatedResponse<AdminTrip>>> => {
+    const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
+    if (filters?.city_id) params.append('city_id', filters.city_id.toString());
+    if (filters?.trip_type) params.append('trip_type', filters.trip_type);
+    return apiRequest(`/admin/trips?${params.toString()}`);
+  },
+  getTrip: async (tripId: number): Promise<ApiResponse<AdminTrip & { boats: { id: number; name: string }[] }>> => apiRequest(`/admin/trips/${tripId}`),
+  createTrip: async (tripData: { name: string; description?: string; total_price: number; voyage_hours: number; trip_type: string; city_id: number; pax?: number; guests_on_board?: number; rooms_available?: number }, images?: File[]): Promise<ApiResponse<AdminTrip>> => {
+    const formData = new FormData();
+    Object.entries(tripData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value.toString()); });
+    if (images) images.forEach(img => formData.append('trip_images', img));
+    return adminFormRequest('/admin/trips', formData);
+  },
+  updateTrip: async (tripId: number, tripData: { name?: string; description?: string; total_price?: number; voyage_hours?: number; trip_type?: string; city_id?: number; pax?: number; guests_on_board?: number; rooms_available?: number }, images?: File[], removedImages?: string[]): Promise<ApiResponse<AdminTrip>> => {
+    const formData = new FormData();
+    Object.entries(tripData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value.toString()); });
+    if (images) images.forEach(img => formData.append('trip_images', img));
+    if (removedImages) removedImages.forEach(url => formData.append('removed_images', url));
+    return adminFormRequest(`/admin/trips/${tripId}`, formData, 'PUT');
+  },
+  deleteTrip: async (tripId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/trips/${tripId}`, { method: 'DELETE' }),
+
+  // Voyages
+  getVoyages: async (page = 1, perPage = 10, filters?: { status?: string; voyage_type?: string }): Promise<ApiResponse<{ voyages: AdminVoyage[] } & PaginatedResponse<AdminVoyage>>> => {
+    const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.voyage_type) params.append('voyage_type', filters.voyage_type);
+    return apiRequest(`/admin/voyages?${params.toString()}`);
+  },
+  createVoyage: async (voyageData: { boat_id: number; voyage_type: string; start_date: string; end_date: string; price_per_hour: number; status?: string }): Promise<ApiResponse<AdminVoyage>> => {
+    return apiRequest('/admin/voyages', { method: 'POST', body: JSON.stringify(voyageData) });
+  },
+  updateVoyage: async (voyageId: number, voyageData: { status?: string; voyage_type?: string; price_per_hour?: number; start_date?: string; end_date?: string }): Promise<ApiResponse<AdminVoyage>> => {
+    return apiRequest(`/admin/voyages/${voyageId}`, { method: 'PUT', body: JSON.stringify(voyageData) });
+  },
+  deleteVoyage: async (voyageId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/voyages/${voyageId}`, { method: 'DELETE' }),
+
+  // Reviews
+  getBoatReviews: async (page = 1, perPage = 10): Promise<ApiResponse<{ reviews: AdminReview[] } & PaginatedResponse<AdminReview>>> => {
+    return apiRequest(`/admin/reviews/boats?page=${page}&per_page=${perPage}`);
+  },
+  deleteBoatReview: async (reviewId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/reviews/boats/${reviewId}`, { method: 'DELETE' }),
+
+  // Groups
+  getGroups: async (): Promise<ApiResponse<{ groups: AdminGroup[] }>> => apiRequest('/admin/groups'),
+  createGroup: async (name: string, description?: string): Promise<ApiResponse<AdminGroup>> => apiRequest('/admin/groups', { method: 'POST', body: JSON.stringify({ name, description }) }),
+  updateGroup: async (groupId: number, name?: string, description?: string): Promise<ApiResponse<AdminGroup>> => apiRequest(`/admin/groups/${groupId}`, { method: 'PUT', body: JSON.stringify({ name, description }) }),
+  deleteGroup: async (groupId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/groups/${groupId}`, { method: 'DELETE' }),
+
+  // Legacy compatibility
+  addBoat: async (userId: number, boatData: AddBoatData): Promise<ApiResponse<AddBoatResponse>> => {
+    const formData = new FormData();
+    formData.append('name', boatData.name);
+    formData.append('price_per_hour', boatData.price_per_hour.toString());
+    if (boatData.price_per_day) formData.append('price_per_day', boatData.price_per_day.toString());
+    if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
+    if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
+    formData.append('description', boatData.description);
+    boatData.categories.forEach(id => formData.append('categories', id.toString()));
+    boatData.cities.forEach(id => formData.append('cities', id.toString()));
+    if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
+    return adminFormRequest(`/admin/users/${userId}/boats`, formData);
+  },
   editBoat: async (boatId: number, boatData: EditBoatData): Promise<ApiResponse<EditBoatResponse>> => {
     const formData = new FormData();
-    
-    // Add text fields (only if provided)
-    if (boatData.name) {
-      formData.append('name', boatData.name);
-    }
-    
-    if (boatData.price_per_hour) {
-      formData.append('price_per_hour', boatData.price_per_hour.toString());
-    }
-    
-    if (boatData.price_per_day) {
-      formData.append('price_per_day', boatData.price_per_day.toString());
-    }
-    
-    if (boatData.max_seats) {
-      formData.append('max_seats', boatData.max_seats.toString());
-    }
-    
-    if (boatData.max_seats_stay) {
-      formData.append('max_seats_stay', boatData.max_seats_stay.toString());
-    }
-    
-    if (boatData.description) {
-      formData.append('description', boatData.description);
-    }
-    
-    // Add categories (multiple values)
-    if (boatData.categories && boatData.categories.length > 0) {
-      boatData.categories.forEach(categoryId => {
-        formData.append('categories', categoryId.toString());
-      });
-    }
-    
-    // Add cities (multiple values)
-    if (boatData.cities && boatData.cities.length > 0) {
-      boatData.cities.forEach(cityId => {
-        formData.append('cities', cityId.toString());
-      });
-    }
-    
-    // Add trips (optional, multiple values)
-    if (boatData.trips && boatData.trips.length > 0) {
-      boatData.trips.forEach(tripId => {
-        formData.append('trips', tripId.toString());
-      });
-    }
-    
-    // Add new images (optional)
-    if (boatData.boat_images && boatData.boat_images.length > 0) {
-      boatData.boat_images.forEach(image => {
-        formData.append('boat_images', image);
-      });
-    }
-    
-    const url = `${BASE_URL}/admin/boats/${boatId}/edit`;
-    const token = storage.getToken();
-    
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: formData
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.message || data.error || 'Failed to edit boat'
-        };
-      }
-      
-      return {
-        success: true,
-        data: data
-      };
-    } catch (error) {
-      console.error('Error editing boat:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'An unexpected error occurred.'
-      };
-    }
+    if (boatData.name) formData.append('name', boatData.name);
+    if (boatData.price_per_hour) formData.append('price_per_hour', boatData.price_per_hour.toString());
+    if (boatData.price_per_day) formData.append('price_per_day', boatData.price_per_day.toString());
+    if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
+    if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
+    if (boatData.description) formData.append('description', boatData.description);
+    if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
+    if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
+    if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+    if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
+    return adminFormRequest(`/admin/boats/${boatId}`, formData, 'PUT');
   }
 };
+
 
 // ===== DIAGNOSTIC FUNCTIONS =====
 export async function diagnoseConnection(): Promise<ApiResponse<{ status: string; message: string; details: Record<string, unknown> }>> {
