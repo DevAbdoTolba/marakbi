@@ -4,8 +4,8 @@
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
-// const BASE_URL = 'http://127.0.0.1:8787';
+// const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
+const BASE_URL = 'http://127.0.0.1:8787';
 
 
 // Toggle for verbose API logging in the console
@@ -288,7 +288,9 @@ export interface AddBoatData {
   description: string;
   categories: number[]; // Array of category IDs
   cities: number[]; // Array of city IDs
+  trips?: number[]; // Array of trip IDs
   boat_images?: File[]; // Array of image files
+  primary_new_image_index?: number; // Index in boat_images to be primary
 }
 
 export interface EditBoatData {
@@ -303,6 +305,8 @@ export interface EditBoatData {
   trips?: number[]; // Array of trip IDs (optional)
   boat_images?: File[]; // Array of new image files (optional)
   removed_images?: string[]; // Array of image URLs to remove (for edit only)
+  primary_image_url?: string; // Existing image to set as primary
+  primary_new_image_index?: number; // New image to set as primary
 }
 
 export interface AddBoatResponse {
@@ -744,6 +748,12 @@ export interface AdminStats {
   new_boats_this_month: number;
   new_users_this_month: number;
   new_bookings_this_month: number;
+  // Fleet & Content Overview stats
+  total_trips?: number;
+  total_voyages?: number;
+  total_categories?: number;
+  total_cities?: number;
+  total_reviews?: number;
 }
 
 export interface AdminUser {
@@ -796,8 +806,11 @@ export interface AdminBoat {
   price_per_day: number | null;
   description: string;
   categories: string[];
+  categories_id?: number[];
   cities: string[];
+  cities_id?: number[];
   images: string[];
+  trips?: AdminTrip[];
   max_seats: number;
   max_seats_stay: number;
   owner_username: string | null;
@@ -909,11 +922,14 @@ export const adminApi = {
   getStats: async (): Promise<ApiResponse<AdminStats>> => apiRequest<AdminStats>('/admin/stats'),
 
   // Orders
-  getOrders: async (page = 1, perPage = 10, filters?: { status?: string; payment_status?: string; search?: string }): Promise<ApiResponse<{ orders: AdminOrder[] } & PaginatedResponse<AdminOrder>>> => {
+  getOrders: async (page = 1, perPage = 10, filters?: { status?: string; payment_status?: string; search?: string; user_id?: number; start_date?: string; end_date?: string }): Promise<ApiResponse<{ orders: AdminOrder[] } & PaginatedResponse<AdminOrder>>> => {
     const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
     if (filters?.status) params.append('status', filters.status);
     if (filters?.payment_status) params.append('payment_status', filters.payment_status);
     if (filters?.search) params.append('search', filters.search);
+    if (filters?.user_id) params.append('user_id', filters.user_id.toString());
+    if (filters?.start_date) params.append('start_date', filters.start_date);
+    if (filters?.end_date) params.append('end_date', filters.end_date);
     return apiRequest(`/admin/orders?${params.toString()}`);
   },
   getOrder: async (orderId: number): Promise<ApiResponse<AdminOrder>> => apiRequest(`/admin/orders/${orderId}`),
@@ -965,8 +981,15 @@ export const adminApi = {
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
     formData.append('description', boatData.description);
+
     boatData.categories.forEach(id => formData.append('categories', id.toString()));
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
+    if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+
+    if (boatData.primary_new_image_index !== undefined) {
+      formData.append('primary_new_image_index', boatData.primary_new_image_index.toString());
+    }
+
     if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
     return adminFormRequest('/admin/boats', formData);
   },
@@ -978,9 +1001,16 @@ export const adminApi = {
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
     if (boatData.description) formData.append('description', boatData.description);
+
     if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+
+    if (boatData.primary_image_url) formData.append('primary_image_url', boatData.primary_image_url);
+    if (boatData.primary_new_image_index !== undefined) {
+      formData.append('primary_new_image_index', boatData.primary_new_image_index.toString());
+    }
+
     if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
     if (boatData.removed_images) boatData.removed_images.forEach(url => formData.append('removed_images', url));
     return adminFormRequest(`/admin/boats/${boatId}`, formData, 'PUT');

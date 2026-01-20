@@ -10,6 +10,9 @@ import AdminTripsLayout from "./tabContent/trips/AdminTripsLayout";
 import AdminBookingsLayout from "./tabContent/bookings/AdminBookingsLayout";
 import AdminUsersLayout from "./tabContent/users/AdminUsersLayout";
 import AdminCitiesLayout from "./tabContent/cities/AdminCitiesLayout";
+import AdminReviewsLayout from "./tabContent/reviews/AdminReviewsLayout";
+import AdminVoyagesLayout from "./tabContent/voyages/AdminVoyagesLayout";
+import AdminCategoriesLayout from "./tabContent/categories/AdminCategoriesLayout";
 import { adminApi, AdminStats } from "@/lib/api";
 
 export default function AdminDashboardLayout() {
@@ -83,6 +86,9 @@ export default function AdminDashboardLayout() {
           {currentTab === "bookings" && <AdminBookingsLayout />}
           {currentTab === "users" && <AdminUsersLayout />}
           {currentTab === "cities" && <AdminCitiesLayout />}
+          {currentTab === "reviews" && <AdminReviewsLayout />}
+          {currentTab === "voyages" && <AdminVoyagesLayout />}
+          {currentTab === "categories" && <AdminCategoriesLayout />}
         </div>
       </div>
     </div>

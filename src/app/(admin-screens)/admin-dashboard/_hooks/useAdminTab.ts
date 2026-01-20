@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type AdminTab = "overview" | "boat-listings" | "trips" | "bookings" | "users" | "cities";
+type AdminTab = "overview" | "boat-listings" | "trips" | "bookings" | "users" | "cities" | "reviews" | "voyages" | "categories";
 
 type AdminTabStore = {
   currentTab: AdminTab;

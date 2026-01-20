@@ -3,7 +3,7 @@ import useAdminTab from "../../_hooks/useAdminTab";
 import AdminDashboardNavbarSingleTab from "./AdminDashboardNavbarSingleTab";
 
 type navItemsType = {
-  tabId: "overview" | "boat-listings" | "trips" | "bookings" | "users" | "cities";
+  tabId: "overview" | "boat-listings" | "trips" | "bookings" | "users" | "cities" | "reviews" | "voyages" | "categories";
   tabLabel: string;
 }[];
 
@@ -12,11 +12,14 @@ export default function AdminDashboardNavbar() {
 
   const navItems: navItemsType = [
     { tabId: "overview", tabLabel: "Overview" },
-    { tabId: "boat-listings", tabLabel: "Boat Listings" },
+    { tabId: "boat-listings", tabLabel: "Boats" },
     { tabId: "trips", tabLabel: "Trips" },
     { tabId: "bookings", tabLabel: "Bookings" },
+    { tabId: "voyages", tabLabel: "Voyages" },
     { tabId: "users", tabLabel: "Users" },
     { tabId: "cities", tabLabel: "Cities" },
+    { tabId: "categories", tabLabel: "Categories" },
+    { tabId: "reviews", tabLabel: "Reviews" },
   ];
 
   return (

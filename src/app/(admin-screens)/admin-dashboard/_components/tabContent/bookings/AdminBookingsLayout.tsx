@@ -1,61 +1,97 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { adminApi, AdminOrder } from "@/lib/api";
-import { FiSearch, FiDownload, FiEye, FiX, FiCalendar, FiUser, FiDollarSign, FiAnchor } from "react-icons/fi";
+import { FiSearch, FiFilter, FiCalendar, FiCheck, FiX, FiRefreshCw, FiEye, FiUser, FiDollarSign, FiAnchor } from "react-icons/fi";
 import Image from "next/image";
+import { useToast } from "../../ToastProvider";
+import ConfirmModal from "../../ConfirmModal";
+import { TableSkeleton } from "../../Skeleton";
 
 export default function AdminBookingsLayout() {
-  const [bookings, setBookings] = useState<AdminOrder[]>([]);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { showSuccess, showError } = useToast();
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [selectedBooking, setSelectedBooking] = useState<AdminOrder | null>(null);
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("All Payments");
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // User filter from URL
+  const [userFilter, setUserFilter] = useState<number | undefined>();
+  const [userFilterName, setUserFilterName] = useState("");
+
+  // Date range filter
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
-    const filters: { search?: string; status?: string } = {};
+    const filters: { search?: string; status?: string; payment_status?: string; user_id?: number; start_date?: string; end_date?: string } = {};
     if (search) filters.search = search;
-    if (statusFilter && statusFilter !== "All") filters.status = statusFilter.toLowerCase();
+    if (statusFilter && statusFilter !== "All Status") filters.status = statusFilter.toLowerCase();
+    if (paymentStatusFilter && paymentStatusFilter !== "All Payments") filters.payment_status = paymentStatusFilter.toLowerCase();
+    if (userFilter) filters.user_id = userFilter;
+    if (startDateFilter) filters.start_date = startDateFilter;
+    if (endDateFilter) filters.end_date = endDateFilter;
 
     const response = await adminApi.getOrders(page, 10, filters);
     if (response.success && response.data) {
-      setBookings(response.data.orders);
+      setOrders(response.data.orders);
       setTotalPages(response.data.pages);
     }
     setLoading(false);
-  }, [page, search, statusFilter]);
+  }, [page, search, statusFilter, paymentStatusFilter, userFilter, startDateFilter, endDateFilter]);
+
+  // Read user filter from URL
+  useEffect(() => {
+    const userId = searchParams.get("user");
+    if (userId) {
+      setUserFilter(parseInt(userId, 10));
+      // Fetch username for display
+      adminApi.getUser(parseInt(userId, 10)).then((res) => {
+        if (res.success && res.data) {
+          setUserFilterName(res.data.username);
+        }
+      });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
 
-  const handleStatusUpdate = async (bookingId: number, newStatus: string) => {
+  const handleStatusUpdate = async (orderId: number, newStatus: string) => {
     setActionLoading(true);
-    const response = await adminApi.updateOrderStatus(bookingId, { status: newStatus });
+    const response = await adminApi.updateOrderStatus(orderId, { status: newStatus });
     if (response.success) {
       fetchBookings();
-      if (selectedBooking?.id === bookingId) {
-        setSelectedBooking(prev => prev ? { ...prev, status: newStatus } : null);
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
       }
+      showSuccess(`Status updated to ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)} `);
     } else {
-      alert(response.error || "Failed to update status");
+      showError(response.error || "Failed to update status");
     }
     setActionLoading(false);
   };
 
-  const handlePaymentUpdate = async (bookingId: number, newPaymentStatus: string) => {
+  const handlePaymentUpdate = async (orderId: number, newPaymentStatus: string) => {
     setActionLoading(true);
-    const response = await adminApi.updateOrderStatus(bookingId, { payment_status: newPaymentStatus });
+    const response = await adminApi.updateOrderStatus(orderId, { payment_status: newPaymentStatus });
     if (response.success) {
       fetchBookings();
-      if (selectedBooking?.id === bookingId) {
-        setSelectedBooking(prev => prev ? { ...prev, payment_status: newPaymentStatus } : null);
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(prev => prev ? { ...prev, payment_status: newPaymentStatus } : null);
       }
+      showSuccess(`Payment status updated to ${newPaymentStatus.charAt(0).toUpperCase() + newPaymentStatus.slice(1)} `);
     } else {
-      alert(response.error || "Failed to update payment status");
+      showError(response.error || "Failed to update payment status");
     }
     setActionLoading(false);
   };
@@ -109,7 +145,7 @@ export default function AdminBookingsLayout() {
   const handleExport = () => {
     const csv = [
       ["ID", "Customer", "Email", "Boat", "Type", "Amount", "Status", "Payment", "Start Date", "End Date", "Created"].join(","),
-      ...bookings.map(b => [
+      ...orders.map(b => [
         b.id,
         `"${b.username || ''}"`,
         `"${b.user_email || ''}"`,
@@ -132,23 +168,51 @@ export default function AdminBookingsLayout() {
     window.URL.revokeObjectURL(url);
   };
 
+  const openDetailModal = (order: AdminOrder) => {
+    setSelectedOrder(order);
+  };
+
   return (
-    <div className="bg-white rounded-[15.09px] p-[26px]">
+    <div className="bg-white rounded-xl p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center mb-6 justify-between gap-3">
         <div>
           <p className="text-[#0A0A0A] font-medium text-lg">Bookings Management</p>
           <p className="text-[#717182] font-normal text-sm">
-            View and manage all bookings ({bookings.length} shown)
+            View and manage all bookings ({orders.length} shown)
           </p>
         </div>
         <button
           onClick={handleExport}
           className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200"
+          aria-label="Export bookings to CSV"
         >
-          <FiDownload /> Export
+          <FiRefreshCw /> Export
         </button>
       </div>
+
+      {/* User Filter Banner */}
+      {userFilter && userFilterName && (
+        <div className="mb-4 flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg px-4 py-3">
+          <div className="flex items-center gap-2">
+            <FiUser className="text-purple-600" />
+            <span className="text-purple-700 font-medium">
+              Showing bookings by: {userFilterName}
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setUserFilter(undefined);
+              setUserFilterName("");
+              router.replace("/admin-dashboard?tab=bookings", { scroll: false });
+            }}
+            className="text-purple-600 hover:text-purple-800 text-sm font-medium flex items-center gap-1"
+            aria-label="Clear user filter"
+          >
+            <FiX size={16} /> Clear Filter
+          </button>
+        </div>
+      )}
 
       {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
@@ -163,6 +227,7 @@ export default function AdminBookingsLayout() {
             }}
             placeholder="Search by customer or boat..."
             className="bg-transparent outline-none text-sm flex-1"
+            aria-label="Search bookings"
           />
         </div>
         <select
@@ -172,24 +237,105 @@ export default function AdminBookingsLayout() {
             setPage(1);
           }}
           className="bg-[#F3F3F5] px-3 py-2 rounded-lg text-sm outline-none min-w-[140px]"
+          aria-label="Filter by booking status"
         >
-          <option value="">All Status</option>
+          <option value="All Status">All Status</option>
           <option value="pending">Pending</option>
           <option value="confirmed">Confirmed</option>
           <option value="cancelled">Cancelled</option>
           <option value="completed">Completed</option>
         </select>
+        <select
+          value={paymentStatusFilter}
+          onChange={(e) => {
+            setPaymentStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="bg-[#F3F3F5] px-3 py-2 rounded-lg text-sm outline-none min-w-[140px]"
+          aria-label="Filter by payment status"
+        >
+          <option value="All Payments">All Payments</option>
+          <option value="unpaid">Unpaid</option>
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+          <option value="refunded">Refunded</option>
+        </select>
+      </div>
+
+      {/* Date Range Filter */}
+      <div className="flex flex-wrap gap-3 mb-4 items-center">
+        <div className="flex items-center gap-2">
+          <label htmlFor="startDateFilter" className="text-sm text-gray-600">From:</label>
+          <input
+            id="startDateFilter"
+            type="date"
+            value={startDateFilter}
+            onChange={(e) => {
+              setStartDateFilter(e.target.value);
+              setPage(1);
+            }}
+            className="bg-[#F3F3F5] px-3 py-2 rounded-lg text-sm outline-none"
+            aria-label="Start date filter"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label htmlFor="endDateFilter" className="text-sm text-gray-600">To:</label>
+          <input
+            id="endDateFilter"
+            type="date"
+            value={endDateFilter}
+            onChange={(e) => {
+              setEndDateFilter(e.target.value);
+              setPage(1);
+            }}
+            className="bg-[#F3F3F5] px-3 py-2 rounded-lg text-sm outline-none"
+            aria-label="End date filter"
+          />
+        </div>
+        {(startDateFilter || endDateFilter) && (
+          <button
+            onClick={() => {
+              setStartDateFilter("");
+              setEndDateFilter("");
+              setPage(1);
+            }}
+            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            aria-label="Clear date range filter"
+          >
+            <FiX size={14} /> Clear Dates
+          </button>
+        )}
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      ) : bookings.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <p className="text-lg">No bookings found</p>
-          <p className="text-sm">Try adjusting your search or filters</p>
+        <TableSkeleton rows={5} columns={8} />
+      ) : orders.length === 0 ? (
+        <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+          <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <FiCalendar className="text-gray-400" size={32} />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">No bookings found</h3>
+          <p className="text-gray-500 max-w-sm mx-auto mb-6">
+            We couldn't find any bookings matching your filters.
+          </p>
+          {(search || statusFilter !== "All Status" || paymentStatusFilter !== "All Payments" || userFilter || startDateFilter || endDateFilter) && (
+            <button
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("All Status");
+                setPaymentStatusFilter("All Payments");
+                setUserFilter(undefined);
+                setStartDateFilter("");
+                setEndDateFilter("");
+                router.replace("/admin-dashboard?tab=bookings", { scroll: false });
+              }}
+              className="text-blue-600 font-medium hover:underline"
+              aria-label="Clear all filters"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -204,74 +350,88 @@ export default function AdminBookingsLayout() {
               </tr>
             </thead>
             <tbody>
-              {bookings.map((booking) => {
-                const status = (booking.status || 'unknown').toLowerCase();
-                const payment = (booking.payment_status || 'unknown').toLowerCase();
-                const days = calculateDays(booking.start_date, booking.end_date);
+              {orders.map((order) => {
+                const status = (order.status || 'unknown').toLowerCase();
+                const payment = (order.payment_status || 'unknown').toLowerCase();
+                const days = calculateDays(order.start_date, order.end_date);
 
                 return (
-                  <tr key={booking.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4">
-                      <span className="font-medium">#{booking.id}</span>
-                      <p className="text-xs text-gray-500">{formatDate(booking.created_at)}</p>
+                      <span className="font-medium">#{order.id}</span>
+                      <p className="text-xs text-gray-500">{formatDate(order.created_at)}</p>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="font-medium">{booking.username || 'Unknown'}</span>
-                      <p className="text-xs text-gray-500">{booking.user_email || ''}</p>
+                      <span className="font-medium">{order.username || 'Unknown'}</span>
+                      <p className="text-xs text-gray-500">{order.user_email || ''}</p>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden relative flex-shrink-0">
-                          {booking.boat_images?.[0] ? (
-                            <Image src={booking.boat_images[0]} alt="" fill className="object-cover" />
+                          {order.boat_images?.[0] ? (
+                            <Image src={order.boat_images[0]} alt="" fill className="object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-lg">🚤</div>
                           )}
                         </div>
                         <div>
-                          <span className="font-medium block truncate max-w-[150px]">{booking.boat_name || 'Unknown'}</span>
-                          <p className="text-xs text-gray-500 capitalize">{booking.booking_type || 'Rental'}</p>
+                          <span className="font-medium block truncate max-w-[150px]">{order.boat_name || 'Unknown'}</span>
+                          <p className="text-xs text-gray-500 capitalize">{order.booking_type || 'Rental'}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-3 px-4 text-sm">
-                      <p>{formatDate(booking.start_date)} - {formatDate(booking.end_date)}</p>
+                      <p>{formatDate(order.start_date)} - {formatDate(order.end_date)}</p>
                       <p className="text-xs text-gray-500">{days} day{days > 1 ? 's' : ''}</p>
                     </td>
                     <td className="py-3 px-4 font-medium text-blue-600">
-                      {formatCurrency(booking.total_price)}
+                      {formatCurrency(order.total_price)}
                     </td>
                     <td className="py-3 px-4">
-                      <select
-                        value={status}
-                        onChange={(e) => handleStatusUpdate(booking.id, e.target.value)}
-                        className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer ${statusColors[status] || "bg-gray-100"}`}
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="completed">Completed</option>
-                      </select>
+                      <span className={`px - 2 py - 1 rounded - full text - xs font - medium ${statusColors[status] || "bg-gray-100"} `}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </span>
                     </td>
                     <td className="py-3 px-4">
-                      <select
-                        value={payment}
-                        onChange={(e) => handlePaymentUpdate(booking.id, e.target.value)}
-                        className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer ${paymentColors[payment] || "bg-gray-100"}`}
-                      >
-                        <option value="unpaid">Unpaid</option>
-                        <option value="pending">Pending</option>
-                        <option value="paid">Paid</option>
-                        <option value="refunded">Refunded</option>
-                      </select>
+                      <span className={`px - 2 py - 1 rounded - full text - xs font - medium ${paymentColors[payment] || "bg-gray-100"} `}>
+                        {payment.charAt(0).toUpperCase() + payment.slice(1)}
+                      </span>
                     </td>
                     <td className="py-3 px-4">
-                      <button
-                        onClick={() => setSelectedBooking(booking)}
-                        className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        <FiEye /> View
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openDetailModal(order)}
+                          className="p-1 hover:bg-gray-100 rounded text-blue-600"
+                          title="View Details"
+                          aria-label={`View details for booking #${order.id}`}
+                        >
+                          <FiEye />
+                        </button>
+
+                        {/* Only show quick actions for pending/confirmed orders */}
+                        {(order.status === 'pending' || order.status === 'confirmed') && (
+                          <>
+                            {order.status === 'pending' && (
+                              <button
+                                onClick={() => handleStatusUpdate(order.id, 'confirmed')}
+                                className="p-1 hover:bg-green-50 rounded text-green-600"
+                                title="Confirm"
+                                aria-label={`Confirm booking #${order.id} `}
+                              >
+                                <FiCheck />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleStatusUpdate(order.id, 'cancelled')}
+                              className="p-1 hover:bg-red-50 rounded text-red-600"
+                              title="Cancel"
+                              aria-label={`Cancel booking #${order.id} `}
+                            >
+                              <FiX />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -305,16 +465,16 @@ export default function AdminBookingsLayout() {
       )}
 
       {/* Booking Details Modal */}
-      {selectedBooking && (
+      {selectedOrder && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b">
               <div>
-                <h2 className="text-xl font-semibold">Booking #{selectedBooking.id}</h2>
-                <p className="text-sm text-gray-500">Created: {formatDateTime(selectedBooking.created_at)}</p>
+                <h2 className="text-xl font-semibold">Booking #{selectedOrder.id}</h2>
+                <p className="text-sm text-gray-500">Created: {formatDateTime(selectedOrder.created_at)}</p>
               </div>
-              <button onClick={() => setSelectedBooking(null)} className="p-2 hover:bg-gray-100 rounded-full">
+              <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 rounded-full">
                 <FiX />
               </button>
             </div>
@@ -325,9 +485,9 @@ export default function AdminBookingsLayout() {
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Status</label>
                   <select
-                    value={(selectedBooking.status || 'pending').toLowerCase()}
-                    onChange={(e) => handleStatusUpdate(selectedBooking.id, e.target.value)}
-                    className={`px-3 py-2 rounded-lg border font-medium ${statusColors[(selectedBooking.status || 'pending').toLowerCase()] || "bg-gray-100"}`}
+                    value={(selectedOrder.status || 'pending').toLowerCase()}
+                    onChange={(e) => handleStatusUpdate(selectedOrder.id, e.target.value)}
+                    className={`px - 3 py - 2 rounded - lg border font - medium ${statusColors[(selectedOrder.status || 'pending').toLowerCase()] || "bg-gray-100"} `}
                   >
                     <option value="pending">Pending</option>
                     <option value="confirmed">Confirmed</option>
@@ -338,9 +498,9 @@ export default function AdminBookingsLayout() {
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Payment</label>
                   <select
-                    value={(selectedBooking.payment_status || 'unpaid').toLowerCase()}
-                    onChange={(e) => handlePaymentUpdate(selectedBooking.id, e.target.value)}
-                    className={`px-3 py-2 rounded-lg border font-medium ${paymentColors[(selectedBooking.payment_status || 'unpaid').toLowerCase()] || "bg-gray-100"}`}
+                    value={(selectedOrder.payment_status || 'unpaid').toLowerCase()}
+                    onChange={(e) => handlePaymentUpdate(selectedOrder.id, e.target.value)}
+                    className={`px - 3 py - 2 rounded - lg border font - medium ${paymentColors[(selectedOrder.payment_status || 'unpaid').toLowerCase()] || "bg-gray-100"} `}
                   >
                     <option value="unpaid">Unpaid</option>
                     <option value="pending">Pending</option>
@@ -358,16 +518,16 @@ export default function AdminBookingsLayout() {
                 </div>
                 <div className="flex gap-4">
                   <div className="w-20 h-20 relative rounded-lg overflow-hidden bg-gray-200">
-                    {selectedBooking.boat_images?.[0] ? (
-                      <Image src={selectedBooking.boat_images[0]} alt="" fill className="object-cover" />
+                    {selectedOrder.boat_images?.[0] ? (
+                      <Image src={selectedOrder.boat_images[0]} alt="" fill className="object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-2xl">🚤</div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">{selectedBooking.boat_name || 'Unknown'}</h3>
-                    <p className="text-sm text-gray-500 capitalize">{selectedBooking.booking_type || 'Rental'}</p>
-                    <p className="text-sm text-gray-500">{selectedBooking.guest_count} guest(s)</p>
+                    <h3 className="font-semibold text-lg">{selectedOrder.boat_name || 'Unknown'}</h3>
+                    <p className="text-sm text-gray-500 capitalize">{selectedOrder.booking_type || 'Rental'}</p>
+                    <p className="text-sm text-gray-500">{selectedOrder.guest_count} guest(s)</p>
                   </div>
                 </div>
               </div>
@@ -381,11 +541,11 @@ export default function AdminBookingsLayout() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium">{selectedBooking.username || 'Unknown'}</p>
+                    <p className="font-medium">{selectedOrder.username || 'Unknown'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{selectedBooking.user_email || 'N/A'}</p>
+                    <p className="font-medium">{selectedOrder.user_email || 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -399,15 +559,15 @@ export default function AdminBookingsLayout() {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Start</p>
-                    <p className="font-medium">{formatDateTime(selectedBooking.start_date)}</p>
+                    <p className="font-medium">{formatDateTime(selectedOrder.start_date)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">End</p>
-                    <p className="font-medium">{formatDateTime(selectedBooking.end_date)}</p>
+                    <p className="font-medium">{formatDateTime(selectedOrder.end_date)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Duration</p>
-                    <p className="font-medium">{calculateDays(selectedBooking.start_date, selectedBooking.end_date)} days</p>
+                    <p className="font-medium">{calculateDays(selectedOrder.start_date, selectedOrder.end_date)} days</p>
                   </div>
                 </div>
               </div>
@@ -421,18 +581,18 @@ export default function AdminBookingsLayout() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Total Amount</p>
-                    <p className="font-bold text-xl text-blue-600">{formatCurrency(selectedBooking.total_price)}</p>
+                    <p className="font-bold text-xl text-blue-600">{formatCurrency(selectedOrder.total_price)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Method</p>
-                    <p className="font-medium capitalize">{selectedBooking.payment_method || 'Not specified'}</p>
+                    <p className="font-medium capitalize">{selectedOrder.payment_method || 'Not specified'}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
-              <button onClick={() => setSelectedBooking(null)} className="px-4 py-2 border rounded-lg hover:bg-gray-100">
+              <button onClick={() => setSelectedOrder(null)} className="px-4 py-2 border rounded-lg hover:bg-gray-100">
                 Close
               </button>
             </div>

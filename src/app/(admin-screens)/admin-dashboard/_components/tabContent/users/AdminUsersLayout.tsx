@@ -2,12 +2,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { adminApi, AdminUser } from "@/lib/api";
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiAnchor } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiAnchor, FiCalendar } from "react-icons/fi";
 import useAdminTab from "../../../_hooks/useAdminTab";
+import { useToast } from "../../ToastProvider";
+import ConfirmModal from "../../ConfirmModal";
+import { TableSkeleton } from "../../Skeleton";
 
 export default function AdminUsersLayout() {
   const router = useRouter();
   const { setTab } = useAdminTab();
+  const { showSuccess, showError } = useToast();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -37,6 +41,21 @@ export default function AdminUsersLayout() {
     setTab("boat-listings");
   };
 
+  const navigateToBookings = (userId: number, username: string) => {
+    const params = new URLSearchParams();
+    params.set("user", userId.toString());
+    router.push(`/admin-dashboard?tab=bookings&${params.toString()}`);
+    setTab("bookings");
+  };
+
+  // Confirm delete state
+  const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; userId: number | null; username: string }>({
+    isOpen: false,
+    userId: null,
+    username: ""
+  });
+  const [deleting, setDeleting] = useState(false);
+
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -58,7 +77,7 @@ export default function AdminUsersLayout() {
 
   const handleCreate = async () => {
     if (!formData.username || !formData.email || !formData.password) {
-      alert("Please fill in required fields");
+      showError("Please fill in required fields");
       return;
     }
     const response = await adminApi.createUser(formData);
@@ -66,8 +85,9 @@ export default function AdminUsersLayout() {
       setShowModal(false);
       resetForm();
       fetchUsers();
+      showSuccess("User created successfully");
     } else {
-      alert(response.error || "Failed to create user");
+      showError(response.error || "Failed to create user");
     }
   };
 
@@ -81,19 +101,28 @@ export default function AdminUsersLayout() {
       setEditingUser(null);
       resetForm();
       fetchUsers();
+      showSuccess("User updated successfully");
     } else {
-      alert(response.error || "Failed to update user");
+      showError(response.error || "Failed to update user");
     }
   };
 
-  const handleDelete = async (userId: number) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-    const response = await adminApi.deleteUser(userId);
+  const handleDeleteClick = (user: AdminUser) => {
+    setConfirmDelete({ isOpen: true, userId: user.id, username: user.username });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!confirmDelete.userId) return;
+    setDeleting(true);
+    const response = await adminApi.deleteUser(confirmDelete.userId);
     if (response.success) {
       fetchUsers();
+      showSuccess("User deleted successfully");
     } else {
-      alert(response.error || "Failed to delete user");
+      showError(response.error || "Failed to delete user");
     }
+    setDeleting(false);
+    setConfirmDelete({ isOpen: false, userId: null, username: "" });
   };
 
   const openEditModal = async (user: AdminUser) => {
@@ -127,7 +156,7 @@ export default function AdminUsersLayout() {
   };
 
   return (
-    <div className="bg-white rounded-[15.09px] p-[26px]">
+    <div className="bg-white rounded-xl p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center mb-6 justify-between gap-3">
         <div>
@@ -180,8 +209,27 @@ export default function AdminUsersLayout() {
 
       {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <TableSkeleton rows={5} columns={6} />
+      ) : users.length === 0 ? (
+        <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+          <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <FiSearch className="text-gray-400" size={32} />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">No users found</h3>
+          <p className="text-gray-500 max-w-sm mx-auto mb-6">
+            We couldn't find any users matching your filters.
+          </p>
+          {(search || roleFilter) && (
+            <button
+              onClick={() => {
+                setSearch("");
+                setRoleFilter("");
+              }}
+              className="text-blue-600 font-medium hover:underline"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -231,13 +279,23 @@ export default function AdminUsersLayout() {
                         onClick={() => openEditModal(user)}
                         className="p-1 hover:bg-gray-100 rounded"
                         title="Edit"
+                        aria-label={`Edit ${user.username}`}
                       >
                         <FiEdit2 className="text-gray-600" />
+                      </button>
+                      <button
+                        onClick={() => navigateToBookings(user.id, user.username)}
+                        className="p-1 hover:bg-purple-50 rounded"
+                        title="View Bookings"
+                        aria-label={`View bookings for ${user.username}`}
+                      >
+                        <FiCalendar className="text-purple-600" />
                       </button>
                       <button
                         onClick={() => navigateToBoatListings(user.id)}
                         className="p-1 hover:bg-gray-100 rounded"
                         title="View Boats"
+                        aria-label={`View boats owned by ${user.username}`}
                       >
                         <FiAnchor className="text-blue-600" />
                       </button>
@@ -245,13 +303,15 @@ export default function AdminUsersLayout() {
                         onClick={() => navigateToBoatListings(user.id, "add")}
                         className="p-1 hover:bg-green-50 rounded"
                         title="Add Boat"
+                        aria-label={`Add boat for ${user.username}`}
                       >
                         <FiPlus className="text-green-600" />
                       </button>
                       <button
-                        onClick={() => handleDelete(user.id)}
+                        onClick={() => handleDeleteClick(user)}
                         className="p-1 hover:bg-red-50 rounded"
                         title="Delete"
+                        aria-label={`Delete ${user.username}`}
                       >
                         <FiTrash2 className="text-red-600" />
                       </button>
@@ -376,6 +436,18 @@ export default function AdminUsersLayout() {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={confirmDelete.isOpen}
+        title="Delete User"
+        message={`Are you sure you want to delete user "${confirmDelete.username}"? This will also delete all their boats and bookings.`}
+        confirmText="Delete"
+        confirmVariant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDelete({ isOpen: false, userId: null, username: "" })}
+        isLoading={deleting}
+      />
     </div>
   );
 }

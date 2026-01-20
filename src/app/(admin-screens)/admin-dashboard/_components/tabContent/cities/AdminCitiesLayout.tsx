@@ -2,20 +2,33 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import { FiPlus, FiEdit2, FiTrash2, FiMapPin, FiX } from "react-icons/fi";
+import { useToast } from "../../ToastProvider";
+import ConfirmModal from "../../ConfirmModal";
 
 interface City {
     id: number;
     name: string;
     created_at: string;
+    boats_count?: number;
+    trips_count?: number;
 }
 
 export default function AdminCitiesLayout() {
+    const { showSuccess, showError } = useToast();
     const [cities, setCities] = useState<City[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingCity, setEditingCity] = useState<City | null>(null);
     const [cityName, setCityName] = useState("");
     const [saving, setSaving] = useState(false);
+
+    // Confirm delete state
+    const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; cityId: number | null; cityName: string }>({
+        isOpen: false,
+        cityId: null,
+        cityName: ""
+    });
+    const [deleting, setDeleting] = useState(false);
 
     const fetchCities = useCallback(async () => {
         setLoading(true);
@@ -44,7 +57,7 @@ export default function AdminCitiesLayout() {
 
     const handleSubmit = async () => {
         if (!cityName.trim()) {
-            alert("Please enter a city name");
+            showError("Please enter a city name");
             return;
         }
 
@@ -62,24 +75,34 @@ export default function AdminCitiesLayout() {
             setCityName("");
             setEditingCity(null);
             fetchCities();
+            showSuccess(editingCity ? "City updated successfully" : "City created successfully");
         } else {
-            alert(response.error || "Failed to save city");
+            showError(response.error || "Failed to save city");
         }
         setSaving(false);
     };
 
-    const handleDelete = async (cityId: number) => {
-        if (!confirm("Are you sure you want to delete this city? This may affect boats and trips associated with it.")) return;
-        const response = await adminApi.deleteCity(cityId);
+    const handleDeleteClick = (city: City) => {
+        setConfirmDelete({ isOpen: true, cityId: city.id, cityName: city.name });
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!confirmDelete.cityId) return;
+
+        setDeleting(true);
+        const response = await adminApi.deleteCity(confirmDelete.cityId);
         if (response.success) {
             fetchCities();
+            showSuccess("City deleted successfully");
         } else {
-            alert(response.error || "Failed to delete city");
+            showError(response.error || "Failed to delete city");
         }
+        setDeleting(false);
+        setConfirmDelete({ isOpen: false, cityId: null, cityName: "" });
     };
 
     return (
-        <div className="bg-white rounded-[15.09px] p-[26px]">
+        <div className="bg-white rounded-xl p-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center mb-6 justify-between gap-3">
                 <div>
@@ -98,14 +121,34 @@ export default function AdminCitiesLayout() {
 
             {/* Grid */}
             {loading ? (
-                <div className="flex justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {[...Array(8)].map((_, i) => (
+                        <div key={i} className="border rounded-xl p-4 h-[120px] animate-pulse">
+                            <div className="flex gap-3">
+                                <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                                <div className="space-y-2 flex-1">
+                                    <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : cities.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                    <FiMapPin size={48} className="mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg">No cities found</p>
-                    <p className="text-sm">Add your first city to get started</p>
+                <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                    <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <FiMapPin className="text-gray-400" size={32} />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">No cities found</h3>
+                    <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                        Get started by adding cities where your boats operate.
+                    </p>
+                    <button
+                        onClick={openCreateModal}
+                        className="text-blue-600 font-medium hover:underline"
+                    >
+                        Add your first city
+                    </button>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -121,9 +164,11 @@ export default function AdminCitiesLayout() {
                                     </div>
                                     <div>
                                         <h3 className="font-medium text-gray-900">{city.name}</h3>
-                                        <p className="text-xs text-gray-500">
-                                            Added {new Date(city.created_at).toLocaleDateString()}
-                                        </p>
+                                        <div className="flex gap-2 text-xs text-gray-500 mt-1">
+                                            <span>{city.boats_count || 0} boats</span>
+                                            <span>•</span>
+                                            <span>{city.trips_count || 0} trips</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -131,12 +176,14 @@ export default function AdminCitiesLayout() {
                                 <button
                                     onClick={() => openEditModal(city)}
                                     className="flex-1 flex items-center justify-center gap-1 py-2 text-sm text-gray-600 hover:bg-white rounded transition"
+                                    aria-label={`Edit ${city.name}`}
                                 >
                                     <FiEdit2 size={14} /> Edit
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(city.id)}
+                                    onClick={() => handleDeleteClick(city)}
                                     className="flex-1 flex items-center justify-center gap-1 py-2 text-sm text-red-600 hover:bg-red-50 rounded transition"
+                                    aria-label={`Delete ${city.name}`}
                                 >
                                     <FiTrash2 size={14} /> Delete
                                 </button>
@@ -210,6 +257,18 @@ export default function AdminCitiesLayout() {
                     </div>
                 </div>
             )}
+
+            {/* Confirm Delete Modal */}
+            <ConfirmModal
+                isOpen={confirmDelete.isOpen}
+                title="Delete City"
+                message={`Are you sure you want to delete "${confirmDelete.cityName}"? This may affect boats and trips associated with it.`}
+                confirmText="Delete"
+                confirmVariant="danger"
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setConfirmDelete({ isOpen: false, cityId: null, cityName: "" })}
+                isLoading={deleting}
+            />
         </div>
     );
 }
