@@ -73,8 +73,19 @@ export default function OrdersManagement() {
     setActionLoading(false);
   };
 
-  const handleViewOrder = (order: AdminOrder) => {
+  const handleViewOrder = async (order: AdminOrder) => {
+    // Open immediately with partial data
     setSelectedOrder(order);
+
+    // Fetch full details to get trip_details, owner phone, etc.
+    try {
+      const response = await adminApi.getOrder(order.id);
+      if (response.success && response.data) {
+        setSelectedOrder(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch full order details", err);
+    }
   };
 
   const handleExport = () => {
@@ -105,13 +116,13 @@ export default function OrdersManagement() {
   };
 
   return (
-    <div className="bg-white rounded-[15.09px] p-[26px]">
+    <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center mb-8 justify-between gap-3">
         <div>
-          <p className="text-[#0A0A0A] font-medium text-lg">Orders Management</p>
-          <p className="text-[#717182] font-normal">
-            View and manage all boat rental orders ({orders.length} total)
+          <p className="text-[#0A0A0A] font-bold text-xl">Orders Management</p>
+          <p className="text-[#717182] font-normal text-sm">
+            View and manage all boat rental orders
           </p>
         </div>
 
@@ -124,17 +135,20 @@ export default function OrdersManagement() {
         </div>
       </div>
 
-      {/* Search + Filters */}
-      <div className="flex flex-col lg:flex-row gap-3 mb-4">
-        <SearchInput
-          value={search}
-          onChange={(value) => {
-            setSearch(value);
-            setPage(1);
-          }}
-        />
+      {/* Search + Filters Row */}
+      <div className="flex flex-col md:flex-row gap-3 mb-6 items-center">
+        <div className="flex-1 w-full">
+          <SearchInput
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+            placeholder="Search by order #, customer, or boat..."
+          />
+        </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
           <FilterComponent
             selectItems={[
               "All Status",

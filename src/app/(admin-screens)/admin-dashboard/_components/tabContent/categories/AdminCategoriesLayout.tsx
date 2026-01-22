@@ -1,7 +1,7 @@
-"use client";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { adminApi, AdminCategory } from "@/lib/api";
-import { FiPlus, FiEdit2, FiTrash2, FiTag, FiX, FiUpload } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiTag, FiX, FiAnchor, FiUsers, FiUpload } from "react-icons/fi";
 import Image from "next/image";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
@@ -16,7 +16,7 @@ export default function AdminCategoriesLayout() {
     const [categoryImage, setCategoryImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
     const [saving, setSaving] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Confirm delete state
     const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; categoryId: number | null; categoryName: string }>({
@@ -25,6 +25,34 @@ export default function AdminCategoriesLayout() {
         categoryName: ""
     });
     const [deleting, setDeleting] = useState(false);
+
+    // Category Details Modal State
+    const [selectedCategoryForDetails, setSelectedCategoryForDetails] = useState<AdminCategory | null>(null);
+    const [categoryBoats, setCategoryBoats] = useState<any[]>([]);
+    const [detailsLoading, setDetailsLoading] = useState(false);
+
+    // Navigation
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Deep linking: Open category modal
+    useEffect(() => {
+        const categoryIdParam = searchParams.get('openCategoryId');
+        if (categoryIdParam && categories.length > 0) {
+            const categoryId = parseInt(categoryIdParam);
+            const category = categories.find(c => c.id === categoryId);
+            if (category) {
+                if (selectedCategoryForDetails?.id !== category.id) {
+                    fetchCategoryDetails(category);
+                }
+            }
+        } else {
+            // URL param missing, ensure modal is closed
+            if (selectedCategoryForDetails) {
+                setSelectedCategoryForDetails(null);
+            }
+        }
+    }, [searchParams, categories, selectedCategoryForDetails]);
 
     const fetchCategories = useCallback(async () => {
         setLoading(true);
@@ -38,6 +66,21 @@ export default function AdminCategoriesLayout() {
     useEffect(() => {
         fetchCategories();
     }, [fetchCategories]);
+
+    const fetchCategoryDetails = async (category: AdminCategory) => {
+        setSelectedCategoryForDetails(category);
+        setDetailsLoading(true);
+        try {
+            // Fetch boats for this category
+            const boatsResponse = await adminApi.getBoats(1, 100, { category_id: category.id });
+            if (boatsResponse.success && boatsResponse.data) {
+                setCategoryBoats(boatsResponse.data.boats);
+            }
+        } catch (error) {
+            showError("Failed to fetch category details");
+        }
+        setDetailsLoading(false);
+    };
 
     const openCreateModal = () => {
         setEditingCategory(null);
@@ -102,6 +145,10 @@ export default function AdminCategoriesLayout() {
         setDeleting(true);
         const response = await adminApi.deleteCategory(confirmDelete.categoryId);
         if (response.success) {
+            if (selectedCategoryForDetails?.id === confirmDelete.categoryId) {
+                router.push('/admin-dashboard?tab=categories');
+                setSelectedCategoryForDetails(null);
+            }
             fetchCategories();
             showSuccess("Category deleted successfully");
         } else {
@@ -111,21 +158,51 @@ export default function AdminCategoriesLayout() {
         setConfirmDelete({ isOpen: false, categoryId: null, categoryName: "" });
     };
 
+    const navigateToDetails = (id: number) => {
+        const returnCategoryId = selectedCategoryForDetails?.id;
+
+        // Close modal
+        setSelectedCategoryForDetails(null);
+
+        // Navigate to boat tab with ID param AND return info
+        const params = new URLSearchParams();
+        params.set('tab', 'boat-listings');
+        params.set('boatId', id.toString());
+
+        // Add return param
+        if (returnCategoryId) {
+            params.set('returnToCategoryId', returnCategoryId.toString()); // Note: need to support this param in boat listing too? Or just reuse returnToCityId concept?
+            // Actually, AdminBoatListingLayout supports 'returnToCityId'.
+            // I should either update AdminBoatListingLayout to support 'returnToCategoryId' or hack it.
+            // Let's implement 'returnToCategoryId' support in AdminBoatListingLayout next or rename to generic 'returnToId' and 'returnToType'.
+            // For now, let's call it returnToCategoryId and I will update AdminBoatListingLayout.
+        }
+
+        router.push(`/admin-dashboard?${params.toString()}`);
+    };
+
+    // Helper for image url
+    const getImageUrl = (item: any) => {
+        if (item.images && item.images.length > 0) return item.images[0];
+        if (item.primary_image_url) return item.primary_image_url;
+        return null;
+    };
+
     return (
-        <div className="bg-white rounded-xl p-6">
+        <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center mb-6 justify-between gap-3">
                 <div>
-                    <p className="text-[#0A0A0A] font-medium text-lg">Categories Management</p>
+                    <p className="text-[#0A0A0A] font-bold text-xl">Categories Management</p>
                     <p className="text-[#717182] font-normal text-sm">
                         Manage boat categories ({categories.length} categories)
                     </p>
                 </div>
                 <button
                     onClick={openCreateModal}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    className="flex items-center gap-2 bg-[#0F172A] text-white px-5 py-3 rounded-xl hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                 >
-                    <FiPlus /> Add Category
+                    <FiPlus size={18} /> Add Category
                 </button>
             </div>
 
@@ -165,10 +242,11 @@ export default function AdminCategoriesLayout() {
                     {categories.map((category) => (
                         <div
                             key={category.id}
-                            className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4"
+                            className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 hover:shadow-lg transition cursor-pointer group"
+                            onClick={() => router.push(`/admin-dashboard?tab=categories&openCategoryId=${category.id}`)}
                         >
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-12 h-12 relative rounded-lg overflow-hidden bg-white">
+                                <div className="w-12 h-12 relative rounded-lg overflow-hidden bg-white shadow-sm">
                                     {category.image ? (
                                         <Image src={category.image} alt={category.name} fill className="object-cover" />
                                     ) : (
@@ -178,24 +256,20 @@ export default function AdminCategoriesLayout() {
                                     )}
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="font-semibold text-gray-900">{category.name}</h3>
-                                    <p className="text-xs text-gray-500">{(category as AdminCategory & { boats_count?: number }).boats_count || 0} boats</p>
+                                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{category.name}</h3>
+                                    <p className="text-xs text-gray-500 font-medium">{category.boats_count || 0} boats</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 pt-3 border-t border-blue-100">
                                 <button
-                                    onClick={() => openEditModal(category)}
-                                    className="flex-1 flex items-center justify-center gap-1 py-2 text-sm text-gray-600 hover:bg-white rounded transition"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        openEditModal(category);
+                                    }}
+                                    className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-gray-600 hover:bg-white rounded transition font-medium"
                                     aria-label={`Edit ${category.name}`}
                                 >
-                                    <FiEdit2 size={14} /> Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDeleteClick(category)}
-                                    className="flex-1 flex items-center justify-center gap-1 py-2 text-sm text-red-600 hover:bg-red-50 rounded transition"
-                                    aria-label={`Delete ${category.name}`}
-                                >
-                                    <FiTrash2 size={14} /> Delete
+                                    <FiEdit2 size={12} /> Edit
                                 </button>
                             </div>
                         </div>
@@ -203,7 +277,102 @@ export default function AdminCategoriesLayout() {
                 </div>
             )}
 
-            {/* Modal */}
+            {/* Category Details Modal */}
+            {selectedCategoryForDetails && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white rounded-t-2xl">
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{selectedCategoryForDetails.name}</h1>
+                                <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                                    <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">{categoryBoats.length} Boats</span>
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleDeleteClick(selectedCategoryForDetails)}
+                                    className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-full transition-colors"
+                                    title="Delete Category"
+                                >
+                                    <FiTrash2 size={20} />
+                                </button>
+                                <button
+                                    onClick={() => router.push('/admin-dashboard?tab=categories')}
+                                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <FiX size={24} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-8 overflow-y-auto flex-1 bg-gray-50/50">
+                            {detailsLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
+                                    <p className="text-sm text-gray-500 font-medium">Loading details...</p>
+                                </div>
+                            ) : (
+                                categoryBoats.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {categoryBoats.map(boat => {
+                                            const imgUrl = getImageUrl(boat);
+                                            return (
+                                                <div key={boat.id} className="group bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
+                                                    <div className="h-48 bg-gray-100 relative overflow-hidden">
+                                                        {imgUrl ? (
+                                                            <img src={imgUrl} alt={boat.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
+                                                                <FiAnchor size={32} />
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
+                                                        <div className="absolute top-3 right-3">
+                                                            <span className="px-2.5 py-1 bg-white/95 backdrop-blur-sm text-gray-900 text-xs font-bold rounded-lg shadow-sm">
+                                                                ${boat.price_per_hour}/hr
+                                                            </span>
+                                                        </div>
+                                                        <div className="absolute bottom-3 left-3 text-white">
+                                                            <div className="flex items-center gap-1.5 text-xs font-medium bg-black/30 backdrop-blur-md px-2 py-1 rounded-lg">
+                                                                <FiUsers size={12} /> {boat.max_seats} Guests
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-5 flex flex-col flex-1">
+                                                        <h3 className="font-bold text-gray-900 mb-1 truncate text-lg group-hover:text-blue-600 transition-colors">{boat.name}</h3>
+                                                        <p className="text-xs text-gray-500 mb-4 line-clamp-2">{boat.description || "No description provided."}</p>
+
+                                                        <div className="mt-auto pt-4 border-t border-gray-50">
+                                                            <button
+                                                                onClick={() => navigateToDetails(boat.id)}
+                                                                className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm group-hover:border-blue-200 group-hover:text-blue-700"
+                                                            >
+                                                                View Details
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                                            <FiTag size={24} />
+                                        </div>
+                                        <h3 className="text-lg font-medium text-gray-900">No boats found</h3>
+                                        <p className="text-gray-500">There are no boats in the {selectedCategoryForDetails.name} category yet.</p>
+                                    </div>
+                                )
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Create/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
                     <div className="bg-white rounded-xl w-full max-w-md">

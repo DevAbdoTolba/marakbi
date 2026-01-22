@@ -765,6 +765,8 @@ export interface AdminUser {
   boats_count: number;
   bookings_count: number;
   profile_picture: string | null;
+  bio: string | null;
+  phone: string | null;
 }
 
 export interface AdminUserDetails extends AdminUser {
@@ -785,7 +787,9 @@ export interface AdminOrder {
   boat_id: number;
   username: string;
   user_email: string | null;
+  user_phone?: string;
   boat_name: string;
+  boat_description?: string;
   boat_images: string[];
   start_date: string;
   end_date: string;
@@ -797,6 +801,52 @@ export interface AdminOrder {
   guest_count: number;
   created_at: string;
   trip_name?: string;
+  // Owner Details
+  owner_username?: string;
+  owner_email?: string;
+  owner_details?: {
+    username: string;
+    email: string;
+    phone: string | null;
+    profile_picture: string | null;
+  };
+  // Extended Details
+  trip_type?: string;
+  voyage_type?: string;
+  voyage_id?: number;
+  voyage_seats_taken?: number;
+  voyage_max_seats?: number;
+
+  // Full Context Objects (for single order view)
+  voyage_details?: {
+    id: number;
+    voyage_type: string;
+    max_seats: number;
+    current_seats_taken: number;
+    available_seats: number;
+    boat_id: number;
+    start_date: string;
+    end_date: string;
+    price_per_hour: number;
+    status: string;
+  };
+  trip_details?: {
+    id: number;
+    name: string;
+    trip_type: string;
+    voyage_hours: number;
+    description: string;
+    image?: string;
+  };
+  voyage_participants?: Array<{
+    id: number;
+    username: string;
+    email: string | null;
+    guest_count: number;
+    voyage_id: number;
+    status: string;
+    payment_status: string;
+  }>;
 }
 
 export interface AdminBoat {
@@ -852,6 +902,7 @@ export interface AdminCategory {
   id: number;
   name: string;
   image: string | null;
+  boats_count?: number;
 }
 
 export interface AdminGroup {
@@ -1048,13 +1099,13 @@ export const adminApi = {
     return apiRequest(`/admin/trips?${params.toString()}`);
   },
   getTrip: async (tripId: number): Promise<ApiResponse<AdminTrip & { boats: { id: number; name: string }[] }>> => apiRequest(`/admin/trips/${tripId}`),
-  createTrip: async (tripData: { name: string; description?: string; total_price: number; voyage_hours: number; trip_type: string; city_id: number; pax?: number; guests_on_board?: number; rooms_available?: number }, images?: File[]): Promise<ApiResponse<AdminTrip>> => {
+  createTrip: async (tripData: { name: string; description?: string; total_price: number; voyage_hours: number; trip_type: string; city_id: number; pax?: number; guests_on_board?: number; rooms_available?: number; primary_image_url?: string; primary_new_image_index?: number }, images?: File[]): Promise<ApiResponse<AdminTrip>> => {
     const formData = new FormData();
     Object.entries(tripData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value.toString()); });
     if (images) images.forEach(img => formData.append('trip_images', img));
     return adminFormRequest('/admin/trips', formData);
   },
-  updateTrip: async (tripId: number, tripData: { name?: string; description?: string; total_price?: number; voyage_hours?: number; trip_type?: string; city_id?: number; pax?: number; guests_on_board?: number; rooms_available?: number }, images?: File[], removedImages?: string[]): Promise<ApiResponse<AdminTrip>> => {
+  updateTrip: async (tripId: number, tripData: { name?: string; description?: string; total_price?: number; voyage_hours?: number; trip_type?: string; city_id?: number; pax?: number; guests_on_board?: number; rooms_available?: number; primary_image_url?: string; primary_new_image_index?: number }, images?: File[], removedImages?: string[]): Promise<ApiResponse<AdminTrip>> => {
     const formData = new FormData();
     Object.entries(tripData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value.toString()); });
     if (images) images.forEach(img => formData.append('trip_images', img));
@@ -1079,8 +1130,10 @@ export const adminApi = {
   deleteVoyage: async (voyageId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/voyages/${voyageId}`, { method: 'DELETE' }),
 
   // Reviews
-  getBoatReviews: async (page = 1, perPage = 10): Promise<ApiResponse<{ reviews: AdminReview[] } & PaginatedResponse<AdminReview>>> => {
-    return apiRequest(`/admin/reviews/boats?page=${page}&per_page=${perPage}`);
+  getBoatReviews: async (page = 1, perPage = 10, filters?: { user_id?: number }): Promise<ApiResponse<{ reviews: AdminReview[] } & PaginatedResponse<AdminReview>>> => {
+    let query = `page=${page}&per_page=${perPage}`;
+    if (filters?.user_id) query += `&user_id=${filters.user_id}`;
+    return apiRequest(`/admin/reviews/boats?${query}`);
   },
   deleteBoatReview: async (reviewId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/reviews/boats/${reviewId}`, { method: 'DELETE' }),
 

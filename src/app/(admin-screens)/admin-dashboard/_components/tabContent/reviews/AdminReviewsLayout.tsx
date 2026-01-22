@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { adminApi } from "@/lib/api";
-import { FiStar, FiTrash2, FiSearch, FiUser, FiAnchor } from "react-icons/fi";
+import { FiStar, FiTrash2, FiSearch, FiUser, FiAnchor, FiX } from "react-icons/fi";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
 
@@ -16,13 +16,20 @@ interface BoatReview {
     created_at: string;
 }
 
+import { useSearchParams, useRouter } from "next/navigation";
+
 export default function AdminReviewsLayout() {
     const { showSuccess, showError } = useToast();
+    const searchParams = useSearchParams();
+    const userIdFilter = searchParams.get("user") ? Number(searchParams.get("user")) : null;
+
     const [reviews, setReviews] = useState<BoatReview[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [ratingFilter, setRatingFilter] = useState<number | "">("");
+    const [userFilterName, setUserFilterName] = useState("");
+    const router = useRouter();
 
     // Confirm delete state
     const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; reviewId: number | null }>({
@@ -33,7 +40,10 @@ export default function AdminReviewsLayout() {
 
     const fetchReviews = useCallback(async () => {
         setLoading(true);
-        const response = await adminApi.getBoatReviews(page, 10);
+        const filters: { user_id?: number } = {};
+        if (userIdFilter) filters.user_id = userIdFilter;
+
+        const response = await adminApi.getBoatReviews(page, 10, filters);
         if (response.success && response.data) {
             let filteredReviews = response.data.reviews;
             // Client-side filtering by rating (ideally this would be server-side)
@@ -44,11 +54,22 @@ export default function AdminReviewsLayout() {
             setTotalPages(response.data.pages);
         }
         setLoading(false);
-    }, [page, ratingFilter]);
+    }, [page, ratingFilter, userIdFilter]);
 
     useEffect(() => {
         fetchReviews();
     }, [fetchReviews]);
+
+    // Fetch user details for filter display
+    useEffect(() => {
+        if (userIdFilter) {
+            adminApi.getUser(userIdFilter).then((res) => {
+                if (res.success && res.data) {
+                    setUserFilterName(res.data.username);
+                }
+            });
+        }
+    }, [userIdFilter]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -100,16 +121,36 @@ export default function AdminReviewsLayout() {
     };
 
     return (
-        <div className="bg-white rounded-xl p-6">
+        <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center mb-6 justify-between gap-3">
                 <div>
-                    <p className="text-[#0A0A0A] font-medium text-lg">Reviews Moderation</p>
+                    <p className="text-[#0A0A0A] font-bold text-xl">Reviews Moderation</p>
                     <p className="text-[#717182] font-normal text-sm">
                         Manage and moderate boat reviews ({reviews.length} shown)
                     </p>
                 </div>
             </div>
+
+            {/* User Filter Banner */}
+            {userIdFilter && (
+                <div className="mb-6 flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg px-4 py-3">
+                    <div className="flex items-center gap-2">
+                        <FiUser className="text-purple-600" />
+                        <span className="text-purple-700 font-medium">
+                            Showing reviews by: {userFilterName || userIdFilter}
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => {
+                            router.replace("/admin-dashboard?tab=reviews");
+                        }}
+                        className="text-purple-600 hover:text-purple-800 text-sm font-medium flex items-center gap-1"
+                    >
+                        <FiX size={16} /> Clear Filter
+                    </button>
+                </div>
+            )}
 
             {/* Filters */}
             <div className="flex flex-wrap gap-3 mb-4">

@@ -65,7 +65,7 @@ export default function AdminVoyagesLayout() {
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'USD',
+            currency: 'EGP',
             minimumFractionDigits: 0
         }).format(amount);
     };

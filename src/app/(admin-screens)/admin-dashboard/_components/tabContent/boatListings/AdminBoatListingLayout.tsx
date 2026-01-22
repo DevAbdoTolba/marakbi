@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminStats, AdminReview } from "@/lib/api";
-import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiPlus, FiEye, FiUsers, FiDollarSign, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiPlus, FiEye, FiUsers, FiDollarSign, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import Image from "next/image";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
@@ -69,6 +69,8 @@ export default function AdminBoatListingLayout() {
   // View Details Modal State
   const [viewDetailsBoat, setViewDetailsBoat] = useState<BoatDetailsData | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [reviewsRatingFilter, setReviewsRatingFilter] = useState<number | "">("");
 
   // Stats
   const [stats, setStats] = useState<BoatStats>({ total_fleet: 0, total_revenue: 0, total_bookings: 0 });
@@ -91,19 +93,54 @@ export default function AdminBoatListingLayout() {
   });
 
   // User filter from URL
-  const [userFilter, setUserFilter] = useState<number | undefined>();
+  const [userFilter, setUserFilter] = useState<number | undefined>(() => {
+    const userId = searchParams.get("user");
+    return userId ? parseInt(userId, 10) : undefined;
+  });
   const [userFilterName, setUserFilterName] = useState<string>("");
 
-  // Read user param from URL on mount
+  // Read user param from URL on updates
   useEffect(() => {
     const userId = searchParams.get("user");
     if (userId && !searchParams.get("action")) {
-      setUserFilter(parseInt(userId, 10));
-      adminApi.getUser(parseInt(userId, 10)).then((res) => {
+      const uid = parseInt(userId, 10);
+      if (uid !== userFilter) {
+        setUserFilter(uid);
+      }
+      adminApi.getUser(uid).then((res) => {
         if (res.success && res.data) {
           setUserFilterName(res.data.username);
         }
       });
+    } else if (userFilter !== undefined && !searchParams.get("action")) {
+      setUserFilter(undefined);
+    }
+  }, [searchParams]);
+
+  // Reset image index when opening details modal
+  useEffect(() => {
+    if (viewDetailsBoat) {
+      setCurrentImageIndex(0);
+    }
+  }, [viewDetailsBoat]);
+
+  // Check for boatId to open details modal
+  useEffect(() => {
+    const boatIdParam = searchParams.get("boatId");
+    if (boatIdParam) {
+      const boatId = Number(boatIdParam);
+      if (!isNaN(boatId)) {
+        // Fetch boat details
+        const fetchBoatDetails = async () => {
+          setLoadingDetails(true);
+          const response = await adminApi.getBoat(boatId);
+          if (response.success && response.data) {
+            setViewDetailsBoat(response.data);
+          }
+          setLoadingDetails(false);
+        };
+        fetchBoatDetails();
+      }
     }
   }, [searchParams]);
 
@@ -122,6 +159,55 @@ export default function AdminBoatListingLayout() {
     }
     setLoading(false);
   }, [page, search, categoryFilter, cityFilter, userFilter]);
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    resetForm();
+
+    // Handle navigation back or clear params
+    const returnToCityId = searchParams.get('returnToCityId');
+    const returnToCategoryId = searchParams.get('returnToCategoryId');
+    const returnTab = searchParams.get('returnTab');
+    const returnOrderId = searchParams.get('returnOrderId');
+
+    if (returnToCityId) {
+      router.push(`/admin-dashboard?tab=cities&openCityId=${returnToCityId}`);
+    } else if (returnToCategoryId) {
+      router.push(`/admin-dashboard?tab=categories&openCategoryId=${returnToCategoryId}`);
+    } else if (returnTab && returnOrderId) {
+      router.push(`/admin-dashboard?tab=${returnTab}&openOrderId=${returnOrderId}`);
+    } else {
+      const params = new URLSearchParams(searchParams.toString());
+      if (params.get('boatId') || params.get('action')) {
+        params.delete('boatId');
+        params.delete('action');
+        router.push(`/admin-dashboard?${params.toString()}`);
+      }
+    }
+  };
+
+  const handleCloseDetailsModal = () => {
+    setViewDetailsBoat(null);
+    setReviewsRatingFilter("");
+    const returnToCityId = searchParams.get('returnToCityId');
+    const returnToCategoryId = searchParams.get('returnToCategoryId');
+    const returnTab = searchParams.get('returnTab');
+    const returnOrderId = searchParams.get('returnOrderId');
+
+    if (returnToCityId) {
+      router.push(`/admin-dashboard?tab=cities&openCityId=${returnToCityId}`);
+    } else if (returnToCategoryId) {
+      router.push(`/admin-dashboard?tab=categories&openCategoryId=${returnToCategoryId}`);
+    } else if (returnTab && returnOrderId) {
+      router.push(`/admin-dashboard?tab=${returnTab}&openOrderId=${returnOrderId}`);
+    } else {
+      const params = new URLSearchParams(searchParams.toString());
+      if (params.get('boatId')) {
+        params.delete('boatId');
+        router.push(`/admin-dashboard?${params.toString()}`);
+      }
+    }
+  };
 
   const fetchStats = async () => {
     const response = await adminApi.getStats();
@@ -309,6 +395,7 @@ export default function AdminBoatListingLayout() {
 
   const openViewDetails = async (boat: AdminBoat) => {
     setLoadingDetails(true);
+    setReviewsRatingFilter("");
     setViewDetailsBoat(boat as BoatDetailsData);
 
     const response = await adminApi.getBoat(boat.id);
@@ -445,7 +532,7 @@ export default function AdminBoatListingLayout() {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'EGP',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
@@ -485,73 +572,24 @@ export default function AdminBoatListingLayout() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
       {/* 1. Header & Stats Section */}
       <div>
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-1">Boat Listings</h1>
-            <p className="text-gray-500 text-sm">Manage and monitor all boats in your fleet</p>
+            <p className="text-[#0A0A0A] font-bold text-xl">Boat Listings</p>
+            <p className="text-[#717182] font-normal text-sm">Manage and monitor all boats in your fleet</p>
           </div>
-          <button
+          {/* <button
             onClick={handleExport}
             className="flex items-center gap-2 bg-[#1E293B] text-white px-4 py-2 rounded-lg hover:bg-black transition-colors text-sm font-medium"
           >
             <FiDownload /> Export Report
-          </button>
+          </button> */}
         </div>
 
         {/* Stats Cards Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Total Fleet */}
-          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-500 font-medium mb-1">Total Fleet</p>
-                <div className="flex items-baseline gap-1">
-                  <h3 className="text-2xl font-bold text-gray-900">{stats.total_fleet}</h3>
-                  <span className="text-xs text-gray-400">boats</span>
-                </div>
-                <p className="text-xs text-gray-400 mt-2">Active fleet</p>
-              </div>
-              <div className="p-2 bg-gray-50 rounded-lg text-gray-400">
-                <FiAnchor size={20} />
-              </div>
-            </div>
-          </div>
 
-          {/* Total Revenue */}
-          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-500 font-medium mb-1">Total Revenue</p>
-                <div className="flex items-baseline gap-1">
-                  <h3 className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_revenue)}</h3>
-                </div>
-                <p className="text-xs text-green-600 mt-2 font-medium">+12% vs last month</p>
-              </div>
-              <div className="p-2 bg-gray-50 rounded-lg text-gray-400">
-                <FiDollarSign size={20} />
-              </div>
-            </div>
-          </div>
-
-          {/* Total Bookings */}
-          <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-500 font-medium mb-1">Total Bookings</p>
-                <div className="flex items-baseline gap-1">
-                  <h3 className="text-2xl font-bold text-blue-600">{stats.total_bookings}</h3>
-                </div>
-                <p className="text-xs text-blue-600 mt-2 font-medium">+8% vs last month</p>
-              </div>
-              <div className="p-2 bg-gray-50 rounded-lg text-gray-400">
-                <FiCalendar size={20} />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* 2. Filters Row */}
@@ -570,7 +608,7 @@ export default function AdminBoatListingLayout() {
           />
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <select
             value={categoryFilter || ""}
             onChange={(e) => {
@@ -608,13 +646,13 @@ export default function AdminBoatListingLayout() {
             ))}
           </select>
 
-          {/* Add Boat Button aligned with filters for better usability, though design shows it in header */}
+          {/* Add Boat Button aligned with filters for better usability, though design shows it in header
           <button
             onClick={openCreateModal}
             className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-50 text-sm font-medium"
           >
             <FiPlus /> Add Boat
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -788,7 +826,7 @@ export default function AdminBoatListingLayout() {
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              setViewDetailsBoat(null);
+              handleCloseDetailsModal();
             }
           }}
         >
@@ -806,7 +844,7 @@ export default function AdminBoatListingLayout() {
                   {getItemName(viewDetailsBoat.categories?.[0]) || "Boat"} • {getItemName(viewDetailsBoat.cities?.[0]) || "Unknown City"}
                 </p>
               </div>
-              <button onClick={() => setViewDetailsBoat(null)} className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
+              <button onClick={handleCloseDetailsModal} className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
                 <FiX size={24} />
               </button>
             </div>
@@ -819,16 +857,66 @@ export default function AdminBoatListingLayout() {
             ) : (
               <div className="p-6 pt-4 flex-1 overflow-y-auto">
                 {/* Modal Gallery Image */}
+                {/* Modal Gallery Image Slider */}
                 <div className="relative w-full h-80 rounded-2xl overflow-hidden mb-8 bg-gray-100 group">
-                  {viewDetailsBoat.images?.[0] ? (
-                    <Image src={viewDetailsBoat.images[0]} alt="" fill className="object-cover" />
+                  {viewDetailsBoat.images && viewDetailsBoat.images.length > 0 ? (
+                    <>
+                      <Image
+                        src={viewDetailsBoat.images[currentImageIndex]}
+                        alt={`${viewDetailsBoat.name} - Image ${currentImageIndex + 1}`}
+                        fill
+                        className="object-cover transition-opacity duration-300"
+                        priority
+                      />
+
+                      {/* Navigation Arrows (Only if > 1 image) */}
+                      {viewDetailsBoat.images.length > 1 && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentImageIndex((prev) => (prev - 1 + viewDetailsBoat.images.length) % viewDetailsBoat.images.length);
+                            }}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-gray-900 shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:scale-105 z-10"
+                          >
+                            <FiChevronLeft size={24} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentImageIndex((prev) => (prev + 1) % viewDetailsBoat.images.length);
+                            }}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-gray-900 shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:scale-105 z-10"
+                          >
+                            <FiChevronRight size={24} />
+                          </button>
+
+                          {/* Indicators */}
+                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                            {viewDetailsBoat.images.map((_, idx) => (
+                              <button
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCurrentImageIndex(idx);
+                                }}
+                                className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex
+                                  ? "bg-white w-4"
+                                  : "bg-white/50 hover:bg-white/80"
+                                  }`}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                       <FiImage size={48} />
                     </div>
                   )}
                   {/* Image Overlay Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 pointer-events-none"></div>
                 </div>
 
                 {/* 2-Column Stats Layout */}
@@ -892,33 +980,54 @@ export default function AdminBoatListingLayout() {
                       <p className="text-base font-bold text-gray-900">{viewDetailsBoat.owner?.username || viewDetailsBoat.owner_username || "Unknown Owner"}</p>
                       <p className="text-sm text-gray-500">{viewDetailsBoat.owner?.email || "No email available"}</p>
                     </div>
-                    <button className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition-colors">
+                    {/* <button className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition-colors">
                       View Profile
-                    </button>
+                    </button> */}
                   </div>
                 </div>
 
                 {/* Reviews Section */}
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-100 pb-2 mb-4">Reviews</h3>
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-4">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Reviews</h3>
+                    <select
+                      value={reviewsRatingFilter}
+                      onChange={(e) => setReviewsRatingFilter(e.target.value === "" ? "" : Number(e.target.value))}
+                      className="bg-gray-50 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 outline-none border border-transparent hover:border-gray-200 focus:border-gray-300 transition-all cursor-pointer"
+                    >
+                      <option value="">All Ratings</option>
+                      <option value="5">5 Stars</option>
+                      <option value="4">4 Stars</option>
+                      <option value="3">3 Stars</option>
+                      <option value="2">2 Stars</option>
+                      <option value="1">1 Star</option>
+                    </select>
+                  </div>
                   {viewDetailsBoat.reviews && viewDetailsBoat.reviews.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {viewDetailsBoat.reviews.map((review) => (
-                        <div key={review.id} className="bg-gray-50 rounded-xl p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-bold text-sm text-gray-900">{review.username}</span>
-                            <div className="flex items-center gap-[1px]">
-                              {[...Array(5)].map((_, i) => (
-                                <FiStar key={i} size={10} className={i < review.rating ? "text-orange-400 fill-orange-400" : "text-gray-300"} />
-                              ))}
+                      {viewDetailsBoat.reviews
+                        .filter(review => reviewsRatingFilter === "" || review.rating === reviewsRatingFilter)
+                        .map((review) => (
+                          <div key={review.id} className="bg-gray-50 rounded-xl p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-bold text-sm text-gray-900">{review.username}</span>
+                              <div className="flex items-center gap-[1px]">
+                                {[...Array(5)].map((_, i) => (
+                                  <FiStar key={i} size={10} className={i < review.rating ? "text-orange-400 fill-orange-400" : "text-gray-300"} />
+                                ))}
+                              </div>
                             </div>
+                            <p className="text-xs text-gray-600 line-clamp-3 italic">"{review.comment}"</p>
+                            <p className="text-[10px] text-gray-400 mt-2 text-right">
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </p>
                           </div>
-                          <p className="text-xs text-gray-600 line-clamp-3 italic">"{review.comment}"</p>
-                          <p className="text-[10px] text-gray-400 mt-2 text-right">
-                            {new Date(review.created_at).toLocaleDateString()}
-                          </p>
+                        ))}
+                      {viewDetailsBoat.reviews.filter(review => reviewsRatingFilter === "" || review.rating === reviewsRatingFilter).length === 0 && (
+                        <div className="col-span-full py-8 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl">
+                          <p className="text-sm text-gray-500">No reviews found with this rating.</p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   ) : (
                     <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
@@ -933,7 +1042,7 @@ export default function AdminBoatListingLayout() {
             {/* Modal Footer */}
             <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl flex-shrink-0">
               <button
-                onClick={() => setViewDetailsBoat(null)}
+                onClick={handleCloseDetailsModal}
                 className="px-6 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
               >
                 Close
@@ -981,10 +1090,7 @@ export default function AdminBoatListingLayout() {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  resetForm();
-                }}
+                onClick={handleCloseModal}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <FiX size={20} />
@@ -1036,7 +1142,7 @@ export default function AdminBoatListingLayout() {
 
                       {/* Price Hour */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Price per Hour ($) *</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Price per Hour (EGP) *</label>
                         <input
                           type="number"
                           value={formData.price_per_hour}
@@ -1055,9 +1161,17 @@ export default function AdminBoatListingLayout() {
                               key={city.id}
                               type="button"
                               onClick={() => {
-                                // Single selection for location usually, but model supports multiple. Using toggle logic for now.
-                                const newCities = formData.cities.includes(city.id) ? formData.cities.filter((id) => id !== city.id) : [...formData.cities, city.id];
-                                setFormData({ ...formData, cities: newCities });
+                                const newCities = formData.cities.includes(city.id)
+                                  ? formData.cities.filter((id) => id !== city.id)
+                                  : [...formData.cities, city.id];
+
+                                // Auto-deselect trips that don't belong to the selected cities anymore
+                                const newSelectedTrips = formData.trips.filter(tripId => {
+                                  const trip = trips.find((t: any) => t.id === tripId);
+                                  return trip && newCities.includes(trip.city_id);
+                                });
+
+                                setFormData({ ...formData, cities: newCities, trips: newSelectedTrips });
                               }}
                               className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${formData.cities.includes(city.id) ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
                             >
@@ -1127,26 +1241,7 @@ export default function AdminBoatListingLayout() {
                       </div>
                     )}
 
-                    {/* Trips Selection */}
-                    <div className="mt-6">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Available Trips</label>
-                      <div className="flex flex-wrap gap-2">
-                        {trips.map((trip) => (
-                          <button
-                            key={trip.id}
-                            type="button"
-                            onClick={() => {
-                              const newTrips = formData.trips.includes(trip.id) ? formData.trips.filter((id) => id !== trip.id) : [...formData.trips, trip.id];
-                              setFormData({ ...formData, trips: newTrips });
-                            }}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${formData.trips.includes(trip.id) ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
-                          >
-                            {trip.name}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">Select trips that this boat can be assigned to.</p>
-                    </div>
+
 
                   </div>
                 </div>
@@ -1337,7 +1432,7 @@ export default function AdminBoatListingLayout() {
                 {/* Progress/Step info passed if needed */}
               </div>
               <div className="flex gap-3">
-                <button onClick={() => { setShowModal(false); resetForm(); }} className="px-6 py-2.5 text-gray-700 font-medium bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                <button onClick={handleCloseModal} className="px-6 py-2.5 text-gray-700 font-medium bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
                   Cancel
                 </button>
                 <button onClick={handleSubmit} disabled={saving} className="px-6 py-2.5 bg-[#1E293B] text-white font-medium rounded-xl hover:bg-black transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-gray-200">

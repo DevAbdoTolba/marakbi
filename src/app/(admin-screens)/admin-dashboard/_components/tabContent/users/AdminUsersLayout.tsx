@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { adminApi, AdminUser } from "@/lib/api";
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiAnchor, FiCalendar } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiAnchor, FiCalendar, FiMoreVertical, FiPhone, FiInfo, FiStar } from "react-icons/fi";
 import useAdminTab from "../../../_hooks/useAdminTab";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
@@ -20,6 +20,26 @@ export default function AdminUsersLayout() {
   const [roleFilter, setRoleFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [openMenu, setOpenMenu] = useState<{ id: number; top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openMenu !== null && !(event.target as Element).closest('.action-menu-trigger')) {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMenu]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (openMenu !== null) setOpenMenu(null);
+    }
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [openMenu]);
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -37,15 +57,18 @@ export default function AdminUsersLayout() {
 
     // Update URL without full page reload
     router.push(`/admin-dashboard?tab=boat-listings${params.toString() ? `&${params.toString()}` : ""}`);
-    // Also update Zustand state to switch tab
-    setTab("boat-listings");
   };
 
   const navigateToBookings = (userId: number, username: string) => {
     const params = new URLSearchParams();
     params.set("user", userId.toString());
     router.push(`/admin-dashboard?tab=bookings&${params.toString()}`);
-    setTab("bookings");
+  };
+
+  const navigateToReviews = (userId: number) => {
+    const params = new URLSearchParams();
+    params.set("user", userId.toString());
+    router.push(`/admin-dashboard?tab=reviews&${params.toString()}`);
   };
 
   // Confirm delete state
@@ -156,11 +179,11 @@ export default function AdminUsersLayout() {
   };
 
   return (
-    <div className="bg-white rounded-xl p-6">
+    <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center mb-6 justify-between gap-3">
         <div>
-          <p className="text-[#0A0A0A] font-medium text-lg">Users Management</p>
+          <p className="text-[#0A0A0A] font-bold text-xl">Users Management</p>
           <p className="text-[#717182] font-normal text-sm">
             Manage all registered users ({users.length} shown)
           </p>
@@ -171,9 +194,9 @@ export default function AdminUsersLayout() {
             resetForm();
             setShowModal(true);
           }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 bg-[#0F172A] text-white px-5 py-3 rounded-xl hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
         >
-          <FiPlus /> Add User
+          <FiPlus size={18} /> Add User
         </button>
       </div>
 
@@ -233,10 +256,10 @@ export default function AdminUsersLayout() {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-left">
+          <table className="w-full min-w-[900px] text-left">
             <thead>
               <tr className="border-b border-gray-200">
-                {["User", "Email", "Role", "Boats", "Joined", "Actions"].map((h) => (
+                {["User", "Email", "Role", "Phone", "Bio", "Activity", "Joined", "Actions"].map((h) => (
                   <th key={h} className="py-3 px-4 text-sm font-semibold text-gray-500">
                     {h}
                   </th>
@@ -248,7 +271,7 @@ export default function AdminUsersLayout() {
                 <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                         {user.profile_picture ? (
                           <img src={user.profile_picture} alt="" className="w-8 h-8 rounded-full object-cover" />
                         ) : (
@@ -257,65 +280,63 @@ export default function AdminUsersLayout() {
                           </span>
                         )}
                       </div>
-                      <span className="font-medium text-gray-900">{user.username}</span>
+                      <span className="font-medium text-gray-900 truncate max-w-[120px]" title={user.username}>{user.username}</span>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{user.email}</td>
+                  <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-[180px]" title={user.email}>{user.email}</td>
                   <td className="py-3 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === "admin" ? "bg-purple-100 text-purple-700" :
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${user.role === "admin" ? "bg-purple-100 text-purple-700" :
                       user.role === "captain" ? "bg-blue-100 text-blue-700" :
                         "bg-gray-100 text-gray-700"
                       }`}>
                       {user.role}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{user.boats_count}</td>
+                  <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-[120px]">
+                    {user.phone || "-"}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-[150px]" title={user.bio || ""}>
+                    {user.bio || "-"}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    {user.role === 'user' ? (
+                      <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2.5 py-0.5 rounded-full text-xs font-medium border border-yellow-100">
+                        <FiCalendar className="w-3 h-3" /> {user.bookings_count} Bookings
+                      </span>
+                    ) : user.role === 'captain' ? (
+                      <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full text-xs font-medium border border-blue-100">
+                        <FiAnchor className="w-3 h-3" /> {user.boats_count} Boats
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
                   <td className="py-3 px-4 text-sm text-gray-600">
                     {user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => openEditModal(user)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                        title="Edit"
-                        aria-label={`Edit ${user.username}`}
-                      >
-                        <FiEdit2 className="text-gray-600" />
-                      </button>
-                      <button
-                        onClick={() => navigateToBookings(user.id, user.username)}
-                        className="p-1 hover:bg-purple-50 rounded"
-                        title="View Bookings"
-                        aria-label={`View bookings for ${user.username}`}
-                      >
-                        <FiCalendar className="text-purple-600" />
-                      </button>
-                      <button
-                        onClick={() => navigateToBoatListings(user.id)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                        title="View Boats"
-                        aria-label={`View boats owned by ${user.username}`}
-                      >
-                        <FiAnchor className="text-blue-600" />
-                      </button>
-                      <button
-                        onClick={() => navigateToBoatListings(user.id, "add")}
-                        className="p-1 hover:bg-green-50 rounded"
-                        title="Add Boat"
-                        aria-label={`Add boat for ${user.username}`}
-                      >
-                        <FiPlus className="text-green-600" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(user)}
-                        className="p-1 hover:bg-red-50 rounded"
-                        title="Delete"
-                        aria-label={`Delete ${user.username}`}
-                      >
-                        <FiTrash2 className="text-red-600" />
-                      </button>
-                    </div>
+                  <td className="py-3 px-4 relative">
+                    <button
+                      className="p-2 hover:bg-gray-200 rounded-full transition action-menu-trigger text-gray-500"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Close if already open for this user
+                        if (openMenu?.id === user.id) {
+                          setOpenMenu(null);
+                          return;
+                        }
+
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setOpenMenu({
+                          id: user.id,
+                          top: rect.bottom,
+                          left: rect.left - 180 + rect.width // Align right edge roughly
+                        });
+                      }}
+                    >
+                      <FiMoreVertical />
+                    </button>
+
+
                   </td>
                 </tr>
               ))}
@@ -448,6 +469,89 @@ export default function AdminUsersLayout() {
         onCancel={() => setConfirmDelete({ isOpen: false, userId: null, username: "" })}
         isLoading={deleting}
       />
+
+      {/* Fixed Position Menu */}
+      {openMenu && (
+        <div
+          className="fixed bg-white rounded-lg shadow-xl border border-gray-100 z-[9999] overflow-hidden action-menu-trigger w-48"
+          style={{ top: openMenu.top, left: openMenu.left }}
+        >
+          {(() => {
+            const user = users.find(u => u.id === openMenu.id);
+            if (!user) return null;
+            return (
+              <>
+                <button
+                  onClick={() => {
+                    setOpenMenu(null);
+                    openEditModal(user);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <FiEdit2 size={14} /> Edit User
+                </button>
+
+                {user.role === 'user' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setOpenMenu(null);
+                        navigateToBookings(user.id, user.username);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <FiCalendar size={14} /> View Bookings
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOpenMenu(null);
+                        navigateToReviews(user.id);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <FiStar size={14} /> View Reviews
+                    </button>
+                  </>
+                )}
+
+                {user.role === 'captain' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setOpenMenu(null);
+                        navigateToBoatListings(user.id);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <FiAnchor size={14} /> View Boats
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOpenMenu(null);
+                        navigateToBoatListings(user.id, "add");
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
+                    >
+                      <FiPlus size={14} /> Add Boat
+                    </button>
+                  </>
+                )}
+
+                <hr className="border-gray-100" />
+                <button
+                  onClick={() => {
+                    setOpenMenu(null);
+                    handleDeleteClick(user);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                >
+                  <FiTrash2 size={14} /> Delete User
+                </button>
+              </>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }

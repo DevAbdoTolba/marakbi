@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { adminApi, AdminTrip } from "@/lib/api";
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiClock, FiDollarSign, FiMapPin, FiStar } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiClock, FiDollarSign, FiMapPin, FiStar, FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
 import Image from "next/image";
 import ConfirmModal from "../../ConfirmModal";
 import { useToast } from "../../ToastProvider";
@@ -21,6 +22,8 @@ interface TripFormData {
 const TRIP_TYPES = ["Voyage", "Fishing", "Occasion", "Cruise", "Water_activities"];
 
 export default function AdminTripsLayout() {
+    const searchParams = useSearchParams();
+    const router = useRouter(); // Also initializing this since it was imported and might be needed, though deep linking mainly uses searchParams.
     const [trips, setTrips] = useState<AdminTrip[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -36,6 +39,11 @@ export default function AdminTripsLayout() {
     const [removedImageUrls, setRemovedImageUrls] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showSuccess, showError } = useToast();
+
+    // View Details Modal State
+    const [viewDetailsTrip, setViewDetailsTrip] = useState<AdminTrip | null>(null);
+    const [loadingDetails, setLoadingDetails] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     const [activeTab, setActiveTab] = useState<'details' | 'photos'>('details');
     // Confirm delete state
@@ -85,7 +93,30 @@ export default function AdminTripsLayout() {
     useEffect(() => {
         fetchTrips();
         fetchCities();
-    }, [fetchTrips]);
+
+        // Check for tripId in URL
+        const tripIdParam = searchParams.get("tripId");
+        if (tripIdParam) {
+            const tripId = Number(tripIdParam);
+            if (!isNaN(tripId)) {
+                // Fetch trip details to open modal
+                const fetchTripForModal = async () => {
+                    const response = await adminApi.getTrip(tripId);
+                    if (response.success && response.data) {
+                        setViewDetailsTrip(response.data);
+                    }
+                };
+                fetchTripForModal();
+            }
+        }
+    }, [fetchTrips, searchParams]);
+
+    // Reset image index when opening details modal
+    useEffect(() => {
+        if (viewDetailsTrip) {
+            setCurrentImageIndex(0);
+        }
+    }, [viewDetailsTrip]);
 
     const resetForm = () => {
         setFormData({
@@ -111,6 +142,29 @@ export default function AdminTripsLayout() {
         setEditingTrip(null);
         resetForm();
         setShowModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        resetForm();
+
+        // Handle navigation back or clear params
+        const returnToCityId = searchParams.get('returnToCityId');
+        const returnTab = searchParams.get('returnTab');
+        const returnOrderId = searchParams.get('returnOrderId');
+
+        if (returnToCityId) {
+            router.push(`/admin-dashboard?tab=cities&openCityId=${returnToCityId}`);
+        } else if (returnTab && returnOrderId) {
+            router.push(`/admin-dashboard?tab=${returnTab}&openOrderId=${returnOrderId}`);
+        } else {
+            // Remove tripId param from URL if it exists
+            const params = new URLSearchParams(searchParams.toString());
+            if (params.get('tripId')) {
+                params.delete('tripId');
+                router.push(`/admin-dashboard?${params.toString()}`);
+            }
+        }
     };
 
     const openEditModal = async (trip: AdminTrip) => {
@@ -261,10 +315,39 @@ export default function AdminTripsLayout() {
         if (showModal) setShowModal(false); // Close modal if deleting from there
     };
 
+    const handleViewTrip = async (tripId: number) => {
+        setLoadingDetails(true);
+        // Show partial data immediately if needed
+        const listTrip = trips.find(t => t.id === tripId);
+        if (listTrip) setViewDetailsTrip(listTrip);
+
+        const response = await adminApi.getTrip(tripId);
+        if (response.success && response.data) {
+            setViewDetailsTrip(response.data);
+        }
+        setLoadingDetails(false);
+    };
+
+    const handleCloseDetailsModal = () => {
+        setViewDetailsTrip(null);
+        const returnTab = searchParams.get('returnTab');
+        const returnOrderId = searchParams.get('returnOrderId');
+
+        if (returnTab && returnOrderId) {
+            router.push(`/admin-dashboard?tab=${returnTab}&openOrderId=${returnOrderId}`);
+        } else {
+            const params = new URLSearchParams(searchParams.toString());
+            if (params.get('tripId')) {
+                params.delete('tripId');
+                router.push(`/admin-dashboard?${params.toString()}`);
+            }
+        }
+    };
+
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat("en-US", {
             style: "currency",
-            currency: "USD",
+            currency: "EGP",
             minimumFractionDigits: 0,
         }).format(value);
     };
@@ -282,11 +365,159 @@ export default function AdminTripsLayout() {
 
     return (
         <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+            {/* View Details Modal with Image Slider */}
+            {viewDetailsTrip && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) handleCloseDetailsModal();
+                    }}
+                >
+                    <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        {/* Modal Header */}
+                        <div className="flex items-start justify-between p-6 pb-2 border-b border-gray-100 flex-shrink-0">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-1">{viewDetailsTrip.name}</h2>
+                                <p className="text-sm text-gray-500 font-medium flex items-center gap-1.5">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${getTypeColor(viewDetailsTrip.trip_type).replace('text-', 'bg-opacity-20 text-')}`}>
+                                        {viewDetailsTrip.trip_type}
+                                    </span>
+                                    • {viewDetailsTrip.city_name || "Unknown City"}
+                                </p>
+                            </div>
+                            <button onClick={handleCloseDetailsModal} className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
+                                <FiX size={24} />
+                            </button>
+                        </div>
+
+                        {loadingDetails ? (
+                            <div className="p-12 flex flex-col items-center justify-center space-y-3 flex-1 overflow-y-auto">
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-900 border-t-transparent"></div>
+                                <p className="text-sm text-gray-500">Loading trip details...</p>
+                            </div>
+                        ) : (
+                            <div className="p-6 pt-4 flex-1 overflow-y-auto">
+                                {/* Image Slider */}
+                                <div className="relative w-full h-80 rounded-2xl overflow-hidden mb-8 bg-gray-100 group">
+                                    {viewDetailsTrip.images && viewDetailsTrip.images.length > 0 ? (
+                                        <>
+                                            <Image
+                                                src={viewDetailsTrip.images[currentImageIndex]}
+                                                alt={`${viewDetailsTrip.name} - Image ${currentImageIndex + 1}`}
+                                                fill
+                                                className="object-cover transition-opacity duration-300"
+                                                priority
+                                            />
+                                            {/* Navigation Arrows */}
+                                            {viewDetailsTrip.images.length > 1 && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setCurrentImageIndex((prev) => (prev - 1 + viewDetailsTrip.images!.length) % viewDetailsTrip.images!.length);
+                                                        }}
+                                                        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-gray-900 shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:scale-105 z-10"
+                                                    >
+                                                        <FiChevronLeft size={24} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setCurrentImageIndex((prev) => (prev + 1) % viewDetailsTrip.images!.length);
+                                                        }}
+                                                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-gray-900 shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:scale-105 z-10"
+                                                    >
+                                                        <FiChevronRight size={24} />
+                                                    </button>
+                                                    {/* Indicators */}
+                                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                                                        {viewDetailsTrip.images.map((_, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setCurrentImageIndex(idx);
+                                                                }}
+                                                                className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? "bg-white w-4" : "bg-white/50 hover:bg-white/80"}`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                            <FiImage size={48} />
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 pointer-events-none"></div>
+                                </div>
+
+                                {/* Content Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                    <div className="space-y-6">
+                                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-100 pb-2">Details</h3>
+                                        <div className="space-y-4">
+                                            <div className="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
+                                                <span className="text-gray-500 text-sm">Price</span>
+                                                <span className="text-lg font-bold text-gray-900">{formatCurrency(viewDetailsTrip.total_price)}</span>
+                                            </div>
+                                            <div className="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
+                                                <span className="text-gray-500 text-sm">Duration</span>
+                                                <span className="text-lg font-bold text-gray-900">{viewDetailsTrip.voyage_hours} Hours</span>
+                                            </div>
+                                            {/* Dynamic Fields */}
+                                            {viewDetailsTrip.pax && (
+                                                <div className="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
+                                                    <span className="text-gray-500 text-sm">Guests (Pax)</span>
+                                                    <span className="text-lg font-bold text-gray-900">{viewDetailsTrip.pax}</span>
+                                                </div>
+                                            )}
+                                            {viewDetailsTrip.guests_on_board && (
+                                                <div className="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
+                                                    <span className="text-gray-500 text-sm">Guests on Board</span>
+                                                    <span className="text-lg font-bold text-gray-900">{viewDetailsTrip.guests_on_board}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-6">
+                                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-100 pb-2">Description</h3>
+                                        <p className="text-sm leading-relaxed text-gray-600">
+                                            {viewDetailsTrip.description || "No description provided."}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Modal Footer */}
+                        <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl flex-shrink-0">
+                            <button
+                                onClick={handleCloseDetailsModal}
+                                className="px-6 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setViewDetailsTrip(null);
+                                    openEditModal(viewDetailsTrip);
+                                }}
+                                className="px-6 py-2.5 text-sm font-medium bg-[#0F172A] text-white rounded-xl hover:bg-black transition-colors shadow-lg shadow-gray-200 flex items-center gap-2"
+                            >
+                                <FiEdit2 size={16} /> Edit Trip
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center mb-8 justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Trip Packages</h1>
-                    <p className="text-gray-500 mt-1">
+                    <p className="text-[#0A0A0A] font-bold text-xl">Trip Packages</p>
+                    <p className="text-[#717182] font-normal text-sm">
                         Manage your fleet's predefined trip packages and offerings.
                     </p>
                 </div>
@@ -308,7 +539,7 @@ export default function AdminTripsLayout() {
                         className="w-full pl-11 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 text-gray-900 placeholder:text-gray-400"
                     />
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                     <select
                         value={cityFilter || ""}
                         onChange={(e) => {
@@ -414,24 +645,17 @@ export default function AdminTripsLayout() {
                                     </div>
                                 </div>
 
-                                {/* Stats Grid */}
-                                <div className="grid grid-cols-2 gap-2 mb-6 p-3 bg-gray-50 rounded-xl border border-gray-100/50">
-                                    <div className="flex flex-col items-center justify-center text-center">
-                                        <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-0.5">Capacity</span>
-                                        <span className="text-sm font-bold text-gray-900">{trip.pax || formData.pax || '-'} Guests</span>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center text-center border-l border-gray-200 pl-2">
-                                        <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-0.5">Type</span>
-                                        <span className="text-sm font-bold text-gray-900">{trip.trip_type}</span>
-                                    </div>
-                                </div>
+
 
                                 <div className="mt-auto pt-4 border-t border-gray-50">
                                     <button
-                                        onClick={() => openEditModal(trip)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleViewTrip(trip.id);
+                                        }}
                                         className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                                     >
-                                        <FiEdit2 size={14} /> View Details & Edit
+                                        <FiEye size={14} /> View Details
                                     </button>
                                 </div>
                             </div>
@@ -469,8 +693,7 @@ export default function AdminTripsLayout() {
                     className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {
-                            setShowModal(false);
-                            resetForm();
+                            handleCloseModal();
                         }
                     }}
                 >
@@ -492,10 +715,7 @@ export default function AdminTripsLayout() {
                                 </button>
                             </div>
                             <button
-                                onClick={() => {
-                                    setShowModal(false);
-                                    resetForm();
-                                }}
+                                onClick={handleCloseModal}
                                 className="p-2 hover:bg-gray-200/50 rounded-full transition-colors text-gray-500"
                             >
                                 <FiX size={20} />
@@ -562,10 +782,9 @@ export default function AdminTripsLayout() {
                                             </div>
                                         </div>
 
-                                        {/* Price & Duration */}
                                         <div className="grid grid-cols-2 gap-6 mb-6">
                                             <div>
-                                                <label className="block text-sm font-semibold text-gray-700 mb-2">Total Price ($) *</label>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">Total Price (EGP) *</label>
                                                 <input
                                                     type="number"
                                                     value={formData.total_price}
@@ -585,6 +804,46 @@ export default function AdminTripsLayout() {
                                                 />
                                             </div>
                                         </div>
+
+                                        {/* Dynamic Fields based on Trip Type */}
+                                        {formData.trip_type === "Fishing" && (
+                                            <div className="mb-6">
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">Guests (Pax) *</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.pax || ""}
+                                                    onChange={(e) => setFormData({ ...formData, pax: e.target.value ? Number(e.target.value) : null })}
+                                                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                                                    placeholder="Number of guests"
+                                                    min="1"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {formData.trip_type === "Cruise" && (
+                                            <div className="grid grid-cols-2 gap-6 mb-6">
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Guests on Board *</label>
+                                                    <input
+                                                        type="number"
+                                                        value={formData.guests_on_board || ""}
+                                                        onChange={(e) => setFormData({ ...formData, guests_on_board: e.target.value ? Number(e.target.value) : null })}
+                                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                                                        min="1"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Rooms Available *</label>
+                                                    <input
+                                                        type="number"
+                                                        value={formData.rooms_available || ""}
+                                                        onChange={(e) => setFormData({ ...formData, rooms_available: e.target.value ? Number(e.target.value) : null })}
+                                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                                                        min="1"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* Description */}
                                         <div>
@@ -706,10 +965,7 @@ export default function AdminTripsLayout() {
                         {/* Footer */}
                         <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl">
                             <button
-                                onClick={() => {
-                                    setShowModal(false);
-                                    resetForm();
-                                }}
+                                onClick={handleCloseModal}
                                 className="px-6 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
                                 disabled={saving}
                             >

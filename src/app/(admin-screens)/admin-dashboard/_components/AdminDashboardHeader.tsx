@@ -19,7 +19,7 @@ export default function AdminHeader() {
         <AdminDashboardButton
           icon={FaArrowLeft}
           label="Sign Out"
-          onClick={() => {}}
+          onClick={() => { }}
         />
       </div>
     </div>
