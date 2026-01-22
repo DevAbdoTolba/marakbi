@@ -288,7 +288,9 @@ export interface AddBoatData {
   description: string;
   categories: number[]; // Array of category IDs
   cities: number[]; // Array of city IDs
+  trips?: number[]; // Array of trip IDs
   boat_images?: File[]; // Array of image files
+  primary_new_image_index?: number; // Index in boat_images to be primary
 }
 
 export interface EditBoatData {
@@ -303,6 +305,8 @@ export interface EditBoatData {
   trips?: number[]; // Array of trip IDs (optional)
   boat_images?: File[]; // Array of new image files (optional)
   removed_images?: string[]; // Array of image URLs to remove (for edit only)
+  primary_image_url?: string; // Existing image to set as primary
+  primary_new_image_index?: number; // New image to set as primary
 }
 
 export interface AddBoatResponse {
@@ -744,6 +748,12 @@ export interface AdminStats {
   new_boats_this_month: number;
   new_users_this_month: number;
   new_bookings_this_month: number;
+  // Fleet & Content Overview stats
+  total_trips?: number;
+  total_voyages?: number;
+  total_categories?: number;
+  total_cities?: number;
+  total_reviews?: number;
 }
 
 export interface AdminUser {
@@ -755,6 +765,8 @@ export interface AdminUser {
   boats_count: number;
   bookings_count: number;
   profile_picture: string | null;
+  bio: string | null;
+  phone: string | null;
 }
 
 export interface AdminUserDetails extends AdminUser {
@@ -775,7 +787,9 @@ export interface AdminOrder {
   boat_id: number;
   username: string;
   user_email: string | null;
+  user_phone?: string;
   boat_name: string;
+  boat_description?: string;
   boat_images: string[];
   start_date: string;
   end_date: string;
@@ -787,6 +801,52 @@ export interface AdminOrder {
   guest_count: number;
   created_at: string;
   trip_name?: string;
+  // Owner Details
+  owner_username?: string;
+  owner_email?: string;
+  owner_details?: {
+    username: string;
+    email: string;
+    phone: string | null;
+    profile_picture: string | null;
+  };
+  // Extended Details
+  trip_type?: string;
+  voyage_type?: string;
+  voyage_id?: number;
+  voyage_seats_taken?: number;
+  voyage_max_seats?: number;
+
+  // Full Context Objects (for single order view)
+  voyage_details?: {
+    id: number;
+    voyage_type: string;
+    max_seats: number;
+    current_seats_taken: number;
+    available_seats: number;
+    boat_id: number;
+    start_date: string;
+    end_date: string;
+    price_per_hour: number;
+    status: string;
+  };
+  trip_details?: {
+    id: number;
+    name: string;
+    trip_type: string;
+    voyage_hours: number;
+    description: string;
+    image?: string;
+  };
+  voyage_participants?: Array<{
+    id: number;
+    username: string;
+    email: string | null;
+    guest_count: number;
+    voyage_id: number;
+    status: string;
+    payment_status: string;
+  }>;
 }
 
 export interface AdminBoat {
@@ -796,8 +856,11 @@ export interface AdminBoat {
   price_per_day: number | null;
   description: string;
   categories: string[];
+  categories_id?: number[];
   cities: string[];
+  cities_id?: number[];
   images: string[];
+  trips?: AdminTrip[];
   max_seats: number;
   max_seats_stay: number;
   owner_username: string | null;
@@ -839,6 +902,7 @@ export interface AdminCategory {
   id: number;
   name: string;
   image: string | null;
+  boats_count?: number;
 }
 
 export interface AdminGroup {
@@ -909,11 +973,14 @@ export const adminApi = {
   getStats: async (): Promise<ApiResponse<AdminStats>> => apiRequest<AdminStats>('/admin/stats'),
 
   // Orders
-  getOrders: async (page = 1, perPage = 10, filters?: { status?: string; payment_status?: string; search?: string }): Promise<ApiResponse<{ orders: AdminOrder[] } & PaginatedResponse<AdminOrder>>> => {
+  getOrders: async (page = 1, perPage = 10, filters?: { status?: string; payment_status?: string; search?: string; user_id?: number; start_date?: string; end_date?: string }): Promise<ApiResponse<{ orders: AdminOrder[] } & PaginatedResponse<AdminOrder>>> => {
     const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
     if (filters?.status) params.append('status', filters.status);
     if (filters?.payment_status) params.append('payment_status', filters.payment_status);
     if (filters?.search) params.append('search', filters.search);
+    if (filters?.user_id) params.append('user_id', filters.user_id.toString());
+    if (filters?.start_date) params.append('start_date', filters.start_date);
+    if (filters?.end_date) params.append('end_date', filters.end_date);
     return apiRequest(`/admin/orders?${params.toString()}`);
   },
   getOrder: async (orderId: number): Promise<ApiResponse<AdminOrder>> => apiRequest(`/admin/orders/${orderId}`),
@@ -965,8 +1032,15 @@ export const adminApi = {
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
     formData.append('description', boatData.description);
+
     boatData.categories.forEach(id => formData.append('categories', id.toString()));
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
+    if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+
+    if (boatData.primary_new_image_index !== undefined) {
+      formData.append('primary_new_image_index', boatData.primary_new_image_index.toString());
+    }
+
     if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
     return adminFormRequest('/admin/boats', formData);
   },
@@ -978,9 +1052,16 @@ export const adminApi = {
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
     if (boatData.description) formData.append('description', boatData.description);
+
     if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+
+    if (boatData.primary_image_url) formData.append('primary_image_url', boatData.primary_image_url);
+    if (boatData.primary_new_image_index !== undefined) {
+      formData.append('primary_new_image_index', boatData.primary_new_image_index.toString());
+    }
+
     if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
     if (boatData.removed_images) boatData.removed_images.forEach(url => formData.append('removed_images', url));
     return adminFormRequest(`/admin/boats/${boatId}`, formData, 'PUT');
@@ -1018,13 +1099,13 @@ export const adminApi = {
     return apiRequest(`/admin/trips?${params.toString()}`);
   },
   getTrip: async (tripId: number): Promise<ApiResponse<AdminTrip & { boats: { id: number; name: string }[] }>> => apiRequest(`/admin/trips/${tripId}`),
-  createTrip: async (tripData: { name: string; description?: string; total_price: number; voyage_hours: number; trip_type: string; city_id: number; pax?: number; guests_on_board?: number; rooms_available?: number }, images?: File[]): Promise<ApiResponse<AdminTrip>> => {
+  createTrip: async (tripData: { name: string; description?: string; total_price: number; voyage_hours: number; trip_type: string; city_id: number; pax?: number; guests_on_board?: number; rooms_available?: number; primary_image_url?: string; primary_new_image_index?: number }, images?: File[]): Promise<ApiResponse<AdminTrip>> => {
     const formData = new FormData();
     Object.entries(tripData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value.toString()); });
     if (images) images.forEach(img => formData.append('trip_images', img));
     return adminFormRequest('/admin/trips', formData);
   },
-  updateTrip: async (tripId: number, tripData: { name?: string; description?: string; total_price?: number; voyage_hours?: number; trip_type?: string; city_id?: number; pax?: number; guests_on_board?: number; rooms_available?: number }, images?: File[], removedImages?: string[]): Promise<ApiResponse<AdminTrip>> => {
+  updateTrip: async (tripId: number, tripData: { name?: string; description?: string; total_price?: number; voyage_hours?: number; trip_type?: string; city_id?: number; pax?: number; guests_on_board?: number; rooms_available?: number; primary_image_url?: string; primary_new_image_index?: number }, images?: File[], removedImages?: string[]): Promise<ApiResponse<AdminTrip>> => {
     const formData = new FormData();
     Object.entries(tripData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value.toString()); });
     if (images) images.forEach(img => formData.append('trip_images', img));
@@ -1049,8 +1130,10 @@ export const adminApi = {
   deleteVoyage: async (voyageId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/voyages/${voyageId}`, { method: 'DELETE' }),
 
   // Reviews
-  getBoatReviews: async (page = 1, perPage = 10): Promise<ApiResponse<{ reviews: AdminReview[] } & PaginatedResponse<AdminReview>>> => {
-    return apiRequest(`/admin/reviews/boats?page=${page}&per_page=${perPage}`);
+  getBoatReviews: async (page = 1, perPage = 10, filters?: { user_id?: number }): Promise<ApiResponse<{ reviews: AdminReview[] } & PaginatedResponse<AdminReview>>> => {
+    let query = `page=${page}&per_page=${perPage}`;
+    if (filters?.user_id) query += `&user_id=${filters.user_id}`;
+    return apiRequest(`/admin/reviews/boats?${query}`);
   },
   deleteBoatReview: async (reviewId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/reviews/boats/${reviewId}`, { method: 'DELETE' }),
 

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type AdminTab = "overview" | "boat-listings" | "trips" | "bookings" | "users" | "cities";
+type AdminTab = "boat-listings" | "trips" | "bookings" | "users" | "cities" | "reviews" | "categories";
 
 type AdminTabStore = {
   currentTab: AdminTab;
@@ -8,7 +8,7 @@ type AdminTabStore = {
 };
 
 const useAdminTab = create<AdminTabStore>((set) => ({
-  currentTab: "overview",
+  currentTab: "boat-listings",
   setTab: (tab) => set({ currentTab: tab }),
 }));
 
