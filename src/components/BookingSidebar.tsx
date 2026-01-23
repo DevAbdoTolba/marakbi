@@ -59,12 +59,14 @@ export default function BookingSidebar({
             }
         }
 
-        const total = basePrice;
+        // Service fee is 1% of base price
+        const serviceFee = basePrice * 0.01;
+        const total = basePrice + serviceFee;
 
-        return { basePrice, total, days };
+        return { basePrice, serviceFee, total, days };
     };
 
-    const { basePrice, total, days } = calculatePrice();
+    const { basePrice, serviceFee, total, days } = calculatePrice();
 
     // Calendar helpers
     const getDaysInMonth = (date: Date) => {
@@ -138,7 +140,7 @@ export default function BookingSidebar({
                 end_date: (selectedDates[1] || selectedDates[0]).toISOString(),
                 days: days > 0 ? days : undefined,
                 base_price: basePrice,
-                service_fee: 0,
+                service_fee: serviceFee,
                 total_price: total,
             };
 
@@ -162,7 +164,7 @@ export default function BookingSidebar({
             end_date: (selectedDates[1] || selectedDates[0]).toISOString(),
             days: days > 0 ? days : undefined,
             base_price: basePrice,
-            service_fee: 0,
+            service_fee: serviceFee,
             total_price: total,
         };
 
@@ -380,6 +382,14 @@ export default function BookingSidebar({
                     </span>
                     <span className="text-neutral-950 text-base font-normal font-poppins">
                         E£ {basePrice.toFixed(0)}
+                    </span>
+                </div>
+                <div className="flex justify-between items-start">
+                    <span className="text-gray-500 text-base font-normal font-poppins">
+                        Service fee (1%)
+                    </span>
+                    <span className="text-neutral-950 text-base font-normal font-poppins">
+                        E£ {serviceFee.toFixed(0)}
                     </span>
                 </div>
                 <div className="h-px bg-black/10"></div>

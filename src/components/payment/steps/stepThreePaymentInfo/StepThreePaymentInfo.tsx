@@ -116,11 +116,11 @@ export default function StepThreePaymentInfo() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6">Payment Method</h2>
+      <h2 className="text-2xl font-bold mb-6 font-poppins">Payment Method</h2>
 
       {/* Booking Summary */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6">
-        <h3 className="font-semibold mb-2">Booking Summary</h3>
+        <h3 className="font-semibold mb-2 font-poppins">Booking Summary</h3>
         <p className="text-sm text-gray-600">Boat: {String(bookingData.boat_name || '')}</p>
         <p className="text-sm text-gray-600">Guests: {String(bookingData.guest_count || 0)}</p>
         <p className="text-sm text-gray-600">

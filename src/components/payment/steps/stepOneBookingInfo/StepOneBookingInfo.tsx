@@ -42,7 +42,7 @@ export default function StepOneBookingInfo() {
     >
       {/* Left side: Booking details */}
       <div className="w-full lg:w-[60%]">
-        <h2 className="text-2xl font-bold mb-6">Booking Information</h2>
+        <h2 className="text-2xl font-bold mb-6 font-poppins">Booking Information</h2>
 
         {/* Booking Details */}
         <div className="bg-gray-50 p-6 rounded-lg mb-6">
@@ -83,7 +83,7 @@ export default function StepOneBookingInfo() {
 
         {/* Pricing */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="font-semibold mb-4">Price Breakdown</h3>
+          <h3 className="font-semibold mb-4 font-poppins">Price Breakdown</h3>
           <div className="space-y-2">
             {typeof bookingData.base_price === 'number' && (
               <div className="flex justify-between">
