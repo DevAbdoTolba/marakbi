@@ -376,10 +376,10 @@ export default function BookingSidebar({
             <div className="flex flex-col gap-2 mb-6">
                 <div className="flex justify-between items-start">
                     <span className="text-gray-500 text-base font-normal font-poppins">
-                        ${effectivePrice} × {rentalType === "hour" ? `${hours} hour${hours > 1 ? 's' : ''}` : `${days} day${days > 1 ? 's' : ''}`}
+                        E£ {effectivePrice} × {rentalType === "hour" ? `${hours} hour${hours > 1 ? 's' : ''}` : `${days} day${days > 1 ? 's' : ''}`}
                     </span>
                     <span className="text-neutral-950 text-base font-normal font-poppins">
-                        ${basePrice.toFixed(0)}
+                        E£ {basePrice.toFixed(0)}
                     </span>
                 </div>
                 <div className="h-px bg-black/10"></div>
@@ -388,7 +388,7 @@ export default function BookingSidebar({
                         Total
                     </span>
                     <span className="text-neutral-950 text-base font-medium font-poppins">
-                        ${total.toFixed(0)}
+                        E£ {total.toFixed(0)}
                     </span>
                 </div>
             </div>
