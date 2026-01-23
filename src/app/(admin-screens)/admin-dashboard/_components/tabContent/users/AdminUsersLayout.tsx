@@ -240,7 +240,7 @@ export default function AdminUsersLayout() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-1">No users found</h3>
           <p className="text-gray-500 max-w-sm mx-auto mb-6">
-            We couldn't find any users matching your filters.
+            We couldn&apos;t find any users matching your filters.
           </p>
           {(search || roleFilter) && (
             <button

@@ -100,13 +100,7 @@ export default function AdminOverviewLayout({ stats }: AdminOverviewLayoutProps)
             <p className="text-3xl font-bold text-purple-600">{stats?.total_trips || 0}</p>
             <p className="text-sm text-purple-700 mt-1 font-medium">Trips</p>
           </div>
-          <div
-            onClick={() => setTab("voyages")}
-            className="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl cursor-pointer hover:shadow-md transition"
-          >
-            <p className="text-3xl font-bold text-indigo-600">{stats?.total_voyages || 0}</p>
-            <p className="text-sm text-indigo-700 mt-1 font-medium">Voyages</p>
-          </div>
+
           <div
             onClick={() => setTab("categories")}
             className="text-center p-4 bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl cursor-pointer hover:shadow-md transition"

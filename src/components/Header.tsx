@@ -13,7 +13,7 @@ interface HeaderProps {
   currentPage?: string;
 }
 
-const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
+const Header = ({ variant = 'transparent' }: HeaderProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<{ fullName?: string; email?: string; role?: string } | null>(null);
@@ -458,9 +458,9 @@ const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
                       >
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-2 py-0.5 rounded ${s.type === 'category' ? 'bg-blue-100 text-blue-700' :
-                              s.type === 'city' ? 'bg-green-100 text-green-700' :
-                                s.type === 'boat' ? 'bg-purple-100 text-purple-700' :
-                                  'bg-gray-100 text-gray-700'
+                            s.type === 'city' ? 'bg-green-100 text-green-700' :
+                              s.type === 'boat' ? 'bg-purple-100 text-purple-700' :
+                                'bg-gray-100 text-gray-700'
                             }`}>
                             {s.type === 'category' ? 'Category' : s.type === 'city' ? 'City' : 'Boat'}
                           </span>
@@ -494,8 +494,8 @@ const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
                   onClick={handleLogout}
                   disabled={isLoggingOut}
                   className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isLoggingOut
-                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
                     }`}
                 >
                   {isLoggingOut && (
@@ -564,8 +564,8 @@ const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
                     onClick={handleLogout}
                     disabled={isLoggingOut}
                     className={`w-full px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${isLoggingOut
-                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
                       }`}
                   >
                     {isLoggingOut && (

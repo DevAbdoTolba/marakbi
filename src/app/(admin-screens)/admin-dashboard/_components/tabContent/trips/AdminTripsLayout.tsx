@@ -252,6 +252,7 @@ export default function AdminTripsLayout() {
 
         setSaving(true);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tripData: any = { // Using any to append extra fields if needed by backend, matching boat logic pattern if API supports it
             name: formData.name,
             description: formData.description,
@@ -518,7 +519,7 @@ export default function AdminTripsLayout() {
                 <div>
                     <p className="text-[#0A0A0A] font-bold text-xl">Trip Packages</p>
                     <p className="text-[#717182] font-normal text-sm">
-                        Manage your fleet's predefined trip packages and offerings.
+                        Manage your fleet&apos;s predefined trip packages and offerings.
                     </p>
                 </div>
                 <button

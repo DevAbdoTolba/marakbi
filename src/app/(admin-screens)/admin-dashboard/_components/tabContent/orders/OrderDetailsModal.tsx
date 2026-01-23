@@ -17,6 +17,8 @@ export default function OrderDetailsModal({
     onStatusChange,
     onPaymentStatusChange,
 }: OrderDetailsModalProps) {
+    const router = useRouter();
+
     if (!order) return null;
 
     const formatDate = (dateString: string) => {
@@ -62,8 +64,6 @@ export default function OrderDetailsModal({
     };
 
     const status = (order.status || "pending").toLowerCase();
-
-    const router = useRouter();
 
     const handleBoatClick = () => {
         if (order.boat_id) {

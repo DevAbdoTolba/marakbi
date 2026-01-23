@@ -32,7 +32,9 @@ export default function AdminCitiesLayout() {
 
     // City Details Modal State
     const [selectedCityForDetails, setSelectedCityForDetails] = useState<City | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [cityBoats, setCityBoats] = useState<any[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [cityTrips, setCityTrips] = useState<any[]>([]);
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [detailsTab, setDetailsTab] = useState<'boats' | 'trips'>('boats');
@@ -179,6 +181,7 @@ export default function AdminCitiesLayout() {
     };
 
     // Helper to get image url safely
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getImageUrl = (item: any) => {
         if (item.images && item.images.length > 0) return item.images[0];
         if (item.primary_image_url) return item.primary_image_url;
