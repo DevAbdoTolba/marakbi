@@ -58,7 +58,7 @@ export default function StepOneBookingInfo() {
               </div>
             )}
             <div className="flex-1">
-              <h3 className="text-xl font-semibold mb-2">{String(bookingData.boat_name || '')}</h3>
+              <h3 className="text-xl font-semibold mb-2 font-poppins ">{String(bookingData.boat_name || '')}</h3>
               <div className="space-y-1 text-gray-600">
                 <p>Rental Type: {bookingData.rental_type === 'hourly' ? 'Per Hour' : 'Per Day'}</p>
                 {!!bookingData.hours && (
