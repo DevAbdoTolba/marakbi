@@ -99,7 +99,7 @@ export default function BoatDetailsPage() {
 
   const { boat, owner, reviews, reviews_summary } = boatData;
   const totalRating = reviews_summary.total_reviews;
-  
+
   const normalizedImages = normalizeImageUrls(boat.images);
 
   const handleImageClick = (index: number) => {
@@ -134,7 +134,7 @@ export default function BoatDetailsPage() {
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!isDragging) return;
-    
+
     const endX = e.changedTouches[0].clientX;
     const diff = startX - endX;
     const threshold = 50;
@@ -183,7 +183,7 @@ export default function BoatDetailsPage() {
                 {normalizedImages.length > 0 ? (
                   <div className="relative">
                     {/* Main Image */}
-                    <div 
+                    <div
                       className="relative w-full h-[400px] rounded-lg overflow-hidden cursor-pointer"
                       onClick={() => handleImageClick(mobileImageIndex)}
                       onTouchStart={handleTouchStart}
@@ -197,7 +197,7 @@ export default function BoatDetailsPage() {
                         className="object-cover"
                         priority
                       />
-                      
+
                       {/* Image Counter Overlay - Top Left */}
                       {normalizedImages.length > 1 && (
                         <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium z-10">
@@ -208,7 +208,7 @@ export default function BoatDetailsPage() {
                       {/* Remaining Images Indicator - Bottom Right */}
                       {normalizedImages.length > 1 && (
                         <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium z-10">
-                          {normalizedImages.length - mobileImageIndex - 1 > 0 
+                          {normalizedImages.length - mobileImageIndex - 1 > 0
                             ? `+${normalizedImages.length - mobileImageIndex - 1} صور`
                             : 'آخر صورة'}
                         </div>
@@ -223,7 +223,7 @@ export default function BoatDetailsPage() {
                           }}
                           // استخدمنا style left عشان نجبره يروح شمال بغض النظر عن اتجاه الموقع
                           className="absolute top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full p-2.5 hover:bg-black/90 transition-colors shadow-lg z-10"
-                          style={{ left: '10px' }} 
+                          style={{ left: '10px' }}
                           aria-label="Previous image"
                         >
                           <svg
@@ -278,11 +278,10 @@ export default function BoatDetailsPage() {
                           <button
                             key={idx}
                             onClick={() => setMobileImageIndex(idx)}
-                            className={`transition-all duration-300 ${
-                              idx === mobileImageIndex
+                            className={`transition-all duration-300 ${idx === mobileImageIndex
                                 ? 'w-8 h-2 bg-[#106BD8] rounded-full'
                                 : 'w-2 h-2 bg-gray-300 rounded-full hover:bg-gray-400'
-                            }`}
+                              }`}
                             aria-label={`Go to image ${idx + 1}`}
                           />
                         ))}
@@ -300,7 +299,7 @@ export default function BoatDetailsPage() {
               <div className="hidden md:grid grid-cols-4 gap-2 h-[400px]">
                 {normalizedImages.length > 0 ? (
                   <>
-                    <div 
+                    <div
                       className="col-span-2 row-span-2 relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => handleImageClick(0)}
                     >
@@ -313,8 +312,8 @@ export default function BoatDetailsPage() {
                       />
                     </div>
                     {normalizedImages.slice(1, 5).map((img, idx) => (
-                      <div 
-                        key={idx} 
+                      <div
+                        key={idx}
                         className="relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                         onClick={() => handleImageClick(idx + 1)}
                       >
@@ -582,6 +581,7 @@ export default function BoatDetailsPage() {
                 pricePerHour={boat.price_per_hour}
                 pricePerDay={boat.price_per_day}
                 maxGuests={boat.max_seats}
+                serviceFeeRate={boatData.service_fee_rate}
                 onBookingRequest={handleRequestToBook}
               />
             </div>
@@ -591,7 +591,7 @@ export default function BoatDetailsPage() {
 
       {/* Image Gallery Modal */}
       {isModalOpen && normalizedImages.length > 0 && (
-        <div 
+        <div
           className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
           onClick={() => setIsModalOpen(false)}
           // هنا برضوا بنجبر اتجاه المودال عشان زرار الكلوز يظبط
@@ -624,7 +624,7 @@ export default function BoatDetailsPage() {
           </button>
 
           {/* Image Container - Centered */}
-          <div 
+          <div
             className="relative w-full h-full flex items-center justify-center px-20"
             onClick={(e) => e.stopPropagation()}
           >

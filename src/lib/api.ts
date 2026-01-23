@@ -4,8 +4,6 @@
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
-// const BASE_URL = 'http://127.0.0.1:8787';
 
 
 // Toggle for verbose API logging in the console
@@ -98,6 +96,7 @@ export interface BoatDetails {
   boat: Boat;
   owner: BoatOwner;
   reviews: BoatReview[];
+  service_fee_rate: number;  // Service fee rate from backend
   reviews_summary: {
     average_rating: number;
     total_reviews: number;

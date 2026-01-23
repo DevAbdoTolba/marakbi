@@ -9,6 +9,7 @@ interface BookingSidebarProps {
     pricePerHour: number;
     pricePerDay?: number;
     maxGuests: number;
+    serviceFeeRate: number;
     onBookingRequest: (bookingData: BookingData) => void;
 }
 
@@ -34,6 +35,7 @@ export default function BookingSidebar({
     pricePerHour,
     pricePerDay,
     maxGuests,
+    serviceFeeRate,
     onBookingRequest,
 }: BookingSidebarProps) {
     const [rentalType, setRentalType] = useState<RentalType>("hour");
@@ -59,8 +61,8 @@ export default function BookingSidebar({
             }
         }
 
-        // Service fee is 1% of base price
-        const serviceFee = basePrice * 0.01;
+        // Service fee calculation based on base price
+        const serviceFee = basePrice * serviceFeeRate;
         const total = basePrice + serviceFee;
 
         return { basePrice, serviceFee, total, days };
@@ -386,7 +388,7 @@ export default function BookingSidebar({
                 </div>
                 <div className="flex justify-between items-start">
                     <span className="text-gray-500 text-base font-normal font-poppins">
-                        Service fee (1%)
+                        Service fee ({(serviceFeeRate * 100).toFixed(0)}%)
                     </span>
                     <span className="text-neutral-950 text-base font-normal font-poppins">
                         E£ {serviceFee.toFixed(0)}
