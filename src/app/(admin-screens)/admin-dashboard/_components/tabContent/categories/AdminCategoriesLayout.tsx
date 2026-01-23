@@ -28,6 +28,7 @@ export default function AdminCategoriesLayout() {
 
     // Category Details Modal State
     const [selectedCategoryForDetails, setSelectedCategoryForDetails] = useState<AdminCategory | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [categoryBoats, setCategoryBoats] = useState<any[]>([]);
     const [detailsLoading, setDetailsLoading] = useState(false);
 
@@ -182,6 +183,7 @@ export default function AdminCategoriesLayout() {
     };
 
     // Helper for image url
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getImageUrl = (item: any) => {
         if (item.images && item.images.length > 0) return item.images[0];
         if (item.primary_image_url) return item.primary_image_url;
@@ -228,7 +230,7 @@ export default function AdminCategoriesLayout() {
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 mb-1">No categories found</h3>
                     <p className="text-gray-500 max-w-sm mx-auto mb-6">
-                        Organize your boats by adding categories like 'Yacht', 'Speedboat', etc.
+                        Organize your boats by adding categories like &apos;Yacht&apos;, &apos;Speedboat&apos;, etc.
                     </p>
                     <button
                         onClick={openCreateModal}

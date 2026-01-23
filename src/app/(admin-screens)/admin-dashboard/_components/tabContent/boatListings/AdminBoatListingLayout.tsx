@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminStats, AdminReview } from "@/lib/api";
-import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiPlus, FiEye, FiUsers, FiDollarSign, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminReview } from "@/lib/api";
+import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import Image from "next/image";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
@@ -48,6 +48,7 @@ export default function AdminBoatListingLayout() {
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [trips, setTrips] = useState<any[]>([]); // Using any for now to bypass strict check, ideally AdminTrip[] but need to import it or define it locally if not exported
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>();
   const [cityFilter, setCityFilter] = useState<number | undefined>();
@@ -379,6 +380,7 @@ export default function AdminBoatListingLayout() {
         description: data.description || "",
         categories: data.categories_full?.map((c) => c.id) || [],
         cities: cityIds,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         trips: data.trips?.map((t: any) => t.id) || [],
         user_id: data.owner_username ? 0 : 1, // We don't edit user_id for existing boats usually, or need to map it back if we have it
       });
@@ -542,6 +544,7 @@ export default function AdminBoatListingLayout() {
     return new Date(dateString).getFullYear();
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getItemName = (item: string | { name: string } | any) => {
     if (!item) return "";
     if (typeof item === 'string') return item;
@@ -680,7 +683,7 @@ export default function AdminBoatListingLayout() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-1">No boats found</h3>
           <p className="text-gray-500 max-w-sm mx-auto mb-6">
-            We couldn't find any boats matching your filters.
+            We couldn&apos;t find any boats matching your filters.
           </p>
           <button
             onClick={() => {
@@ -1017,7 +1020,7 @@ export default function AdminBoatListingLayout() {
                                 ))}
                               </div>
                             </div>
-                            <p className="text-xs text-gray-600 line-clamp-3 italic">"{review.comment}"</p>
+                            <p className="text-xs text-gray-600 line-clamp-3 italic">&quot;{review.comment}&quot;</p>
                             <p className="text-[10px] text-gray-400 mt-2 text-right">
                               {new Date(review.created_at).toLocaleDateString()}
                             </p>
@@ -1167,6 +1170,7 @@ export default function AdminBoatListingLayout() {
 
                                 // Auto-deselect trips that don't belong to the selected cities anymore
                                 const newSelectedTrips = formData.trips.filter(tripId => {
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                   const trip = trips.find((t: any) => t.id === tripId);
                                   return trip && newCities.includes(trip.city_id);
                                 });
@@ -1267,6 +1271,7 @@ export default function AdminBoatListingLayout() {
                           if (!isASelected && isBSelected) return 1;
                           return 0;
                         })
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         .map((trip: any) => { // Assuming trip has image now?
                           const isSelected = formData.trips.includes(trip.id);
                           // Find full trip data to get image if available, else placeholder

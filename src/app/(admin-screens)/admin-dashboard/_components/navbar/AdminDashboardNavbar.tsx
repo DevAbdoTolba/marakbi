@@ -8,7 +8,7 @@ type navItemsType = {
 }[];
 
 export default function AdminDashboardNavbar() {
-  const { currentTab, setTab } = useAdminTab();
+  const { currentTab } = useAdminTab();
   const router = useRouter();
   const searchParams = useSearchParams();
 

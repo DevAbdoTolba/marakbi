@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { adminApi } from "@/lib/api";
-import { FiSearch, FiCalendar, FiDollarSign, FiAnchor, FiClock, FiPlus, FiEdit2, FiTrash2, FiX, FiRefreshCw } from "react-icons/fi";
+import { FiCalendar, FiAnchor, FiTrash2 } from "react-icons/fi";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
 import { TableSkeleton } from "../../Skeleton";

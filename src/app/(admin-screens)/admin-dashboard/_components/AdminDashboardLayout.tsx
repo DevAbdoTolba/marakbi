@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import DashboardStatsCard from "./DashboardStatsCard";
 import { LuDollarSign, LuShip, LuCalendar, LuUsers } from "react-icons/lu";
 import AdminDashboardNavbar from "./navbar/AdminDashboardNavbar";
@@ -18,13 +18,13 @@ import { adminApi, AdminStats } from "@/lib/api";
 export default function AdminDashboardLayout() {
   const { currentTab, setTab } = useAdminTab();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [stats, setStats] = useState<AdminStats | null>(null);
 
   // Sync URL -> Tab State
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam && tabParam !== currentTab) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setTab(tabParam as any);
     }
   }, [searchParams, currentTab, setTab]);
