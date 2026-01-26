@@ -4,8 +4,8 @@
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
-// const BASE_URL = 'http://127.0.0.1:8787';
+export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
+// export const BASE_URL = 'http://127.0.0.1:8787';
 
 
 // Toggle for verbose API logging in the console
@@ -59,7 +59,10 @@ export interface Boat {
   price_per_day?: number;
   max_seats: number;
   max_seats_stay: number;
+  location_url?: string; // New field
+  price_mode?: string; // New field
   total_reviews: number;
+  average_rating?: number; // New field
   user_id: number;
   owner_username?: string;
   created_at: string;
@@ -74,6 +77,44 @@ export interface Boat {
     total_price: number;
   }>;
 }
+
+// ... (omitted unrelated parts)
+
+// Admin Types
+export interface AddBoatData {
+  name: string;
+  price_per_hour: number | null;
+  price_per_day?: number | null;
+  max_seats?: number;
+  max_seats_stay?: number;
+  description: string;
+  location_url?: string; // New field
+  price_mode?: string; // New field
+  categories: number[]; // Array of category IDs
+  cities: number[]; // Array of city IDs
+  trips?: number[]; // Array of trip IDs
+  boat_images?: File[]; // Array of image files
+  primary_new_image_index?: number; // Index in boat_images to be primary
+}
+
+export interface EditBoatData {
+  name?: string;
+  price_per_hour?: number | null;
+  price_per_day?: number | null;
+  max_seats?: number;
+  max_seats_stay?: number;
+  description?: string;
+  location_url?: string; // New field
+  price_mode?: string; // New field
+  categories?: number[];
+  cities?: number[];
+  trips?: number[];
+  boat_images?: File[];
+  removed_images?: string[];
+  primary_image_url?: string;
+  primary_new_image_index?: number;
+}
+
 
 export interface BoatOwner {
   username: string;
@@ -173,6 +214,46 @@ export interface BookingResponse {
   message: string;
 }
 
+export interface TripBookingRequest {
+  boat_id: number;
+  start_date: string;
+  guest_count: number;
+  payment_method: 'card' | 'cash';
+  platform: 'web' | 'mobile';
+  trip_id: number;
+}
+
+export interface TripBookingResponse {
+  message: string;
+  booking: {
+    id: number;
+    user_id: number;
+    username: string;
+    boat_id: number;
+    boat_name: string;
+    trip_id: number;
+    trip_name: string;
+    voyage_id: number | null;
+    booking_type: string;
+    start_date: string;
+    end_date: string;
+    guest_count: number;
+    price_per_hour: number;
+    status: string;
+    created_at: string;
+  };
+  trip: Trip;
+  total_price: number;
+  duration_hours: number;
+  payment_method: string;
+  payment_status: string;
+  payment?: {
+    payment_url: string;
+    invoice_id: unknown;
+    invoice_key: unknown;
+  };
+}
+
 // Home Data Types
 export interface HomeData {
   new_joiners: Boat[];
@@ -257,7 +338,10 @@ export interface Order {
   end_date: string;
   guest_count: number;
   price_per_hour: number;
+  price_per_day?: number;
+  price_mode?: string;
   total_price: number;
+  service_fee?: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   payment_status?: 'unpaid' | 'paid' | 'pending' | 'failed' | 'expired';
   payment_method?: 'card' | 'cash';
@@ -274,41 +358,44 @@ export interface Order {
     price_per_day: number;
     total_reviews: number;
     created_at: string;
-    images?: string[]; // Boat images from API
+    images?: string[];
+    cities?: string[];
+    location_url?: string;
+    price_mode?: string;
+    average_rating?: number;
+    owner?: {
+      username: string;
+      avatar_url: string | null;
+      bio?: string | null;
+      phone?: string | null;
+      member_since?: string | null;
+    };
+  };
+  trip?: {
+    id: number;
+    name: string;
+    description: string;
+    trip_type: string;
+    voyage_hours: number;
+    total_price: number;
+    city_id: number;
+    city_name: string;
+    images: string[];
+    pax?: number | null;
+    guests_on_board?: number | null;
+    rooms_available?: number | null;
+  };
+  voyage?: {
+    id: number;
+    voyage_type: string;
+    status: string;
+    max_seats: number;
+    current_seats_taken: number;
+    available_seats: number;
   };
   profile?: Record<string, unknown>;
 }
 
-// Admin Types
-export interface AddBoatData {
-  name: string;
-  price_per_hour: number;
-  price_per_day?: number;
-  max_seats?: number;
-  max_seats_stay?: number;
-  description: string;
-  categories: number[]; // Array of category IDs
-  cities: number[]; // Array of city IDs
-  trips?: number[]; // Array of trip IDs
-  boat_images?: File[]; // Array of image files
-  primary_new_image_index?: number; // Index in boat_images to be primary
-}
-
-export interface EditBoatData {
-  name?: string;
-  price_per_hour?: number;
-  price_per_day?: number;
-  max_seats?: number;
-  max_seats_stay?: number;
-  description?: string;
-  categories?: number[]; // Array of category IDs
-  cities?: number[]; // Array of city IDs
-  trips?: number[]; // Array of trip IDs (optional)
-  boat_images?: File[]; // Array of new image files (optional)
-  removed_images?: string[]; // Array of image URLs to remove (for edit only)
-  primary_image_url?: string; // Existing image to set as primary
-  primary_new_image_index?: number; // New image to set as primary
-}
 
 export interface AddBoatResponse {
   message: string;
@@ -660,17 +747,19 @@ export const clientApi = {
     return apiRequest<Trip[]>(`/client/trips${query}`);
   },
 
-  bookTrip: async (tripId: number, bookingData: TripBooking): Promise<ApiResponse<BookingResponse>> => {
-    return apiRequest<BookingResponse>(`/client/trips/${tripId}/book`, {
-      method: 'POST',
-      body: JSON.stringify(bookingData)
-    });
-  },
+
 
   createBoatReview: async (boatId: number, reviewData: ReviewData): Promise<ApiResponse<ReviewResponse>> => {
     return apiRequest<ReviewResponse>(`/client/boats/${boatId}/reviews`, {
       method: 'POST',
       body: JSON.stringify(reviewData)
+    });
+  },
+
+  bookTrip: async (tripId: number, bookingData: TripBookingRequest): Promise<ApiResponse<TripBookingResponse>> => {
+    return apiRequest<TripBookingResponse>(`/client/trips/${tripId}/book`, {
+      method: 'POST',
+      body: JSON.stringify(bookingData)
     });
   }
 };
@@ -695,8 +784,8 @@ export const customerApi = {
     });
   },
 
-  getOrders: async (page = 1, perPage = 10): Promise<ApiResponse<{ orders: Order[]; page: number; pages: number; per_page: number; total: number }>> => {
-    return apiRequest<{ orders: Order[]; page: number; pages: number; per_page: number; total: number }>(`/customer/orders?page=${page}&per_page=${perPage}`);
+  getOrders: async (page = 1, perPage = 10, status: 'ongoing' | 'past' = 'ongoing'): Promise<ApiResponse<{ orders: Order[]; page: number; pages: number; per_page: number; total: number }>> => {
+    return apiRequest<{ orders: Order[]; page: number; pages: number; per_page: number; total: number }>(`/customer/orders?page=${page}&per_page=${perPage}&status=${status}`);
   },
 
   createOrder: async (orderData: OrderData): Promise<ApiResponse<CreateOrderResponse>> => {
@@ -715,6 +804,10 @@ export const customerApi = {
 
   getReviews: async (clientId: number): Promise<ApiResponse<{ id: number; review_text: string; rating: number; created_at: string }[]>> => {
     return apiRequest<{ id: number; review_text: string; rating: number; created_at: string }[]>(`/customer/review/${clientId}`);
+  },
+
+  getOrderById: async (orderId: number): Promise<ApiResponse<{ order: Order }>> => {
+    return apiRequest<{ order: Order }>(`/customer/orders/${orderId}`);
   }
 };
 
@@ -817,6 +910,11 @@ export interface AdminOrder {
   voyage_id?: number;
   voyage_seats_taken?: number;
   voyage_max_seats?: number;
+  service_fee?: number;
+  price_per_hour?: number;
+  price_per_day?: number;
+  price_mode?: string;
+  owner_phone?: string;
 
   // Full Context Objects (for single order view)
   voyage_details?: {
@@ -864,6 +962,7 @@ export interface AdminBoat {
   trips?: AdminTrip[];
   max_seats: number;
   max_seats_stay: number;
+  location_url?: string; // New field
   owner_username: string | null;
   created_at: string;
 }
@@ -1028,10 +1127,12 @@ export const adminApi = {
     const formData = new FormData();
     formData.append('user_id', userId.toString());
     formData.append('name', boatData.name);
-    formData.append('price_per_hour', boatData.price_per_hour.toString());
-    if (boatData.price_per_day) formData.append('price_per_day', boatData.price_per_day.toString());
+    if (boatData.price_per_hour !== undefined) formData.append('price_per_hour', boatData.price_per_hour === null ? 'null' : boatData.price_per_hour.toString());
+    if (boatData.price_per_day !== undefined) formData.append('price_per_day', boatData.price_per_day === null ? 'null' : boatData.price_per_day.toString());
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
+    if (boatData.location_url) formData.append('location_url', boatData.location_url); // New field
+    if (boatData.price_mode) formData.append('price_mode', boatData.price_mode); // New field
     formData.append('description', boatData.description);
 
     boatData.categories.forEach(id => formData.append('categories', id.toString()));
@@ -1048,10 +1149,12 @@ export const adminApi = {
   updateBoat: async (boatId: number, boatData: EditBoatData): Promise<ApiResponse<{ message: string; boat: AdminBoat }>> => {
     const formData = new FormData();
     if (boatData.name) formData.append('name', boatData.name);
-    if (boatData.price_per_hour) formData.append('price_per_hour', boatData.price_per_hour.toString());
-    if (boatData.price_per_day) formData.append('price_per_day', boatData.price_per_day.toString());
+    if (boatData.price_per_hour !== undefined) formData.append('price_per_hour', boatData.price_per_hour === null ? 'null' : boatData.price_per_hour.toString());
+    if (boatData.price_per_day !== undefined) formData.append('price_per_day', boatData.price_per_day === null ? 'null' : boatData.price_per_day.toString());
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
+    if (boatData.location_url) formData.append('location_url', boatData.location_url); // New field
+    if (boatData.price_mode) formData.append('price_mode', boatData.price_mode); // New field
     if (boatData.description) formData.append('description', boatData.description);
 
     if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
@@ -1148,7 +1251,7 @@ export const adminApi = {
   addBoat: async (userId: number, boatData: AddBoatData): Promise<ApiResponse<AddBoatResponse>> => {
     const formData = new FormData();
     formData.append('name', boatData.name);
-    formData.append('price_per_hour', boatData.price_per_hour.toString());
+    formData.append('price_per_hour', (boatData.price_per_hour || 0).toString());
     if (boatData.price_per_day) formData.append('price_per_day', boatData.price_per_day.toString());
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());

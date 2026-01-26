@@ -109,19 +109,41 @@ export default function OrdersTable({
               rateLabel = "Fixed Price";
               rateAmount = order.total_price;
 
-            } else if (order.booking_type === 'hourly') {
-              rentalPeriodLabel = `${duration} hour${duration > 1 ? 's' : ''}`;
-              rentalPeriodInDaysLabel = formatDate(order.start_date);
-              rateLabel = "/hour";
-              rateAmount = order.total_price / duration;
-
             } else {
-              // Daily Rental matches user request: "Nov 13 - Nov 15" then "3 days"
-              rentalPeriodLabel = `${formatDate(order.start_date)} - ${formatDate(order.end_date)}`;
-              rentalPeriodInDaysLabel = `${duration} day${duration > 1 ? 's' : ''}`;
+              // Rental Logic (Hourly or Daily)
 
-              rateLabel = "/day";
-              rateAmount = order.total_price / duration;
+              // 1. Determine Rate Amount (Base Rate without tax)
+              if (order.booking_type === 'hourly') {
+                rateAmount = order.price_per_hour || (order.total_price / duration);
+              } else {
+                // Daily
+                rateAmount = order.price_per_day || (order.total_price / duration);
+              }
+
+              // 2. Determine Rate Label based on Price Mode
+              const unit = order.booking_type === 'daily' ? 'day' : 'hour';
+              // Access price_mode safely (casting if necessary as it might be missing in AdminOrder type)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const priceMode = (order as any).price_mode || (order as any).boat?.price_mode || 'per_time';
+
+              if (priceMode === 'per_person') {
+                rateLabel = `/passenger`;
+              } else if (priceMode === 'per_person_per_time') {
+                // e.g. /passenger/hr
+                rateLabel = `/passenger/${unit === 'hour' ? 'hr' : unit}`;
+              } else {
+                // Standard per time
+                rateLabel = `/${unit}`;
+              }
+
+              // Set period labels
+              if (order.booking_type === 'hourly') {
+                rentalPeriodLabel = `${duration} hour${duration > 1 ? 's' : ''}`;
+                rentalPeriodInDaysLabel = formatDate(order.start_date);
+              } else {
+                rentalPeriodLabel = `${formatDate(order.start_date)} - ${formatDate(order.end_date)}`;
+                rentalPeriodInDaysLabel = `${duration} day${duration > 1 ? 's' : ''}`;
+              }
             }
 
 

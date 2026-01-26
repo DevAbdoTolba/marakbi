@@ -9,17 +9,18 @@ import ConfirmModal from "../../ConfirmModal";
 
 interface BoatFormData {
   name: string;
-  price_per_hour: number;
+  price_per_hour: number | null;
   price_per_day: number | null;
   max_seats: number;
   max_seats_stay: number;
   description: string;
+  location_url: string; // New field
+  price_mode: string; // New field
   categories: number[];
   cities: number[];
   trips: number[];
   user_id: number;
 }
-
 interface BoatStats {
   total_fleet: number;
   total_revenue: number;
@@ -49,7 +50,7 @@ export default function AdminBoatListingLayout() {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [trips, setTrips] = useState<any[]>([]); // Using any for now to bypass strict check, ideally AdminTrip[] but need to import it or define it locally if not exported
+  const [trips, setTrips] = useState<any[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>();
   const [cityFilter, setCityFilter] = useState<number | undefined>();
   const [statusFilter, setStatusFilter] = useState("active");
@@ -62,7 +63,7 @@ export default function AdminBoatListingLayout() {
 
   // Modal UI State
   const [activeTab, setActiveTab] = useState<'details' | 'photos' | 'trips'>('details');
-  const [primaryNewImageIndex, setPrimaryNewImageIndex] = useState<number>(0); // Default to first new image
+  const [primaryNewImageIndex, setPrimaryNewImageIndex] = useState<number>(0);
   const [primaryExistingUrl, setPrimaryExistingUrl] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +88,8 @@ export default function AdminBoatListingLayout() {
     max_seats: 10,
     max_seats_stay: 6,
     description: "",
+    location_url: "",
+    price_mode: "per_time",
     categories: [],
     cities: [],
     trips: [],
@@ -153,7 +156,7 @@ export default function AdminBoatListingLayout() {
     if (cityFilter) filters.city_id = cityFilter;
     if (userFilter) filters.user_id = userFilter;
 
-    const response = await adminApi.getBoats(page, 9, filters); // 9 matches typical 3x3 grid
+    const response = await adminApi.getBoats(page, 9, filters);
     if (response.success && response.data) {
       setBoats(response.data.boats);
       setTotalPages(response.data.pages);
@@ -324,6 +327,8 @@ export default function AdminBoatListingLayout() {
         max_seats: 10,
         max_seats_stay: 6,
         description: "",
+        location_url: "",
+        price_mode: "per_time",
         categories: [],
         cities: [],
         trips: [],
@@ -344,6 +349,8 @@ export default function AdminBoatListingLayout() {
       max_seats: 10,
       max_seats_stay: 6,
       description: "",
+      location_url: "",
+      price_mode: "per_time",
       categories: [],
       cities: [],
       trips: [],
@@ -356,13 +363,7 @@ export default function AdminBoatListingLayout() {
     setPrimaryNewImageIndex(0);
     setPrimaryExistingUrl(null);
   };
-
-  const openCreateModal = () => {
-    setEditingBoat(null);
-    resetForm();
-    setShowModal(true);
-  };
-
+  // ...
   const openEditModal = async (boat: AdminBoat) => {
     setEditingBoat(boat);
     setRemovedImageUrls([]);
@@ -378,6 +379,9 @@ export default function AdminBoatListingLayout() {
         max_seats: data.max_seats,
         max_seats_stay: data.max_seats_stay,
         description: data.description || "",
+        location_url: data.location_url || "",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        price_mode: (data as any)['price_mode'] || "per_time",
         categories: data.categories_full?.map((c) => c.id) || [],
         cities: cityIds,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -471,8 +475,18 @@ export default function AdminBoatListingLayout() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.price_per_hour) {
-      showError("Please fill in required fields (name and price per hour)");
+    // Validation: Name required
+    if (!formData.name) {
+      showError("Please fill in the boat name");
+      return;
+    }
+
+    // Validation: At least one price required
+    const hasHourlyPrice = formData.price_per_hour && formData.price_per_hour > 0;
+    const hasDailyPrice = formData.price_per_day && formData.price_per_day > 0;
+
+    if (!hasHourlyPrice && !hasDailyPrice) {
+      showError("Please provide at least one price (per hour or per day)");
       return;
     }
 
@@ -481,10 +495,12 @@ export default function AdminBoatListingLayout() {
     const boatData = {
       name: formData.name,
       price_per_hour: formData.price_per_hour,
-      price_per_day: formData.price_per_day || undefined,
+      price_per_day: formData.price_per_day,
       max_seats: formData.max_seats,
       max_seats_stay: formData.max_seats_stay,
       description: formData.description,
+      location_url: formData.location_url,
+      price_mode: formData.price_mode,
       categories: formData.categories,
       cities: formData.cities,
       trips: formData.trips,
@@ -1143,15 +1159,51 @@ export default function AdminBoatListingLayout() {
                         </div>
                       </div>
 
-                      {/* Price Hour */}
+                      {/* Price Mode */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Price per Hour (EGP) *</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Pricing Model *</label>
+                        <select
+                          value={formData.price_mode}
+                          onChange={(e) => setFormData({ ...formData, price_mode: e.target.value })}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                        >
+                          <option value="per_time">Per Hour/Day (Standard)</option>
+                          <option value="per_person">Per Person (Fixed)</option>
+                          <option value="per_person_per_time">Per Person Per Hour</option>
+                        </select>
+                      </div>
+
+                      {/* Price Value (Hour) */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          {formData.price_mode === 'per_person' ? 'Price per Person (EGP)' :
+                            formData.price_mode === 'per_person_per_time' ? 'Price per Person/Hour (EGP)' :
+                              'Price per Hour (EGP)'}
+                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional if day price set)</span>
+                        </label>
                         <input
                           type="number"
-                          value={formData.price_per_hour}
-                          onChange={(e) => setFormData({ ...formData, price_per_hour: Number(e.target.value) })}
+                          value={formData.price_per_hour || ''}
+                          onChange={(e) => setFormData({ ...formData, price_per_hour: e.target.value ? Number(e.target.value) : null })}
                           className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
                           min="0"
+                          placeholder="e.g. 500"
+                        />
+                      </div>
+
+                      {/* Price Value (Day) - NEW */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Price per Day (EGP)
+                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional if hour price set)</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.price_per_day || ''}
+                          onChange={(e) => setFormData({ ...formData, price_per_day: e.target.value ? Number(e.target.value) : null })}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                          min="0"
+                          placeholder="e.g. 5000"
                         />
                       </div>
 
@@ -1183,6 +1235,22 @@ export default function AdminBoatListingLayout() {
                             </button>
                           ))}
                         </div>
+                      </div>
+
+                      {/* Meet Location URL */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Meet Location URL (Google Maps)</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={formData.location_url}
+                            onChange={(e) => setFormData({ ...formData, location_url: e.target.value })}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                            placeholder="https://maps.google.com/..."
+                          />
+                          <FiMapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Paste the Google Maps link to the meeting point.</p>
                       </div>
 
                       {/* Guest Capacity */}

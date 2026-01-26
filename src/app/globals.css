@@ -293,7 +293,7 @@ h2,
 h3,
 h4,
 .font-serif {
-  font-family: var(--font-family-serif);
+  /* font-family: var(--font-family-serif); */
 }
 
 /* Fix for clickable elements */

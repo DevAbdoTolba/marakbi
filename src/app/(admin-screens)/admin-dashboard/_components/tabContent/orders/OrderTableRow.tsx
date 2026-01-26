@@ -163,24 +163,32 @@ export default function OrderTableRow({
           )}
         </td>
         <td className="py-3 px-4 text-sm relative">
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${paymentColors[paymentKey] || "bg-gray-100 text-gray-700"}`}
-            onClick={() => setShowPaymentDropdown(!showPaymentDropdown)}
-          >
-            {(paymentStatus || 'Unknown').charAt(0).toUpperCase() + (paymentStatus || 'Unknown').slice(1)}
-          </span>
-          {showPaymentDropdown && onPaymentStatusChange && (
-            <div className="absolute top-full left-0 mt-1 bg-white border rounded shadow-lg z-10 min-w-[120px]">
-              {["unpaid", "pending", "paid", "refunded"].map((p) => (
-                <button
-                  key={p}
-                  className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 capitalize"
-                  onClick={() => handlePaymentClick(p)}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
+          {order.payment_method === 'cash' ? (
+            <span className="px-2 py-1 rounded-full text-xs font-medium cursor-default bg-gray-100 text-gray-700 border border-gray-200">
+              Cash
+            </span>
+          ) : (
+            <>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${paymentColors[paymentKey] || "bg-gray-100 text-gray-700"}`}
+                onClick={() => setShowPaymentDropdown(!showPaymentDropdown)}
+              >
+                {(paymentStatus || 'Unknown').charAt(0).toUpperCase() + (paymentStatus || 'Unknown').slice(1)}
+              </span>
+              {showPaymentDropdown && onPaymentStatusChange && (
+                <div className="absolute top-full right-0 mt-1 bg-white border rounded shadow-lg z-10 min-w-[120px]">
+                  {["unpaid", "pending", "paid", "refunded"].map((p) => (
+                    <button
+                      key={p}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 capitalize"
+                      onClick={() => handlePaymentClick(p)}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </td>
         <td className="py-3 px-4 text-sm">

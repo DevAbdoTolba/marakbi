@@ -54,7 +54,17 @@ export default function OrderDetailsModal({
     };
 
     const { value: duration, unit } = calculateDuration(order.start_date, order.end_date, order.booking_type || 'daily');
-    const ratePerUnit = order.total_price / duration;
+
+    // Determine Rate to show (Base Rate)
+    let ratePerUnit = 0;
+    if (order.price_per_hour) {
+        ratePerUnit = order.price_per_hour;
+    } else if (order.price_per_day) {
+        ratePerUnit = order.price_per_day;
+    } else {
+        // Fallback (calculated, might include fees if not careful, but better than 0)
+        ratePerUnit = order.total_price / duration;
+    }
 
     const statusColors: Record<string, string> = {
         pending: "bg-yellow-100 text-yellow-700",
@@ -278,7 +288,7 @@ export default function OrderDetailsModal({
 
                                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</p>
                                 <p className="text-sm font-medium text-gray-900">
-                                    {order.owner_details?.phone || "N/A"}
+                                    {order.owner_details?.phone || order.owner_phone || "N/A"}
                                 </p>
                             </div>
                         </div>
@@ -326,31 +336,69 @@ export default function OrderDetailsModal({
                             <FiDollarSign /> Pricing Details
                         </h3>
 
+                        {/* Breakdown for Hourly/Daily Rentals */}
                         {!order.trip_type && (
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-medium text-gray-600">{unit === 'hour' ? 'Hourly Rate' : 'Daily Rate'}</span>
-                                <span className="text-sm font-bold text-gray-900">{formatCurrency(ratePerUnit)}</span>
+                            <div className="bg-gray-50 p-3 rounded-lg mb-3">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-sm text-gray-600 font-medium">Rate Breakdown</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        {formatCurrency(ratePerUnit)}
+                                        {(() => {
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            const priceMode = (order as any).price_mode || (order as any).boat?.price_mode || 'per_time';
+                                            if (priceMode === 'per_person') return ' / passenger';
+                                            if (priceMode === 'per_person_per_time') return ` / passenger / ${unit === 'hour' ? 'hr' : unit}`;
+                                            return ` / ${unit}`;
+                                        })()}
+                                    </span>
+                                </div>
+                                <div className="text-xs text-gray-500 flex justify-end gap-1">
+                                    <span>{formatCurrency(ratePerUnit)}</span>
+                                    {(order.price_mode?.includes('person') || (!order.price_mode && order.guest_count > 0)) && (
+                                        <span>× {order.guest_count} guest{order.guest_count > 1 ? 's' : ''}</span>
+                                    )}
+                                    <span>× {duration} {unit}{duration > 1 ? 's' : ''}</span>
+                                </div>
                             </div>
                         )}
 
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium text-gray-600">
-                                {order.trip_type ? "Fixed Trip Price" : `Subtotal (${duration} ${unit}s)`}
-                            </span>
-                            <span className="text-sm font-bold text-gray-900">{formatCurrency(order.total_price)}</span>
-                        </div>
-                        <div className="flex justify-between items-center border-t border-gray-100 pt-3 mt-3">
-                            <span className="text-base font-bold text-gray-900">Total</span>
-                            <span className="text-xl font-bold text-gray-900">{formatCurrency(order.total_price)}</span>
-                        </div>
-                        <div className="flex justify-between items-center mt-2">
-                            <span className="text-sm font-medium text-gray-500">Payment Method</span>
-                            <span className="text-sm font-medium text-gray-900 capitalize flex items-center gap-2">
-                                {order.payment_method || "Card"}
-                                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white bg-black`}>
-                                    {order.payment_status || "Paid"}
+                        <div className="space-y-2">
+                            {/* Subtotal */}
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-600">
+                                    {order.trip_type ? "Trip Price" : "Subtotal"}
                                 </span>
-                            </span>
+                                <span className="text-sm font-bold text-gray-900">
+                                    {formatCurrency((order.total_price || 0) - (order.service_fee || 0))}
+                                </span>
+                            </div>
+
+                            {/* Service Fee */}
+                            {(order.service_fee || 0) > 0 && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-gray-600">Service Fee</span>
+                                    <span className="text-sm font-bold text-gray-900">{formatCurrency(order.service_fee || 0)}</span>
+                                </div>
+                            )}
+
+                            {/* Total */}
+                            <div className="flex justify-between items-center border-t border-gray-100 pt-3 mt-2">
+                                <span className="text-base font-bold text-gray-900">Total</span>
+                                <span className="text-xl font-bold text-sky-900">{formatCurrency(order.total_price)}</span>
+                            </div>
+
+                            {/* Payment Method */}
+                            <div className="flex justify-between items-center pt-2">
+                                <span className="text-sm font-medium text-gray-500">Payment Method</span>
+                                <span className="text-sm font-medium text-gray-900 capitalize flex items-center gap-2">
+                                    {order.payment_method || "Card"}
+                                    {(!order.payment_method || order.payment_method.toLowerCase() !== 'cash') && (
+                                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white bg-black`}>
+                                            {order.payment_status || "Paid"}
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
                         </div>
                     </div>
 

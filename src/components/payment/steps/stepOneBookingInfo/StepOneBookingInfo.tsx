@@ -60,7 +60,12 @@ export default function StepOneBookingInfo() {
             <div className="flex-1">
               <h3 className="text-xl font-semibold mb-2 font-poppins ">{String(bookingData.boat_name || '')}</h3>
               <div className="space-y-1 text-gray-600">
-                <p>Rental Type: {bookingData.rental_type === 'hourly' ? 'Per Hour' : 'Per Day'}</p>
+                <p>
+                  Rental Type: {
+                    bookingData.rental_type === 'hourly' ? 'Per Hour' :
+                      bookingData.rental_type === 'trip' ? 'Trip' : 'Per Day'
+                  }
+                </p>
                 {!!bookingData.hours && (
                   <p>Duration: {String(bookingData.hours)} hour{Number(bookingData.hours) > 1 ? 's' : ''}</p>
                 )}
@@ -120,6 +125,6 @@ export default function StepOneBookingInfo() {
       <div className="w-full lg:w-[40%]">
         <TripDetails />
       </div>
-    </div>
+    </div >
   );
 }

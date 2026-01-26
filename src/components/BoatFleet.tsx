@@ -24,7 +24,12 @@ const BoatFleet = ({ homeData }: BoatFleetProps) => {
         } else {
           const response = await clientApi.getBoats(1, 6);
           if (response.success && response.data) {
-            setBoats(response.data.boats);
+            const validBoats = response.data.boats.filter(boat => {
+              const hasHourly = boat.price_per_hour !== null && boat.price_per_hour !== undefined;
+              const hasDaily = boat.price_per_day !== null && boat.price_per_day !== undefined;
+              return hasHourly || hasDaily;
+            });
+            setBoats(validBoats);
           }
         }
       } catch (error) {
@@ -38,17 +43,17 @@ const BoatFleet = ({ homeData }: BoatFleetProps) => {
   return (
     <section className="relative w-full overflow-hidden py-16">
       {/* Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat h-110"
-        style={{backgroundImage: "url('/images/Frame 1321316346.png')"}}
+        style={{ backgroundImage: "url('/images/Frame 1321316346.png')" }}
       ></div>
-      
-  
+
+
 
       <div className="relative">
         {/* Hero Content */}
         <div className="flex flex-col items-center justify-center text-center mb-10">
-         
+
           {/* Title */}
           <h2 className="text-white text-3xl md:text-5xl font-semibold font-poppins mb-4 mt-4">
             Fleet of Luxury Boats
@@ -56,8 +61,8 @@ const BoatFleet = ({ homeData }: BoatFleetProps) => {
 
           {/* Golden Wavy Line - Mobile Only */}
           <div className="flex justify-center mb-4 md:hidden">
-            <Image 
-              src="/icons/Line 74.svg" 
+            <Image
+              src="/icons/Line 74.svg"
               alt="Decorative line"
               width={200}
               height={16}
@@ -72,8 +77,8 @@ const BoatFleet = ({ homeData }: BoatFleetProps) => {
 
           {/* Golden Wavy Line - Desktop Only */}
           <div className="hidden md:flex justify-center">
-            <Image 
-              src="/icons/Line 74.svg" 
+            <Image
+              src="/icons/Line 74.svg"
               alt="Decorative line"
               width={200}
               height={16}
@@ -95,21 +100,30 @@ const BoatFleet = ({ homeData }: BoatFleetProps) => {
             </div>
           ) : (
             boats.map((boat, index: number) => {
-            return (
-              <BoatCard
-                key={boat.id || index}
-                boatId={boat.id}
-                imageUrl={boat.images?.[0] || '/images/Rectangle 3463853.png'}
-                name={boat.name || 'Boat'}
-                price={`${boat.price_per_hour ?? 0}`}
+              const displayPrice = (boat.price_per_hour !== null && boat.price_per_hour !== undefined)
+                ? boat.price_per_hour
+                : (boat.price_per_day ?? 0);
+
+              const displayMode = (boat.price_per_hour !== null && boat.price_per_hour !== undefined)
+                ? boat.price_mode
+                : 'per_day';
+
+              return (
+                <BoatCard
+                  key={boat.id || index}
+                  boatId={boat.id}
+                  imageUrl={boat.images?.[0] || '/images/Rectangle 3463853.png'}
+                  name={boat.name || 'Boat'}
+                  price={`${displayPrice}`}
                   location={boat.cities?.[0] || 'Aswan - Egypt'}
-                guests={boat.max_seats || 4}
+                  guests={boat.max_seats || 4}
                   status="Available"
-                rooms={boat.max_seats_stay || 2}
-                  rating={5}
+                  rooms={boat.max_seats_stay || 2}
+                  rating={boat.average_rating ?? 0}
                   reviewsCount={boat.total_reviews || 0}
-              />
-            );
+                  priceMode={displayMode}
+                />
+              );
             })
           )}
         </div>

@@ -38,6 +38,7 @@ export default function BoatListingLayout() {
   const categoryId = searchParams.get('category_id');
   const rentalType = searchParams.get('rental_type');
   const searchQuery = searchParams.get('search');
+  const minPassengers = searchParams.get('min_passengers');
 
   // Mapping for common Arabic city names to English (for search)
   const cityNameMapping: Record<string, string[]> = {
@@ -222,9 +223,9 @@ export default function BoatListingLayout() {
     // If multiple cities are selected, or if cityId in URL differs from selectedCities, filter client-side
     if (selectedCities.length > 0) {
       // Only filter if we have multiple cities, or if cityId in URL doesn't match selectedCities
-      const needsFiltering = selectedCities.length > 1 || 
-                            (cityId && selectedCities.length === 1 && selectedCities[0] !== parseInt(cityId));
-      
+      const needsFiltering = selectedCities.length > 1 ||
+        (cityId && selectedCities.length === 1 && selectedCities[0] !== parseInt(cityId));
+
       if (needsFiltering) {
         filtered = filtered.filter(boat => {
           // Check if boat has at least one trip in one of the selected cities
@@ -243,6 +244,13 @@ export default function BoatListingLayout() {
         return priceSortOrder === 'high-to-low' ? priceB - priceA : priceA - priceB;
       });
     }
+
+    // Exclude boats with no valid price (neither hourly nor daily)
+    filtered = filtered.filter(boat => {
+      const hasHourly = boat.price_per_hour !== null && boat.price_per_hour !== undefined;
+      const hasDaily = boat.price_per_day !== null && boat.price_per_day !== undefined;
+      return hasHourly || hasDaily;
+    });
 
     setBoats(filtered);
     setTotalBoats(filtered.length);
@@ -378,7 +386,7 @@ export default function BoatListingLayout() {
 
         // Determine which city to use: URL cityId takes precedence, otherwise use first selectedCity from panel
         const effectiveCityId = cityId ? parseInt(cityId) : (selectedCities.length === 1 ? selectedCities[0] : null);
-        
+
         // Fetch boats - use specific endpoint if available for better performance
         // According to API documentation:
         // - /client/boats/category/{categoryId}/city/{cityId} - filter by both category and city
@@ -414,14 +422,14 @@ export default function BoatListingLayout() {
               : Array.isArray((data as { categories?: unknown[] }).categories)
                 ? (data as { categories: { id: number; name: string; description?: string }[] }).categories
                 : [];
-            
+
             // Fetch boats for each category and combine results
-            const allBoatsPromises = categories.map((cat: { id: number }) => 
+            const allBoatsPromises = categories.map((cat: { id: number }) =>
               clientApi.getBoatsByCategoryAndCity(cat.id, effectiveCityId)
             );
-            
+
             const allResponses = await Promise.all(allBoatsPromises);
-            
+
             // Combine all boats and remove duplicates
             const boatsMap = new Map<number, Boat>();
             allResponses.forEach(res => {
@@ -431,7 +439,7 @@ export default function BoatListingLayout() {
                 });
               }
             });
-            
+
             // Create combined response
             const combinedBoats = Array.from(boatsMap.values());
             response = {
@@ -486,6 +494,16 @@ export default function BoatListingLayout() {
             }
           }
 
+          // Filter by minimum passengers if provided via URL
+          if (minPassengers) {
+            const minPassengersNum = parseInt(minPassengers);
+            if (!isNaN(minPassengersNum)) {
+              filteredBoats = filteredBoats.filter(boat =>
+                boat.max_seats >= minPassengersNum
+              );
+            }
+          }
+
           // Store all boats for filtering (before search query filter)
           // Note: Search query filtering will be handled in applyFilters via allBoats
           setAllBoats(filteredBoats);
@@ -498,7 +516,7 @@ export default function BoatListingLayout() {
     };
 
     fetchBoats();
-  }, [cityId, categoryId, rentalType, selectedCities]);
+  }, [cityId, categoryId, rentalType, selectedCities, minPassengers]);
 
   return (
     <div className="relative mt-10 sm:mt-12 lg:mt-16 z-0">
@@ -660,21 +678,33 @@ export default function BoatListingLayout() {
               <p className="text-gray-600 text-lg">No boats found matching your criteria.</p>
             </div>
           ) : (
-            boats.map((boat) => (
-              <BoatCard
-                key={boat.id}
-                boatId={boat.id}
-                imageUrl={normalizeImageUrl(boat.images?.[0])}
-                name={boat.name}
-                price={`${boat.price_per_hour}`}
-                location={boat.cities?.[0] || "Aswan - Egypt"}
-                guests={boat.max_seats}
-                rooms={boat.max_seats_stay}
-                status="Available"
-                rating={5}
-                reviewsCount={boat.total_reviews || 0}
-              />
-            ))
+            boats.map((boat) => {
+              const displayPrice = (boat.price_per_hour !== null && boat.price_per_hour !== undefined)
+                ? boat.price_per_hour
+                : (boat.price_per_day ?? 0);
+
+              const displayMode = (boat.price_per_hour !== null && boat.price_per_hour !== undefined)
+                ? boat.price_mode
+                : 'per_day';
+
+              return (
+                <BoatCard
+                  key={boat.id}
+                  boatId={boat.id}
+                  imageUrl={normalizeImageUrl(boat.images?.[0])}
+                  name={boat.name}
+                  price={`${displayPrice}`}
+                  location={boat.cities?.[0] || "Aswan - Egypt"}
+                  guests={boat.max_seats}
+                  rooms={boat.max_seats_stay}
+                  status="Available"
+                  rating={boat.average_rating ?? 0}
+                  reviewsCount={boat.total_reviews || 0}
+                  guestCount={minPassengers ? parseInt(minPassengers) : undefined}
+                  priceMode={displayMode}
+                />
+              );
+            })
           )}
         </div>
       </div>

@@ -7,6 +7,7 @@ import FilterComponent from "./FilterComponent";
 import OrdersTable from "./OrdersTable";
 import OrderDetailsModal from "./OrderDetailsModal";
 import { adminApi, AdminOrder } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function OrdersManagement() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -54,7 +55,7 @@ export default function OrdersManagement() {
         setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
       }
     } else {
-      alert(response.error || "Failed to update status");
+      toast.error(response.error || "Failed to update status");
     }
     setActionLoading(false);
   };
@@ -68,7 +69,7 @@ export default function OrdersManagement() {
         setSelectedOrder(prev => prev ? { ...prev, payment_status: newPaymentStatus } : null);
       }
     } else {
-      alert(response.error || "Failed to update payment status");
+      toast.error(response.error || "Failed to update payment status");
     }
     setActionLoading(false);
   };
