@@ -1100,13 +1100,17 @@ export const adminApi = {
     return apiRequest('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
   },
   updateUser: async (userId: number, userData: { username?: string; email?: string; password?: string; role?: string; bio?: string; phone?: string; address?: string }, profilePicture?: File): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
+    // Upload profile picture to Cloudinary first if provided
+    let profilePictureUrl: string | undefined;
     if (profilePicture) {
-      const formData = new FormData();
-      Object.entries(userData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value); });
-      formData.append('profile_picture', profilePicture);
-      return adminFormRequest(`/admin/users/${userId}`, formData, 'PUT');
+      const { uploadToCloudinary } = await import('./cloudinaryUpload');
+      profilePictureUrl = await uploadToCloudinary(profilePicture, 'marakbi/profiles');
     }
-    return apiRequest(`/admin/users/${userId}`, { method: 'PUT', body: JSON.stringify(userData) });
+
+    const formData = new FormData();
+    Object.entries(userData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value); });
+    if (profilePictureUrl) formData.append('profile_picture_url', profilePictureUrl);
+    return adminFormRequest(`/admin/users/${userId}`, formData, 'PUT');
   },
   deleteUser: async (userId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/users/${userId}`, { method: 'DELETE' }),
   getUserBoats: async (userId: number): Promise<ApiResponse<{ user_id: number; username: string; boats: AdminBoat[] }>> => apiRequest(`/admin/users/${userId}/boats`),
@@ -1124,6 +1128,14 @@ export const adminApi = {
     return apiRequest(`/admin/boats/${boatId}`);
   },
   createBoat: async (userId: number, boatData: AddBoatData): Promise<ApiResponse<{ message: string; boat: AdminBoat }>> => {
+    // Upload images to Cloudinary first
+    const imageUrls: string[] = [];
+    if (boatData.boat_images && boatData.boat_images.length > 0) {
+      const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      imageUrls.push(...urls);
+    }
+
     const formData = new FormData();
     formData.append('user_id', userId.toString());
     formData.append('name', boatData.name);
@@ -1131,8 +1143,8 @@ export const adminApi = {
     if (boatData.price_per_day !== undefined) formData.append('price_per_day', boatData.price_per_day === null ? 'null' : boatData.price_per_day.toString());
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
-    if (boatData.location_url) formData.append('location_url', boatData.location_url); // New field
-    if (boatData.price_mode) formData.append('price_mode', boatData.price_mode); // New field
+    if (boatData.location_url) formData.append('location_url', boatData.location_url);
+    if (boatData.price_mode) formData.append('price_mode', boatData.price_mode);
     formData.append('description', boatData.description);
 
     boatData.categories.forEach(id => formData.append('categories', id.toString()));
@@ -1143,18 +1155,27 @@ export const adminApi = {
       formData.append('primary_new_image_index', boatData.primary_new_image_index.toString());
     }
 
-    if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
+    // Send Cloudinary URLs instead of files
+    imageUrls.forEach(url => formData.append('image_urls', url));
     return adminFormRequest('/admin/boats', formData);
   },
   updateBoat: async (boatId: number, boatData: EditBoatData): Promise<ApiResponse<{ message: string; boat: AdminBoat }>> => {
+    // Upload new images to Cloudinary first
+    const imageUrls: string[] = [];
+    if (boatData.boat_images && boatData.boat_images.length > 0) {
+      const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      imageUrls.push(...urls);
+    }
+
     const formData = new FormData();
     if (boatData.name) formData.append('name', boatData.name);
     if (boatData.price_per_hour !== undefined) formData.append('price_per_hour', boatData.price_per_hour === null ? 'null' : boatData.price_per_hour.toString());
     if (boatData.price_per_day !== undefined) formData.append('price_per_day', boatData.price_per_day === null ? 'null' : boatData.price_per_day.toString());
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
-    if (boatData.location_url) formData.append('location_url', boatData.location_url); // New field
-    if (boatData.price_mode) formData.append('price_mode', boatData.price_mode); // New field
+    if (boatData.location_url) formData.append('location_url', boatData.location_url);
+    if (boatData.price_mode) formData.append('price_mode', boatData.price_mode);
     if (boatData.description) formData.append('description', boatData.description);
 
     if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
@@ -1166,7 +1187,8 @@ export const adminApi = {
       formData.append('primary_new_image_index', boatData.primary_new_image_index.toString());
     }
 
-    if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
+    // Send Cloudinary URLs instead of files
+    imageUrls.forEach(url => formData.append('image_urls', url));
     if (boatData.removed_images) boatData.removed_images.forEach(url => formData.append('removed_images', url));
     return adminFormRequest(`/admin/boats/${boatId}`, formData, 'PUT');
   },
@@ -1176,15 +1198,29 @@ export const adminApi = {
   // Categories
   getCategories: async (): Promise<ApiResponse<{ categories: AdminCategory[] }>> => apiRequest('/admin/categories'),
   createCategory: async (name: string, image?: File): Promise<ApiResponse<AdminCategory>> => {
+    // Upload image to Cloudinary first if provided
+    let imageUrl: string | undefined;
+    if (image) {
+      const { uploadToCloudinary } = await import('./cloudinaryUpload');
+      imageUrl = await uploadToCloudinary(image, 'marakbi/categories');
+    }
+
     const formData = new FormData();
     formData.append('name', name);
-    if (image) formData.append('image', image);
+    if (imageUrl) formData.append('image_url', imageUrl);
     return adminFormRequest('/admin/categories', formData);
   },
   updateCategory: async (categoryId: number, name?: string, image?: File): Promise<ApiResponse<AdminCategory>> => {
+    // Upload image to Cloudinary first if provided
+    let imageUrl: string | undefined;
+    if (image) {
+      const { uploadToCloudinary } = await import('./cloudinaryUpload');
+      imageUrl = await uploadToCloudinary(image, 'marakbi/categories');
+    }
+
     const formData = new FormData();
     if (name) formData.append('name', name);
-    if (image) formData.append('image', image);
+    if (imageUrl) formData.append('image_url', imageUrl);
     return adminFormRequest(`/admin/categories/${categoryId}`, formData, 'PUT');
   },
   deleteCategory: async (categoryId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/categories/${categoryId}`, { method: 'DELETE' }),
@@ -1204,15 +1240,33 @@ export const adminApi = {
   },
   getTrip: async (tripId: number): Promise<ApiResponse<AdminTrip & { boats: { id: number; name: string }[] }>> => apiRequest(`/admin/trips/${tripId}`),
   createTrip: async (tripData: { name: string; description?: string; total_price: number; voyage_hours: number; trip_type: string; city_id: number; pax?: number; guests_on_board?: number; rooms_available?: number; primary_image_url?: string; primary_new_image_index?: number }, images?: File[]): Promise<ApiResponse<AdminTrip>> => {
+    // Upload images to Cloudinary first
+    const imageUrls: string[] = [];
+    if (images && images.length > 0) {
+      const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
+      const urls = await uploadMultipleToCloudinary(images, 'marakbi/trips');
+      imageUrls.push(...urls);
+    }
+
     const formData = new FormData();
     Object.entries(tripData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value.toString()); });
-    if (images) images.forEach(img => formData.append('trip_images', img));
+    // Send Cloudinary URLs instead of files
+    imageUrls.forEach(url => formData.append('image_urls', url));
     return adminFormRequest('/admin/trips', formData);
   },
   updateTrip: async (tripId: number, tripData: { name?: string; description?: string; total_price?: number; voyage_hours?: number; trip_type?: string; city_id?: number; pax?: number; guests_on_board?: number; rooms_available?: number; primary_image_url?: string; primary_new_image_index?: number }, images?: File[], removedImages?: string[]): Promise<ApiResponse<AdminTrip>> => {
+    // Upload images to Cloudinary first
+    const imageUrls: string[] = [];
+    if (images && images.length > 0) {
+      const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
+      const urls = await uploadMultipleToCloudinary(images, 'marakbi/trips');
+      imageUrls.push(...urls);
+    }
+
     const formData = new FormData();
     Object.entries(tripData).forEach(([key, value]) => { if (value !== undefined) formData.append(key, value.toString()); });
-    if (images) images.forEach(img => formData.append('trip_images', img));
+    // Send Cloudinary URLs instead of files
+    imageUrls.forEach(url => formData.append('image_urls', url));
     if (removedImages) removedImages.forEach(url => formData.append('removed_images', url));
     return adminFormRequest(`/admin/trips/${tripId}`, formData, 'PUT');
   },
@@ -1249,6 +1303,14 @@ export const adminApi = {
 
   // Legacy compatibility
   addBoat: async (userId: number, boatData: AddBoatData): Promise<ApiResponse<AddBoatResponse>> => {
+    // Upload images to Cloudinary first
+    const imageUrls: string[] = [];
+    if (boatData.boat_images && boatData.boat_images.length > 0) {
+      const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      imageUrls.push(...urls);
+    }
+
     const formData = new FormData();
     formData.append('name', boatData.name);
     formData.append('price_per_hour', (boatData.price_per_hour || 0).toString());
@@ -1258,10 +1320,18 @@ export const adminApi = {
     formData.append('description', boatData.description);
     boatData.categories.forEach(id => formData.append('categories', id.toString()));
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
-    if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
+    imageUrls.forEach(url => formData.append('image_urls', url));
     return adminFormRequest(`/admin/users/${userId}/boats`, formData);
   },
   editBoat: async (boatId: number, boatData: EditBoatData): Promise<ApiResponse<EditBoatResponse>> => {
+    // Upload images to Cloudinary first
+    const imageUrls: string[] = [];
+    if (boatData.boat_images && boatData.boat_images.length > 0) {
+      const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      imageUrls.push(...urls);
+    }
+
     const formData = new FormData();
     if (boatData.name) formData.append('name', boatData.name);
     if (boatData.price_per_hour) formData.append('price_per_hour', boatData.price_per_hour.toString());
@@ -1272,7 +1342,7 @@ export const adminApi = {
     if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
-    if (boatData.boat_images) boatData.boat_images.forEach(img => formData.append('boat_images', img));
+    imageUrls.forEach(url => formData.append('image_urls', url));
     return adminFormRequest(`/admin/boats/${boatId}`, formData, 'PUT');
   }
 };
