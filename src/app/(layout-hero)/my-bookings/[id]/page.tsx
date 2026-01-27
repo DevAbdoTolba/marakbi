@@ -426,7 +426,7 @@ export default function BookingDetailsPage() {
                                             {/* Determine Price Mode logic with fallback */}
                                             {(() => {
                                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                const priceMode = (order as any).price_mode || order.boat?.price_mode || 'per_time';
+                                                const priceMode = order.price_mode || order.boat?.price_mode || 'per_time';
 
                                                 return (
                                                     <>
@@ -485,9 +485,10 @@ export default function BookingDetailsPage() {
                             </h3>
                             <p className="text-gray-600 mb-4 text-sm">{location}</p>
 
-                            {order.boat?.location_url ? (
+                            {/* Use order's snapshot location_url with fallback to boat */}
+                            {(order.location_url || order.boat?.location_url) ? (
                                 <a
-                                    href={order.boat.location_url}
+                                    href={order.location_url || order.boat?.location_url || ''}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-[#106BD8] text-[#106BD8] text-sm font-semibold rounded-xl hover:bg-sky-50 transition-colors"
@@ -509,6 +510,41 @@ export default function BookingDetailsPage() {
                                 <span className="text-sm text-blue-600 font-medium">People</span>
                             </div>
                         </div>
+
+                        {/* Contact Info - only show when booking is for someone else */}
+                        {order.booking_for === 'other' && (
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                    <FiPhone className="text-[#106BD8]" /> Contact Info
+                                </h3>
+                                <div className="space-y-3">
+                                    {order.contact_first_name && (
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Booking For</p>
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {order.contact_first_name} {order.contact_last_name}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {order.contact_phone && (
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</p>
+                                            <p className="text-sm font-medium text-gray-900">{order.contact_phone}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Notes - always show when present */}
+                        {order.booking_notes && (
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                    <FiInfo className="text-[#106BD8]" /> Notes
+                                </h3>
+                                <p className="text-sm text-gray-600">{order.booking_notes}</p>
+                            </div>
+                        )}
 
                         {/* Captain Info */}
                         {order.boat?.owner && (

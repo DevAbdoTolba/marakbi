@@ -294,6 +294,36 @@ export default function OrderDetailsModal({
                         </div>
                     </div>
 
+                    {/* Booking Contact Info */}
+                    {(order.contact_phone || order.booking_notes) && (
+                        <div className="mb-8 pb-8 border-b border-gray-100">
+                            <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">
+                                <FiUser /> Booking Contact
+                            </h3>
+                            <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                                {order.booking_for === 'other' && order.contact_first_name && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Booking For</p>
+                                        <p className="text-sm font-medium text-gray-900">
+                                            {order.contact_first_name} {order.contact_last_name}
+                                        </p>
+                                    </div>
+                                )}
+                                {order.contact_phone && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Contact Phone</p>
+                                        <p className="text-sm font-medium text-gray-900">{order.contact_phone}</p>
+                                    </div>
+                                )}
+                                {order.booking_notes && (
+                                    <div className="col-span-2">
+                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Notes</p>
+                                        <p className="text-sm text-gray-600">{order.booking_notes}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     {/* Rental/Trip Info */}
                     <div className="mb-8 pb-8 border-b border-gray-100">
                         <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">
@@ -344,8 +374,8 @@ export default function OrderDetailsModal({
                                     <span className="text-sm font-bold text-gray-900">
                                         {formatCurrency(ratePerUnit)}
                                         {(() => {
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            const priceMode = (order as any).price_mode || (order as any).boat?.price_mode || 'per_time';
+                                            // Use order's snapshot price_mode with fallback to boat
+                                            const priceMode = order.price_mode || 'per_time';
                                             if (priceMode === 'per_person') return ' / passenger';
                                             if (priceMode === 'per_person_per_time') return ` / passenger / ${unit === 'hour' ? 'hr' : unit}`;
                                             return ` / ${unit}`;

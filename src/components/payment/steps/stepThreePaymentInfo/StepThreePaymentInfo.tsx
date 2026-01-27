@@ -83,11 +83,16 @@ export default function StepThreePaymentInfo() {
           guest_count: bookingData.guest_count as number,
           payment_method: paymentMethod,
           platform: 'web',
-          trip_id: bookingData.trip_id as number
+          trip_id: bookingData.trip_id as number,
+          // Contact info
+          booking_for: bookingData.booking_for as string,
+          contact_first_name: bookingData.contact_first_name as string,
+          contact_last_name: bookingData.contact_last_name as string,
+          contact_phone: bookingData.contact_phone as string,
+          booking_notes: bookingData.booking_notes as string
         };
         response = await clientApi.bookTrip(bookingData.trip_id as number, tripBookingData);
       } else {
-        // إنشاء Order
         // نرسل total_price كحقل إضافي لضمان أن الـ API يستخدم السعر الصحيح
         const orderData = {
           boat_id: bookingData.boat_id as number,
@@ -98,8 +103,14 @@ export default function StepThreePaymentInfo() {
           payment_method: paymentMethod,
           platform: 'web' as const,
           voyage_type: 'Private' as const,
-          trip_id: bookingData.trip_id as number | undefined, // Pass trip_id
-          total_price: (bookingData.total_price as number) || (bookingData.base_price as number)
+          trip_id: bookingData.trip_id as number | undefined,
+          total_price: (bookingData.total_price as number) || (bookingData.base_price as number),
+          // Contact info
+          booking_for: bookingData.booking_for as string,
+          contact_first_name: bookingData.contact_first_name as string,
+          contact_last_name: bookingData.contact_last_name as string,
+          contact_phone: bookingData.contact_phone as string,
+          booking_notes: bookingData.booking_notes as string
         };
         response = await customerApi.createOrder(orderData);
       }

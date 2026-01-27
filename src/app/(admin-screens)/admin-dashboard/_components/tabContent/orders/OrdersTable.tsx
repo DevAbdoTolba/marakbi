@@ -122,9 +122,8 @@ export default function OrdersTable({
 
               // 2. Determine Rate Label based on Price Mode
               const unit = order.booking_type === 'daily' ? 'day' : 'hour';
-              // Access price_mode safely (casting if necessary as it might be missing in AdminOrder type)
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const priceMode = (order as any).price_mode || (order as any).boat?.price_mode || 'per_time';
+              // 2. Determine Rate Label based on Price Mode (use order's snapshot with fallback)
+              const priceMode = order.price_mode || 'per_time';
 
               if (priceMode === 'per_person') {
                 rateLabel = `/passenger`;

@@ -221,6 +221,12 @@ export interface TripBookingRequest {
   payment_method: 'card' | 'cash';
   platform: 'web' | 'mobile';
   trip_id: number;
+  // Contact info
+  booking_for?: string;
+  contact_first_name?: string;
+  contact_last_name?: string;
+  contact_phone?: string;
+  booking_notes?: string;
 }
 
 export interface TripBookingResponse {
@@ -340,6 +346,13 @@ export interface Order {
   price_per_hour: number;
   price_per_day?: number;
   price_mode?: string;
+  location_url?: string;
+  // Contact info snapshot
+  booking_for?: string;
+  contact_first_name?: string;
+  contact_last_name?: string;
+  contact_phone?: string;
+  booking_notes?: string;
   total_price: number;
   service_fee?: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
@@ -914,6 +927,13 @@ export interface AdminOrder {
   price_per_hour?: number;
   price_per_day?: number;
   price_mode?: string;
+  location_url?: string;
+  // Contact info snapshot
+  booking_for?: string;
+  contact_first_name?: string;
+  contact_last_name?: string;
+  contact_phone?: string;
+  booking_notes?: string;
   owner_phone?: string;
 
   // Full Context Objects (for single order view)
