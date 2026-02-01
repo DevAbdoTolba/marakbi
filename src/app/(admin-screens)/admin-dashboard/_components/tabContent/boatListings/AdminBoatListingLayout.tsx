@@ -15,6 +15,7 @@ interface BoatFormData {
   max_seats_stay: number;
   description: string;
   location_url: string; // New field
+  address: string; // Boat address
   price_mode: string; // New field
   categories: number[];
   cities: number[];
@@ -89,6 +90,7 @@ export default function AdminBoatListingLayout() {
     max_seats_stay: 6,
     description: "",
     location_url: "",
+    address: "",
     price_mode: "per_time",
     categories: [],
     cities: [],
@@ -328,6 +330,7 @@ export default function AdminBoatListingLayout() {
         max_seats_stay: 6,
         description: "",
         location_url: "",
+        address: "",
         price_mode: "per_time",
         categories: [],
         cities: [],
@@ -350,6 +353,7 @@ export default function AdminBoatListingLayout() {
       max_seats_stay: 6,
       description: "",
       location_url: "",
+      address: "",
       price_mode: "per_time",
       categories: [],
       cities: [],
@@ -380,6 +384,8 @@ export default function AdminBoatListingLayout() {
         max_seats_stay: data.max_seats_stay,
         description: data.description || "",
         location_url: data.location_url || "",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        address: (data as any).address || "",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         price_mode: (data as any)['price_mode'] || "per_time",
         categories: data.categories_full?.map((c) => c.id) || [],
@@ -500,6 +506,7 @@ export default function AdminBoatListingLayout() {
       max_seats_stay: formData.max_seats_stay,
       description: formData.description,
       location_url: formData.location_url,
+      address: formData.address,
       price_mode: formData.price_mode,
       categories: formData.categories,
       cities: formData.cities,
@@ -1251,6 +1258,22 @@ export default function AdminBoatListingLayout() {
                           <FiMapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         </div>
                         <p className="text-xs text-gray-500 mt-1">Paste the Google Maps link to the meeting point.</p>
+                      </div>
+
+                      {/* Boat Address */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Boat Address</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={formData.address}
+                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                            placeholder="Enter boat address..."
+                          />
+                          <FiMap className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Physical address of the boat location.</p>
                       </div>
 
                       {/* Guest Capacity */}
