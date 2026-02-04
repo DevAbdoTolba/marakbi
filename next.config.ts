@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         hostname: "marakbi-e0870d98592a.herokuapp.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
     ],
     // Allow using specific quality values in <Image quality={...} />
     // to avoid Next.js 16 warning about images.qualities

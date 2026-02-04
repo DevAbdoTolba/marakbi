@@ -13,7 +13,7 @@ interface HeaderProps {
   currentPage?: string;
 }
 
-const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
+const Header = ({ variant = 'transparent' }: HeaderProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<{ fullName?: string; email?: string; role?: string } | null>(null);
@@ -353,7 +353,7 @@ const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
         </div>
         {/* Right Side: List your Boat and Social Icons */}
         <div className="flex items-center gap-4 sm:gap-8">
-          <Link href="https://wa.me/201031416900" target="_blank" rel="noopener noreferrer" className="text-white text-xs sm:text-sm md:text-base font-normal font-poppins hover:text-orange-300 transition-colors">
+          <Link href="/partner-with-us" className="text-white text-xs sm:text-sm md:text-base font-normal font-poppins hover:text-orange-300 transition-colors">
             List your Boat
           </Link>
           <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
@@ -397,6 +397,9 @@ const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
             {/* Our Services Dropdown */}
             <ServicesDropdown variant={variant} />
             <Link href="/contact" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>Contact</Link>
+            {user && (
+              <Link href="/my-bookings" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>My Bookings</Link>
+            )}
             {/* Search Icon + Expanding Input (Desktop) */}
             <div className="relative flex items-center">
               <button
@@ -458,9 +461,9 @@ const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
                       >
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-2 py-0.5 rounded ${s.type === 'category' ? 'bg-blue-100 text-blue-700' :
-                              s.type === 'city' ? 'bg-green-100 text-green-700' :
-                                s.type === 'boat' ? 'bg-purple-100 text-purple-700' :
-                                  'bg-gray-100 text-gray-700'
+                            s.type === 'city' ? 'bg-green-100 text-green-700' :
+                              s.type === 'boat' ? 'bg-purple-100 text-purple-700' :
+                                'bg-gray-100 text-gray-700'
                             }`}>
                             {s.type === 'category' ? 'Category' : s.type === 'city' ? 'City' : 'Boat'}
                           </span>
@@ -494,8 +497,8 @@ const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
                   onClick={handleLogout}
                   disabled={isLoggingOut}
                   className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isLoggingOut
-                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
                     }`}
                 >
                   {isLoggingOut && (
@@ -548,6 +551,9 @@ const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
                 <Link href="/services/occasions" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 rounded-lg text-gray-700 text-sm font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">OCCASIONS</Link>
               </div>
               <Link href="/contact" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Contact</Link>
+              {user && (
+                <Link href="/my-bookings" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">My Trips</Link>
+              )}
 
               {/* Mobile Auth Links */}
               {user ? (
@@ -564,8 +570,8 @@ const Header = ({ variant = 'transparent', currentPage }: HeaderProps) => {
                     onClick={handleLogout}
                     disabled={isLoggingOut}
                     className={`w-full px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${isLoggingOut
-                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
                       }`}
                   >
                     {isLoggingOut && (

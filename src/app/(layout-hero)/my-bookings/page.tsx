@@ -2,13 +2,18 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { customerApi, Order } from "@/lib/api";
+import { normalizeImageUrl } from "@/lib/imageUtils";
+import { FiClock, FiCalendar, FiMapPin, FiAnchor, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 interface BookingCardProps {
   order: Order;
 }
 
 function BookingCard({ order }: BookingCardProps) {
+  const router = useRouter();
+
   // Safety check - return null if boat is not available
   if (!order.boat) {
     return null;
@@ -23,7 +28,7 @@ function BookingCard({ order }: BookingCardProps) {
   const remainingHours = durationHours % 24;
 
   const durationText = durationDays > 0
-    ? `${durationDays} Day${durationDays > 1 ? 's' : ''} ${remainingHours} Hour${remainingHours !== 1 ? 's' : ''}`
+    ? `${durationDays} Day${durationDays > 1 ? 's' : ''} ${remainingHours > 0 ? `${remainingHours} Hr${remainingHours > 1 ? 's' : ''}` : ''}`
     : `${durationHours} Hour${durationHours !== 1 ? 's' : ''}`;
 
   // Format date
@@ -32,95 +37,95 @@ function BookingCard({ order }: BookingCardProps) {
   const dayOfWeek = startDate.toLocaleDateString('en-US', { weekday: 'short' });
   const time = startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-  // Get price per hour/day
-  const priceDisplay = order.booking_type === 'hourly' || order.booking_type === 'trip'
-    ? `${order.boat.price_per_hour} EGP/hour`
-    : `${order.boat.price_per_day || order.boat.price_per_hour} EGP/day`;
+  // Status colors
+  const statusColors = {
+    pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    confirmed: "bg-blue-50 text-blue-700 border-blue-200",
+    cancelled: "bg-red-50 text-red-700 border-red-200",
+    completed: "bg-green-50 text-green-700 border-green-200",
+  };
+
+  const status = order.status || 'pending';
+  const statusClass = statusColors[status as keyof typeof statusColors] || statusColors.pending;
+
+  // Booking Type Badge
+  const getBookingTypeLabel = () => {
+    if (order.trip_id) return "Trip";
+    if (order.booking_type === 'daily') return "Daily Rental";
+    return "Hourly Rental";
+  };
 
   return (
-    <div className="relative bg-white rounded-lg overflow-hidden w-[427px] h-[394px]" style={{ boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.1)" }}>
-      {/* Boat Image */}
-      <div className="relative w-full h-[240px] rounded-t-[10px] overflow-hidden">
+    <div
+      onClick={() => router.push(`/my-bookings/${order.id}`)}
+      className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col h-full"
+    >
+      {/* Image Section */}
+      <div className="relative h-48 w-full overflow-hidden">
         <Image
-          src="/images/Rectangle 3463853.png"
-          alt={order.boat.name}
+          src={normalizeImageUrl(order.trip?.images?.[0] || order.boat.images?.[0] || null)}
+          alt={order.trip?.name || order.boat.name}
           fill
-          className="object-cover"
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        {/* Image count badge */}
-        <div className="absolute bottom-[38px] right-[12px] h-8 rounded-md px-2 py-1 flex items-center gap-1" style={{ backgroundColor: "rgba(34, 33, 33, 0.07)", backdropFilter: "blur(2px)" }}>
-          <Image
-            src="/icons/photo_library_24px.svg"
-            alt="Image Count"
-            width={24}
-            height={24}
-          />
-          <span className="text-white text-sm font-medium">
-            1/1
-          </span>
+
+        {/* Status Badge */}
+        <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${statusClass} backdrop-blur-sm`}>
+          {status}
+        </div>
+
+        {/* Type Badge */}
+        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-black/60 text-white backdrop-blur-md border border-white/10">
+          {getBookingTypeLabel()}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-2 pt-4 pb-2 relative h-[154px]">
-        {/* Left Side - Boat Details */}
-        <div className="flex flex-col gap-3 w-[280px]">
-          <h3 className="text-lg font-medium text-black font-poppins tracking-[0.38px] leading-6">
-            {order.boat.name}
+      {/* Content Section */}
+      <div className="p-4 flex flex-col flex-1 gap-4">
+        {/* Title & Price */}
+        <div className="flex justify-between items-start gap-2">
+          <h3 className="text-lg font-bold text-gray-900 line-clamp-1 group-hover:text-[#106BD8] transition-colors">
+            {order.trip?.name || order.boat.name}
           </h3>
+          <span className="font-bold text-[#106BD8] whitespace-nowrap">
+            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EGP' }).format(order.total_price)}
+          </span>
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            {/* Passengers */}
-            <div className="flex items-center gap-[3px]">
-              <Image
-                src="/icons/people-svgrepo-com (1) 2.svg"
-                alt="Passengers"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm text-[#989898] capitalize font-inter font-normal">
-                {order.guest_count} Passenger{order.guest_count > 1 ? 's' : ''}
-              </span>
-            </div>
-
-            {/* Duration */}
-            <div className="flex items-center gap-[3px]">
-              <span className="text-sm text-[#989898] capitalize font-inter font-normal">
-                {durationText}
-              </span>
-            </div>
-
-            {/* Status */}
-            <div className="flex items-center gap-[3px]">
-              <span className="text-sm text-[#106BD8] capitalize font-inter font-medium">
-                {order.status}
-              </span>
-            </div>
+        {/* Details Grid */}
+        <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2">
+            <FiCalendar className="text-gray-400" />
+            <span>{startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FiClock className="text-gray-400" />
+            <span>{time}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FiAnchor className="text-gray-400" />
+            <span>{durationText}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FiMapPin className="text-gray-400" />
+            <span className="truncate">{order.trip?.city_name || order.boat.cities?.[0] || 'Marina'}</span>
           </div>
         </div>
 
-        {/* Right Side - Date and Price */}
-        <div className="absolute right-2 top-4 flex flex-col items-end gap-1 w-[92px]">
-          {/* Date Card */}
-          <div className="bg-white rounded-lg p-1 flex flex-col items-center justify-center w-full h-[84px]" style={{ boxShadow: "0px 0px 4px 0px rgba(0, 0, 0, 0.35)" }}>
-            <div className="text-center flex flex-col items-center gap-1">
-              <p className="text-[40px] font-bold text-[#106BD8] leading-[0.78] font-poppins">
-                {dayOfMonth}
-              </p>
-              <p className="text-sm font-normal font-poppins leading-5">
-                <span className="text-[#106BD8]">{dayOfWeek}</span>
-                <span className="text-[#8A8A8F]"> {month}</span>
-              </p>
-            </div>
-            <p className="text-sm text-[#989898] capitalize font-inter font-normal">
-              {time}
-            </p>
+        {/* Footer Actions */}
+        <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            Order #{order.id}
+          </span>
+          <div className="flex items-center gap-3">
+            {order.boat?.location_url && (
+              /* Location link removed as per request */
+              null
+            )}
+            <span className="text-sm font-medium text-[#106BD8] group-hover:translate-x-1 transition-transform flex items-center gap-1">
+              View Details <FiChevronRight />
+            </span>
           </div>
-
-          {/* Price */}
-          <p className="text-sm font-medium text-[#106BD8] font-inter tracking-[0.38px] leading-6">
-            {priceDisplay}
-          </p>
         </div>
       </div>
     </div>
@@ -128,128 +133,137 @@ function BookingCard({ order }: BookingCardProps) {
 }
 
 export default function MyBookingsPage() {
-  const [activeTab, setActiveTab] = useState<"ongoing" | "past">("past");
+  const router = useRouter();
+
+  const [activeTab, setActiveTab] = useState<"ongoing" | "past">("ongoing");
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Sync state with URL params if needed in future
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const response = await customerApi.getOrders();
-        if (response.success && response.data) {
-          setOrders(response.data.orders);
-        }
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchOrders(page, activeTab);
+  }, [page, activeTab]);
 
-    fetchOrders();
-  }, []);
+  const fetchOrders = async (pageNum: number, status: 'ongoing' | 'past') => {
+    try {
+      setLoading(true);
+      const response = await customerApi.getOrders(pageNum, 9, status); // 9 items per page for grid
+      if (response.success && response.data) {
+        setOrders(response.data.orders);
+        setTotalPages(response.data.pages);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter orders based on activeTab
-  // Ongoing: end_date is in the future
-  // Past: end_date is in the past
-  const filteredOrders = orders.filter((order) => {
-    const endDate = new Date(order.end_date);
-    const now = new Date();
-    const isOngoing = endDate > now;
-
-    return activeTab === "ongoing" ? isOngoing : !isOngoing;
-  });
 
   return (
-    <div className="w-full bg-white py-16">
-      <div className="max-w-[1440px] mx-auto px-8">
-        {/* Tabs */}
-        <div className="flex items-center">
-          {/* Ongoing Bookings Tab */}
-          <button
-            onClick={() => setActiveTab("ongoing")}
-            className={`flex items-center gap-2 px-[30px] py-3 transition-all ${activeTab === "ongoing"
-              ? "border-b-4 border-[#106BD8]"
-              : "border-b-0"
-              }`}
-          >
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M28 11.3333V6.66667C28 5.2 26.8 4 25.3333 4H6.66667C5.2 4 4 5.2 4 6.66667V11.3333C5.46667 11.3333 6.66667 12.5333 6.66667 14C6.66667 15.4667 5.46667 16.6667 4 16.6667V21.3333C4 22.8 5.2 24 6.66667 24H25.3333C26.8 24 28 22.8 28 21.3333V16.6667C26.5333 16.6667 25.3333 15.4667 25.3333 14C25.3333 12.5333 26.5333 11.3333 28 11.3333Z"
-                stroke={activeTab === "ongoing" ? "#106BD8" : "#8C8C8C"}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span
-              className={`text-2xl font-medium font-barlow leading-6 tracking-[-0.4084px] ${activeTab === "ongoing" ? "text-[#106BD8]" : "text-[#8C8C8C]"
-                }`}
-            >
-              Ongoing Bookings
-            </span>
-          </button>
+    <div className="w-full bg-gray-50 min-h-screen py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* Past Booking Tab */}
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Bookings</h1>
+          <p className="text-gray-500">Manage and view your upcoming and past trips.</p>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-xl p-1.5 inline-flex mb-8 shadow-sm border border-gray-100">
           <button
-            onClick={() => setActiveTab("past")}
-            className={`flex items-center justify-center gap-2 pl-10 pr-9 py-3 transition-all ${activeTab === "past"
-              ? "border-b-4 border-[#106BD8]"
-              : "border-b-0"
+            onClick={() => {
+              setActiveTab("ongoing");
+              setPage(1);
+            }}
+            className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === "ongoing"
+              ? "bg-[#106BD8] text-white shadow-md"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
               }`}
           >
-            <Image
-              src="/icons/gift2.svg"
-              alt="Past Booking"
-              width={32}
-              height={32}
-            />
-            <span
-              className={`text-center justify-start text-2xl font-medium font-barlow leading-6 ${activeTab === "past" ? "text-blue-600" : "text-[#8C8C8C]"
-                }`}
-            >
-              Past Booking
-            </span>
+            Ongoing Bookings
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("past");
+              setPage(1);
+            }}
+            className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === "past"
+              ? "bg-[#106BD8] text-white shadow-md"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+          >
+            History
           </button>
         </div>
-      </div>
 
-      {/* Horizontal line separator - Full width */}
-      <div className="w-full h-px bg-gray-900 mb-[52px]"></div>
-
-      <div className="max-w-[1440px] mx-auto px-8">
         {/* Loading State */}
         {loading && (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-sky-900"></div>
+          <div className="flex justify-center items-center py-32">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#106BD8]"></div>
           </div>
         )}
 
-        {/* Bookings Grid */}
+        {/* Content */}
         {!loading && (
-          <div className="flex flex-wrap gap-4">
-            {filteredOrders.map((order) => (
-              <BookingCard key={order.id} order={order} />
-            ))}
-          </div>
-        )}
+          <>
+            {orders.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                {orders.map((order) => (
+                  <BookingCard key={order.id} order={order} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-32 bg-white rounded-3xl border border-dashed border-gray-200">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FiCalendar className="text-gray-400 text-2xl" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No {activeTab} bookings</h3>
+                <p className="text-gray-500">You don&apos;t have any {activeTab} bookings at the moment.</p>
+                {activeTab === 'ongoing' && (
+                  <button
+                    onClick={() => router.push('/search')}
+                    className="mt-6 px-6 py-2.5 bg-[#106BD8] text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition"
+                  >
+                    Explore Boats
+                  </button>
+                )}
+              </div>
+            )}
 
-        {/* Empty State */}
-        {!loading && filteredOrders.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-2xl text-gray-400 font-poppins">
-              No {activeTab} bookings found
-            </p>
-          </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-2 rounded-full bg-white border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-600 hover:text-[#106BD8]"
+                >
+                  <FiChevronLeft size={20} />
+                </button>
+
+                <span className="text-sm font-medium text-gray-600">
+                  Page <span className="text-[#106BD8] font-bold">{page}</span> of {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="p-2 rounded-full bg-white border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-600 hover:text-[#106BD8]"
+                >
+                  <FiChevronRight size={20} />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
   );
 }
+

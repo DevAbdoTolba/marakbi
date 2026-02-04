@@ -1,17 +1,41 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { clientApi, BoatDetails as ApiBoatDetails } from "@/lib/api";
+import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
+import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
+import { FiClock, FiMapPin } from "react-icons/fi";
 
 export default function BoatDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [boatData, setBoatData] = useState<ApiBoatDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [mobileImageIndex, setMobileImageIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+
+  // Trip-based booking support
+  const tripId = searchParams.get("trip_id");
+  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [currentTripImageIndex, setCurrentTripImageIndex] = useState(0);
+
+  // Auto-advance trip image slider
+  useEffect(() => {
+    if (!selectedTrip?.images || selectedTrip.images.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentTripImageIndex((prev) => (prev + 1) % selectedTrip.images.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [selectedTrip?.images]);
 
   useEffect(() => {
     const fetchBoatDetails = async () => {
@@ -20,6 +44,26 @@ export default function BoatDetailsPage() {
         const response = await clientApi.getBoatById(parseInt(params.id as string));
         if (response.success && response.data) {
           setBoatData(response.data);
+
+          // If trip_id is provided, find the matching trip
+          if (tripId && response.data.boat.trips) {
+            const topicTrip = response.data.boat.trips.find(t => t.id === parseInt(tripId));
+            if (topicTrip) {
+              // Initially set from boat data
+              setSelectedTrip(topicTrip as unknown as Trip);
+
+              // Fetch full trip details to get images
+              try {
+                const tripRes = await fetch(`${BASE_URL}/client/trips/${tripId}`);
+                if (tripRes.ok) {
+                  const fullTrip = await tripRes.json();
+                  setSelectedTrip(fullTrip);
+                }
+              } catch (err) {
+                console.error("Error fetching full trip details", err);
+              }
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching boat details:', error);
@@ -31,16 +75,53 @@ export default function BoatDetailsPage() {
     if (params.id) {
       fetchBoatDetails();
     }
-  }, [params.id]);
+  }, [params.id, tripId]);
+
+  // Handle keyboard navigation for image modal
+  useEffect(() => {
+    if (!isModalOpen || !boatData) return;
+
+    const normalizedImages = normalizeImageUrls(boatData.boat.images);
+    if (normalizedImages.length === 0) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+      } else if (e.key === 'ArrowRight') {
+        setCurrentImageIndex((prev) => (prev + 1) % normalizedImages.length);
+      } else if (e.key === 'ArrowLeft') {
+        setCurrentImageIndex((prev) => (prev - 1 + normalizedImages.length) % normalizedImages.length);
+      }
+    };
+
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isModalOpen, boatData]);
 
   const handleRequestToBook = (bookingData: BookingData) => {
-    // Save booking data including dates, hours, and calculated prices
     const completeBookingData = {
       ...bookingData,
-      boat_image: boatData?.boat.images[0],
+      boat_image: normalizeImageUrl(boatData?.boat.images[0]),
       price_per_hour: boatData?.boat.price_per_hour,
       price_per_day: boatData?.boat.price_per_day || (boatData?.boat.price_per_hour || 0) * 8,
-      max_seats: boatData?.boat.max_seats
+      max_seats: boatData?.boat.max_seats,
+      // Include trip data if this is a trip-based booking
+      trip_id: selectedTrip?.id,
+      trip_name: selectedTrip?.name,
+      trip_description: selectedTrip?.description,
+      trip_image: selectedTrip?.images && selectedTrip.images.length > 0 ? normalizeImageUrl(selectedTrip.images[0]) : null,
+      trip_images: selectedTrip?.images ? normalizeImageUrls(selectedTrip.images) : [],
+      trip_price: selectedTrip?.total_price,
+      trip_duration: selectedTrip?.voyage_hours,
+      is_trip_booking: !!selectedTrip,
+      boat_rating: reviews_summary.average_rating,
+      boat_total_reviews: reviews_summary.total_reviews,
     };
 
     localStorage.setItem('booking_data', JSON.stringify(completeBookingData));
@@ -68,6 +149,55 @@ export default function BoatDetailsPage() {
   const { boat, owner, reviews, reviews_summary } = boatData;
   const totalRating = reviews_summary.total_reviews;
 
+  const normalizedImages = normalizeImageUrls(boat.images);
+
+  const handleImageClick = (index: number) => {
+    setCurrentImageIndex(index);
+    setIsModalOpen(true);
+  };
+
+  const handleNext = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % normalizedImages.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + normalizedImages.length) % normalizedImages.length);
+  };
+
+  const handleMobileNext = () => {
+    setMobileImageIndex((prev) => (prev + 1) % normalizedImages.length);
+  };
+
+  const handleMobilePrev = () => {
+    setMobileImageIndex((prev) => (prev - 1 + normalizedImages.length) % normalizedImages.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+
+    const endX = e.changedTouches[0].clientX;
+    const diff = startX - endX;
+    const threshold = 50;
+
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        handleMobileNext();
+      } else {
+        handleMobilePrev();
+      }
+    }
+    setIsDragging(false);
+  };
+
   return (
     <div className="bg-white">
       {/* Owner & Trip Title Section */}
@@ -88,6 +218,92 @@ export default function BoatDetailsPage() {
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 font-poppins">
           {boat.name}
         </h1>
+
+        {/* Trip Info Banner - shown when accessing boat via trip listing */}
+        {selectedTrip && (
+          <div className="mb-8 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+            <div className="flex flex-col md:flex-row">
+              {/* Trip Image */}
+              {/* Trip Image Slider */}
+              <div className="md:w-1/3 relative h-48 md:h-auto overflow-hidden bg-gray-900 group">
+                {selectedTrip.images && selectedTrip.images.length > 0 ? (
+                  <>
+                    {selectedTrip.images.map((img, index) => (
+                      <div
+                        key={index}
+                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentTripImageIndex ? "opacity-100 z-10" : "opacity-0 z-0"}`}
+                      >
+                        <Image
+                          src={normalizeImageUrl(img)}
+                          alt={`${selectedTrip.name} - Image ${index + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                        {/* Overlay for text visibility if needed */}
+                        <div className="absolute inset-0 bg-black/10"></div>
+                      </div>
+                    ))}
+
+                    {/* Slider Indicators/Dots */}
+                    {selectedTrip.images.length > 1 && (
+                      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 z-20 flex gap-1.5">
+                        {selectedTrip.images.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={(e) => {
+                              e.preventDefault(); // Prevent accidental navigation if nested
+                              setCurrentTripImageIndex(index);
+                            }}
+                            className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentTripImageIndex ? "bg-white w-4" : "bg-white/50 hover:bg-white/80"}`}
+                            aria-label={`Go to slide ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                    No Image
+                  </div>
+                )}
+                <div className="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-sky-900 shadow-sm">
+                  Trip
+                </div>
+              </div>
+
+              {/* Trip Details */}
+              <div className="p-6 md:w-2/3 flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-2">
+                    <h2 className="text-2xl font-bold text-gray-900 font-poppins">{selectedTrip.name}</h2>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Trip Price</p>
+                      <p className="text-2xl font-bold text-sky-900">E£ {selectedTrip.total_price}</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 line-clamp-2 mb-4">{selectedTrip.description}</p>
+                </div>
+
+                <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <FiClock className="text-sky-700 text-lg" />
+                    <span>{selectedTrip.voyage_hours} Hours</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <FiMapPin className="text-sky-700 text-lg" />
+                    <span>{selectedTrip.city_name}</span>
+                  </div>
+                  {selectedTrip.trip_type && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                      <span>{selectedTrip.trip_type}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Layout: Left Content + Right Sidebar */}
@@ -97,29 +313,155 @@ export default function BoatDetailsPage() {
           <div className="lg:col-span-2 space-y-8">
             {/* Image Gallery */}
             <div>
-              <div className="grid grid-cols-4 gap-2 h-[400px]">
-                {boat.images.length > 0 ? (
-                  <>
-                    <div className="col-span-2 row-span-2 relative rounded-lg overflow-hidden">
+              {/* Mobile View - Single Image Carousel */}
+              <div className="block md:hidden">
+                {normalizedImages.length > 0 ? (
+                  <div className="relative">
+                    {/* Main Image */}
+                    <div
+                      className="relative w-full h-[400px] rounded-lg overflow-hidden cursor-pointer"
+                      onClick={() => handleImageClick(mobileImageIndex)}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                    >
                       <Image
-                        src={boat.images[0]}
+                        src={normalizedImages[mobileImageIndex]}
+                        alt={`Boat image ${mobileImageIndex + 1}`}
+                        fill
+                        className="object-cover"
+                        priority
+                      />
+
+                      {/* Image Counter Overlay - Top Left */}
+                      {normalizedImages.length > 1 && (
+                        <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium z-10">
+                          {mobileImageIndex + 1} / {normalizedImages.length}
+                        </div>
+                      )}
+
+                      {/* Remaining Images Indicator - Bottom Right */}
+                      {normalizedImages.length > 1 && (
+                        <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium z-10">
+                          {normalizedImages.length - mobileImageIndex - 1 > 0
+                            ? `+${normalizedImages.length - mobileImageIndex - 1} صور`
+                            : 'آخر صورة'}
+                        </div>
+                      )}
+
+                      {/* Previous Button - FORCED LEFT */}
+                      {normalizedImages.length > 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMobilePrev();
+                          }}
+                          // استخدمنا style left عشان نجبره يروح شمال بغض النظر عن اتجاه الموقع
+                          className="absolute top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full p-2.5 hover:bg-black/90 transition-colors shadow-lg z-10"
+                          style={{ left: '10px' }}
+                          aria-label="Previous image"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 19l-7-7 7-7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Next Button - FORCED RIGHT */}
+                      {normalizedImages.length > 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMobileNext();
+                          }}
+                          // استخدمنا style right عشان نجبره يروح يمين بغض النظر عن اتجاه الموقع
+                          className="absolute top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full p-2.5 hover:bg-black/90 transition-colors shadow-lg z-10"
+                          style={{ right: '10px' }}
+                          aria-label="Next image"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Navigation Dots */}
+                    {normalizedImages.length > 1 && (
+                      <div className="flex justify-center items-center gap-2 mt-4">
+                        {normalizedImages.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setMobileImageIndex(idx)}
+                            className={`transition-all duration-300 ${idx === mobileImageIndex
+                              ? 'w-8 h-2 bg-[#106BD8] rounded-full'
+                              : 'w-2 h-2 bg-gray-300 rounded-full hover:bg-gray-400'
+                              }`}
+                            aria-label={`Go to image ${idx + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-full h-[400px] flex items-center justify-center bg-gray-200 rounded-lg">
+                    <p className="text-gray-500">No images available</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop View - Grid Layout */}
+              <div className="hidden md:grid grid-cols-4 gap-2 h-[400px]">
+                {normalizedImages.length > 0 ? (
+                  <>
+                    <div
+                      className="col-span-2 row-span-2 relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => handleImageClick(0)}
+                    >
+                      <Image
+                        src={normalizedImages[0]}
                         alt="Main boat"
                         fill
                         className="object-cover"
+                        priority
                       />
                     </div>
-                    {boat.images.slice(1, 5).map((img, idx) => (
-                      <div key={idx} className="relative rounded-lg overflow-hidden">
+                    {normalizedImages.slice(1, 5).map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => handleImageClick(idx + 1)}
+                      >
                         <Image
                           src={img}
                           alt={`Gallery ${idx + 1}`}
                           fill
                           className="object-cover"
                         />
-                        {idx === 3 && boat.images.length > 5 && (
+                        {idx === 3 && normalizedImages.length > 5 && (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                             <span className="text-white text-3xl font-semibold">
-                              +{boat.images.length - 5}
+                              +{normalizedImages.length - 5}
                             </span>
                           </div>
                         )}
@@ -169,10 +511,12 @@ export default function BoatDetailsPage() {
                   <span className="font-medium text-gray-700 mb-1 sm:mb-0">Sleeping Capacity</span>
                   <span className="text-gray-600 sm:text-right">{boat.max_seats_stay} Guests</span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-gray-200">
-                  <span className="font-medium text-gray-700 mb-1 sm:mb-0">Price Per Hour</span>
-                  <span className="text-gray-600 sm:text-right">{boat.price_per_hour} EGP</span>
-                </div>
+                {boat.price_per_hour && (
+                  <div className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-gray-200">
+                    <span className="font-medium text-gray-700 mb-1 sm:mb-0">Price Per Hour</span>
+                    <span className="text-gray-600 sm:text-right">{boat.price_per_hour} EGP</span>
+                  </div>
+                )}
                 {boat.price_per_day && (
                   <div className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-gray-200">
                     <span className="font-medium text-gray-700 mb-1 sm:mb-0">Price Per Day</span>
@@ -218,6 +562,7 @@ export default function BoatDetailsPage() {
                           alt="Star"
                           width={16}
                           height={16}
+                          className={`${i < Math.floor(reviews_summary.average_rating) ? "opacity-100" : "opacity-30"}`}
                         />
                       ))}
                     </div>
@@ -258,10 +603,12 @@ export default function BoatDetailsPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4 font-poppins">Pricing Options</h2>
               <div className="space-y-3">
-                <div>
-                  <p className="font-semibold">Per Hour Rental</p>
-                  <p className="text-gray-600">From {boat.price_per_hour} EGP</p>
-                </div>
+                {boat.price_per_hour && (
+                  <div>
+                    <p className="font-semibold">Per Hour Rental</p>
+                    <p className="text-gray-600">From {boat.price_per_hour} EGP</p>
+                  </div>
+                )}
                 {boat.price_per_day && (
                   <div>
                     <p className="font-semibold">Per Day Rental</p>
@@ -373,12 +720,134 @@ export default function BoatDetailsPage() {
                 pricePerHour={boat.price_per_hour}
                 pricePerDay={boat.price_per_day}
                 maxGuests={boat.max_seats}
+                serviceFeeRate={boatData.service_fee_rate}
                 onBookingRequest={handleRequestToBook}
+                isTripBooking={!!selectedTrip}
+                tripDuration={selectedTrip?.voyage_hours}
+                tripPrice={selectedTrip?.total_price}
+                initialGuestCount={searchParams.get("guest_count") ? parseInt(searchParams.get("guest_count")!) : (searchParams.get("min_passengers") ? parseInt(searchParams.get("min_passengers")!) : 2)}
+                locationUrl={boat.location_url}
+                priceMode={boat.price_mode as "per_time" | "per_person" | "per_person_per_time"}
               />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Image Gallery Modal */}
+      {isModalOpen && normalizedImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
+          onClick={() => setIsModalOpen(false)}
+          // هنا برضوا بنجبر اتجاه المودال عشان زرار الكلوز يظبط
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, direction: 'ltr' }}
+        >
+          {/* Close Button - FORCED RIGHT */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsModalOpen(false);
+            }}
+            // اجبار المكان بالـ style
+            className="absolute top-6 text-white hover:text-gray-300 transition-colors bg-black/60 rounded-full p-2 hover:bg-black/80"
+            style={{ right: '24px', zIndex: 10000 }}
+            aria-label="Close modal"
+          >
+            <svg
+              className="w-8 h-8"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+
+          {/* Image Container - Centered */}
+          <div
+            className="relative w-full h-full flex items-center justify-center px-20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Previous Button - FORCED LEFT */}
+            {normalizedImages.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrev();
+                }}
+                className="absolute text-white hover:text-gray-300 transition-colors bg-black/60 rounded-full p-4 hover:bg-black/80 flex items-center justify-center"
+                style={{ left: '16px', zIndex: 10000 }}
+                aria-label="Previous image"
+              >
+                <svg
+                  className="w-10 h-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Main Image */}
+            <div className="relative w-full max-w-6xl h-full max-h-[90vh] flex items-center justify-center">
+              <Image
+                src={normalizedImages[currentImageIndex]}
+                alt={`Boat image ${currentImageIndex + 1}`}
+                width={1200}
+                height={800}
+                className="object-contain max-w-full max-h-full"
+                priority
+              />
+            </div>
+
+            {/* Next Button - FORCED RIGHT */}
+            {normalizedImages.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+                className="absolute text-white hover:text-gray-300 transition-colors bg-black/60 rounded-full p-4 hover:bg-black/80 flex items-center justify-center"
+                style={{ right: '16px', zIndex: 10000 }}
+                aria-label="Next image"
+              >
+                <svg
+                  className="w-10 h-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Image Counter - Bottom Center */}
+          {normalizedImages.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[10000] bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium">
+              {currentImageIndex + 1} / {normalizedImages.length}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

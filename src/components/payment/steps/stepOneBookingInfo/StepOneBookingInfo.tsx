@@ -42,7 +42,7 @@ export default function StepOneBookingInfo() {
     >
       {/* Left side: Booking details */}
       <div className="w-full lg:w-[60%]">
-        <h2 className="text-2xl font-bold mb-6">Booking Information</h2>
+        <h2 className="text-2xl font-bold mb-6 font-poppins">Booking Information</h2>
 
         {/* Booking Details */}
         <div className="bg-gray-50 p-6 rounded-lg mb-6">
@@ -58,9 +58,14 @@ export default function StepOneBookingInfo() {
               </div>
             )}
             <div className="flex-1">
-              <h3 className="text-xl font-semibold mb-2">{String(bookingData.boat_name || '')}</h3>
+              <h3 className="text-xl font-semibold mb-2 font-poppins ">{String(bookingData.boat_name || '')}</h3>
               <div className="space-y-1 text-gray-600">
-                <p>Rental Type: {bookingData.rental_type === 'hourly' ? 'Per Hour' : 'Per Day'}</p>
+                <p>
+                  Rental Type: {
+                    bookingData.rental_type === 'hourly' ? 'Per Hour' :
+                      bookingData.rental_type === 'trip' ? 'Trip' : 'Per Day'
+                  }
+                </p>
                 {!!bookingData.hours && (
                   <p>Duration: {String(bookingData.hours)} hour{Number(bookingData.hours) > 1 ? 's' : ''}</p>
                 )}
@@ -83,7 +88,7 @@ export default function StepOneBookingInfo() {
 
         {/* Pricing */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="font-semibold mb-4">Price Breakdown</h3>
+          <h3 className="font-semibold mb-4 font-poppins">Price Breakdown</h3>
           <div className="space-y-2">
             {typeof bookingData.base_price === 'number' && (
               <div className="flex justify-between">
@@ -93,7 +98,7 @@ export default function StepOneBookingInfo() {
             )}
             {typeof bookingData.service_fee === 'number' && (
               <div className="flex justify-between">
-                <span className="text-gray-600">Service Fee (10%)</span>
+                <span className="text-gray-600">Service Fee </span>
                 <span className="font-semibold">{bookingData.service_fee.toFixed(0)} EGP</span>
               </div>
             )}
@@ -120,6 +125,6 @@ export default function StepOneBookingInfo() {
       <div className="w-full lg:w-[40%]">
         <TripDetails />
       </div>
-    </div>
+    </div >
   );
 }

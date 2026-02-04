@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { customerApi } from "@/lib/api";
+import { customerApi, clientApi, type TripBookingRequest } from "@/lib/api";
 import useFormStep from "@/hooks/useFormStep";
+import toast from "react-hot-toast";
 
 export default function StepThreePaymentInfo() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function StepThreePaymentInfo() {
       if (bookingData.start_date && bookingData.end_date) {
         // استخدام التواريخ المحفوظة في bookingData
         startDate = new Date(bookingData.start_date as string).toISOString();
-        
+
         // إذا كان hourly، نحسب end_date بناءً على عدد الساعات
         if (bookingData.rental_type === 'hourly' && bookingData.hours) {
           const start = new Date(bookingData.start_date as string);
@@ -68,31 +69,64 @@ export default function StepThreePaymentInfo() {
         }
       }
 
-      // إنشاء Order
-      // نرسل total_price كحقل إضافي لضمان أن الـ API يستخدم السعر الصحيح
-      const orderData = {
-        boat_id: bookingData.boat_id as number,
-        start_date: startDate,
-        end_date: endDate,
-        rental_type: bookingData.rental_type as 'daily' | 'hourly',
-        guest_count: bookingData.guest_count as number,
-        payment_method: paymentMethod,
-        platform: 'web' as const, // Platform identifier for web application
-        voyage_type: 'Private' as const, // TODO: يمكن جعلها ديناميكية
-        // إرسال total_price لضمان أن بوابة الدفع تستخدم السعر الصحيح
-        total_price: (bookingData.total_price as number) || (bookingData.base_price as number)
-      } as Parameters<typeof customerApi.createOrder>[0] & { total_price: number };
+      let response;
 
-      const response = await customerApi.createOrder(orderData);
+      if (bookingData.rental_type === 'trip') {
+        if (!bookingData.trip_id) {
+          setError("Missing trip details for booking");
+          setProcessing(false);
+          return;
+        }
+        const tripBookingData: TripBookingRequest = {
+          boat_id: bookingData.boat_id as number,
+          start_date: startDate,
+          guest_count: bookingData.guest_count as number,
+          payment_method: paymentMethod,
+          platform: 'web',
+          trip_id: bookingData.trip_id as number,
+          // Contact info
+          booking_for: bookingData.booking_for as string,
+          contact_first_name: bookingData.contact_first_name as string,
+          contact_last_name: bookingData.contact_last_name as string,
+          contact_phone: bookingData.contact_phone as string,
+          booking_notes: bookingData.booking_notes as string
+        };
+        response = await clientApi.bookTrip(bookingData.trip_id as number, tripBookingData);
+      } else {
+        // نرسل total_price كحقل إضافي لضمان أن الـ API يستخدم السعر الصحيح
+        const orderData = {
+          boat_id: bookingData.boat_id as number,
+          start_date: startDate,
+          end_date: endDate,
+          rental_type: bookingData.rental_type as 'daily' | 'hourly',
+          guest_count: bookingData.guest_count as number,
+          payment_method: paymentMethod,
+          platform: 'web' as const,
+          voyage_type: 'Private' as const,
+          trip_id: bookingData.trip_id as number | undefined,
+          total_price: (bookingData.total_price as number) || (bookingData.base_price as number),
+          // Contact info
+          booking_for: bookingData.booking_for as string,
+          contact_first_name: bookingData.contact_first_name as string,
+          contact_last_name: bookingData.contact_last_name as string,
+          contact_phone: bookingData.contact_phone as string,
+          booking_notes: bookingData.booking_notes as string
+        };
+        response = await customerApi.createOrder(orderData);
+      }
 
       if (response.success && response.data) {
-        // لو الدفع بالكارد، redirect للـ payment_url
-        if (paymentMethod === 'card' && response.data.payment_data?.payment_url) {
-          window.location.href = response.data.payment_data.payment_url;
+        // ... rest of success logic
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const responseData = response.data as any;
+        // Check for payment_url in both possible locations (payment_data for regular orders, payment for trips)
+        const paymentUrl = responseData.payment_data?.payment_url || responseData.payment?.payment_url;
+
+        if (paymentMethod === 'card' && paymentUrl) {
+          window.location.href = paymentUrl;
         } else {
-          // لو كاش، رح على صفحة my-bookings
           localStorage.removeItem('booking_data');
-          alert('Booking created successfully! Payment will be collected in cash.');
+          toast.success('Booking created successfully! Payment will be collected in cash.');
           router.push('/my-bookings');
         }
       } else {
@@ -116,16 +150,27 @@ export default function StepThreePaymentInfo() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6">Payment Method</h2>
+      <h2 className="text-2xl font-bold mb-6 font-poppins">Payment Method</h2>
 
       {/* Booking Summary */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6">
-        <h3 className="font-semibold mb-2">Booking Summary</h3>
+        <h3 className="font-semibold mb-2 font-poppins">Booking Summary</h3>
         <p className="text-sm text-gray-600">Boat: {String(bookingData.boat_name || '')}</p>
         <p className="text-sm text-gray-600">Guests: {String(bookingData.guest_count || 0)}</p>
+
         <p className="text-sm text-gray-600">
-          Rental Type: {bookingData.rental_type === 'hourly' ? 'Per Hour' : 'Per Day'}
+          Rental Type: {
+            bookingData.rental_type === 'hourly' ? 'Per Hour' :
+              bookingData.rental_type === 'trip' ? 'Trip' : 'Per Day'
+          }
         </p>
+
+        {bookingData.rental_type === 'trip' && !!bookingData.trip_name && (
+          <p className="text-sm font-medium text-sky-900 border-b border-gray-200 pb-2 mb-2">
+            Trip: {String(bookingData.trip_name)}
+          </p>
+        )}
+
         {!!bookingData.hours && (
           <p className="text-sm text-gray-600">
             Duration: {String(bookingData.hours)} hour{Number(bookingData.hours) > 1 ? 's' : ''}

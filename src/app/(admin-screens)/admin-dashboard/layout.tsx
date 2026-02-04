@@ -9,7 +9,7 @@ const inter = Inter({
 
 export default function layout({ children }: { children: ReactNode }) {
   return (
-    <div className={`${inter.className}`}>
+    <div className={`${inter.className} admin-dashboard-layout`}>
       <AdminDashboardHeader />
       {children}
     </div>

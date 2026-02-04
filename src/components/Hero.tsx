@@ -3,16 +3,15 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { clientApi, City } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 const Hero = () => {
   const router = useRouter();
   const [city, setCity] = useState('');
-  const [boatType, setBoatType] = useState('');
-  const [tripType, setTripType] = useState('');
+  const [voyageType, setVoyageType] = useState(''); // 'hourly_daily' or 'trip_based'
+  const [passengers, setPassengers] = useState(1);
   const [cities, setCities] = useState<City[]>([]);
-  const [categories, setCategories] = useState<{ id: number; name: string; description?: string }[]>([]);
   const [loadingCities, setLoadingCities] = useState(true);
-  const [loadingCategories, setLoadingCategories] = useState(false);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -41,42 +40,6 @@ const Hero = () => {
     fetchCities();
   }, []);
 
-  // Load categories when city changes (no auth required)
-  useEffect(() => {
-    if (city) {
-      const fetchCategories = async () => {
-        try {
-          setLoadingCategories(true);
-          const response = await clientApi.getCategoriesByCity(parseInt(city));
-          if (response.success && response.data) {
-            const data = response.data;
-            // API might return an array directly or wrapped in an object (e.g. { categories: [...] } or { cities: [...] })
-            const normalized =
-              Array.isArray(data)
-                ? data
-                : Array.isArray((data as { categories?: unknown[] }).categories)
-                  ? (data as { categories: { id: number; name: string; description?: string }[] }).categories
-                  : Array.isArray((data as { cities?: unknown[] }).cities)
-                    ? (data as { cities: { id: number; name: string; description?: string }[] }).cities
-                    : [];
-            setCategories(normalized);
-          } else {
-            setCategories([]);
-          }
-        } catch (error) {
-          console.error('Error fetching categories:', error);
-          setCategories([]);
-        } finally {
-          setLoadingCategories(false);
-        }
-      };
-      fetchCategories();
-    } else {
-      setCategories([]);
-      setBoatType('');
-    }
-  }, [city]);
-
   // Timer for image gallery animation - slower (5 seconds)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -93,12 +56,21 @@ const Hero = () => {
 
   // Handle Book Now button
   const handleBookNow = () => {
+    if (!city || !voyageType) {
+      toast.error("Please select both a City and a Voyage Type to proceed.");
+      return;
+    }
+
     const params = new URLSearchParams();
     if (city) params.append('city_id', city);
-    if (boatType) params.append('category_id', boatType);
-    if (tripType) params.append('rental_type', tripType);
-    
-    router.push(`/boat-listing${params.toString() ? `?${params.toString()}` : ''}`);
+    if (passengers > 0) params.append('min_passengers', passengers.toString());
+
+    if (voyageType === 'trip_based') {
+      router.push(`/trip-listing${params.toString() ? `?${params.toString()}` : ''}`);
+    } else {
+      // Default to boat listing for hourly/daily
+      router.push(`/boat-listing${params.toString() ? `?${params.toString()}` : ''}`);
+    }
   };
 
   // Handle Explore Now button
@@ -132,11 +104,11 @@ const Hero = () => {
               Your Dream Boats
             </div>
             <div className="text-white text-3xl sm:text-4xl lg:text-6xl font-bold font-poppins capitalize leading-tight sm:leading-tight lg:leading-[68px] mb-6 sm:mb-12 lg:mb-16">
-              <span className="text-white">Most Reliable<br/></span>
+              <span className="text-white">Most Reliable<br /></span>
               <span className="text-white">Luxury Boats </span>
               <span className="text-orange-300">Rentals</span>
             </div>
-            <button 
+            <button
               onClick={handleExploreNow}
               className="hidden sm:flex w-56 h-12 px-6 py-2.5 bg-[#0C4A8C] rounded-lg justify-center items-center gap-2.5 text-white text-base font-normal font-poppins mx-auto lg:mx-0 clickable hover:bg-[#0A3D7A] transition-colors"
             >
@@ -149,8 +121,8 @@ const Hero = () => {
 
             {/* City Dropdown */}
             <div className="w-full">
-              <p className="text-white text-sm sm:text-base font-normal font-poppins mb-2">Where To Go</p>
-              <select 
+              <p className="text-white text-sm sm:text-base font-normal font-poppins mb-2">Choose Your City</p>
+              <select
                 className="w-full h-11 sm:h-12 p-3 bg-white/30 backdrop-blur-sm rounded-lg text-gray-700 text-sm font-normal font-poppins capitalize border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
@@ -165,42 +137,54 @@ const Hero = () => {
               </select>
             </div>
 
-            {/* Boat Type Dropdown */}
+            {/* Voyage Type Dropdown */}
             <div className="w-full">
-              <p className="text-white text-sm sm:text-base font-normal font-poppins mb-2">Boat Type</p>
-              <select 
+              <p className="text-white text-sm sm:text-base font-normal font-poppins mb-2">Voyage Type</p>
+              <select
                 className="w-full h-11 sm:h-12 p-3 bg-white/30 backdrop-blur-sm rounded-lg text-gray-700 text-sm font-normal font-poppins capitalize border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
-                value={boatType}
-                onChange={(e) => setBoatType(e.target.value)}
-                disabled={!city || loadingCategories}
+                value={voyageType}
+                onChange={(e) => setVoyageType(e.target.value)}
               >
-                <option value="">{!city ? 'Select City First' : loadingCategories ? 'Loading...' : 'Select Boat Type'}</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                    </option>
-                ))}
+                <option value="">Select Voyage Type</option>
+                <option value="hourly_daily">Hourly / Daily</option>
+                <option value="trip_based">Trip Based</option>
               </select>
             </div>
 
-            {/* Trip Type Dropdown (Rental Type) */}
+            {/* Number of Passengers */}
             <div className="w-full">
-              <p className="text-white text-sm sm:text-base font-normal font-poppins mb-2">Rental Type</p>
-              <select 
-                className="w-full h-11 sm:h-12 p-3 bg-white/30 backdrop-blur-sm rounded-lg text-gray-700 text-sm font-normal font-poppins capitalize border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
-                value={tripType}
-                onChange={(e) => setTripType(e.target.value)}
-              >
-                <option value="">Select Rental Type</option>
-                <option value="hourly">Per Hour</option>
-                <option value="daily">Per Day</option>
-              </select>
+              <p className="text-white text-sm sm:text-base font-normal font-poppins mb-2">Number of Passengers</p>
+              <div className="w-full h-11 sm:h-12 bg-white/30 backdrop-blur-sm rounded-lg border border-white/20 flex items-center justify-between px-2">
+                <button
+                  onClick={() => setPassengers(Math.max(1, passengers - 1))}
+                  className="w-8 h-8 flex items-center justify-center bg-white/40 hover:bg-white/60 text-white rounded-md transition-colors"
+                  type="button"
+                >
+                  <span className="text-xl font-medium leading-none mb-1">−</span>
+                </button>
+                <input
+                  type="text"
+                  readOnly
+                  className="w-full bg-transparent text-center text-gray-800 text-base font-medium font-poppins focus:outline-none"
+                  value={passengers}
+                />
+                <button
+                  onClick={() => setPassengers(passengers + 1)}
+                  className="w-8 h-8 flex items-center justify-center bg-white/40 hover:bg-white/60 text-white rounded-md transition-colors"
+                  type="button"
+                >
+                  <span className="text-xl font-medium leading-none mb-1">+</span>
+                </button>
+              </div>
             </div>
 
             {/* Book now Button */}
-            <button 
+            <button
               onClick={handleBookNow}
-              className="w-full h-11 sm:h-12 px-6 py-2.5 bg-[#0C4A8C] backdrop-blur-sm rounded-lg flex justify-center items-center gap-2.5 text-white text-base font-medium font-poppins clickable hover:bg-[#0A3D7A] transition-all duration-300 shadow-lg mt-2 sm:mt-4"
+              disabled={!city || !voyageType}
+              className={`w-full h-11 sm:h-12 px-6 py-2.5 rounded-lg flex justify-center items-center gap-2.5 text-white text-base font-medium font-poppins shadow-lg mt-2 sm:mt-4 transition-all duration-300 ${(!city || !voyageType)
+                ? 'bg-gray-400 cursor-not-allowed opacity-70'
+                : 'bg-[#0C4A8C] backdrop-blur-sm hover:bg-[#0A3D7A] clickable'}`}
             >
               Book now
             </button>
@@ -219,7 +203,7 @@ const Hero = () => {
             {/* Image Gallery */}
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 h-40">
               {/* Image 1: Felucca */}
-              <div 
+              <div
                 className="relative transition-all duration-500 ease-in-out cursor-pointer hover:scale-110"
                 onClick={() => handleImageClick(0)}
               >
@@ -228,11 +212,10 @@ const Hero = () => {
                   alt="Felucca"
                   width={176}
                   height={160}
-                  className={`rounded-lg transition-all duration-500 ease-in-out ${
-                    activeImageIndex === 0
-                      ? 'w-44 h-40 scale-105'
-                      : 'w-40 h-36'
-                  }`}
+                  className={`rounded-lg transition-all duration-500 ease-in-out ${activeImageIndex === 0
+                    ? 'w-44 h-40 scale-105'
+                    : 'w-40 h-36'
+                    }`}
                   quality={85}
                 />
                 <div className="absolute top-4 left-4 w-8 h-8 bg-black/30 rounded-full flex items-center justify-center text-white text-lg font-medium font-poppins">
@@ -241,7 +224,7 @@ const Hero = () => {
               </div>
 
               {/* Image 2: Fishing */}
-              <div 
+              <div
                 className="relative transition-all duration-500 ease-in-out cursor-pointer hover:scale-110"
                 onClick={() => handleImageClick(1)}
               >
@@ -250,11 +233,10 @@ const Hero = () => {
                   alt="Fishing"
                   width={176}
                   height={160}
-                  className={`rounded-lg transition-all duration-500 ease-in-out ${
-                    activeImageIndex === 1 
-                      ? 'w-44 h-40 scale-105' 
-                      : 'w-40 h-36'
-                  }`}
+                  className={`rounded-lg transition-all duration-500 ease-in-out ${activeImageIndex === 1
+                    ? 'w-44 h-40 scale-105'
+                    : 'w-40 h-36'
+                    }`}
                   quality={85}
                 />
                 <div className="absolute top-4 left-4 w-8 h-8 bg-black/30 rounded-full flex items-center justify-center text-white text-lg font-medium font-poppins">
@@ -263,7 +245,7 @@ const Hero = () => {
               </div>
 
               {/* Image 3: Kayak */}
-              <div 
+              <div
                 className="relative transition-all duration-500 ease-in-out cursor-pointer hover:scale-110"
                 onClick={() => handleImageClick(2)}
               >
@@ -272,11 +254,10 @@ const Hero = () => {
                   alt="Kayak"
                   width={176}
                   height={160}
-                  className={`rounded-lg transition-all duration-500 ease-in-out ${
-                    activeImageIndex === 2 
-                      ? 'w-44 h-40 scale-105' 
-                      : 'w-40 h-36'
-                  }`}
+                  className={`rounded-lg transition-all duration-500 ease-in-out ${activeImageIndex === 2
+                    ? 'w-44 h-40 scale-105'
+                    : 'w-40 h-36'
+                    }`}
                   quality={85}
                 />
                 <div className="absolute top-4 left-4 w-8 h-8 bg-black/30 rounded-full flex items-center justify-center text-white text-lg font-medium font-poppins">

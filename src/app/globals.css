@@ -293,7 +293,7 @@ h2,
 h3,
 h4,
 .font-serif {
-  font-family: var(--font-family-serif);
+  /* font-family: var(--font-family-serif); */
 }
 
 /* Fix for clickable elements */
@@ -303,7 +303,19 @@ a,
   cursor: pointer;
   pointer-events: auto !important;
   z-index: 9999;
-  position: relative;
+  /* position: relative; */
+}
+
+/* Fix for Admin Dashboard buttons overlapping fixed header (z-50) */
+.admin-dashboard-layout button,
+.admin-dashboard-layout a,
+.admin-dashboard-layout [role="button"] {
+  z-index: 10;
+}
+
+.admin-dashboard-layout h3,
+.admin-dashboard-layout h2 {
+  font-family: var(--font-family-sans);
 }
 
 /* Ensure buttons are interactive */
@@ -332,7 +344,7 @@ button:not(:disabled):hover {
 }
 
 /* Fix potential overlay issues */
-body > * {
+body>* {
   pointer-events: auto;
 }
 
@@ -428,6 +440,7 @@ body > * {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -444,6 +457,7 @@ body > * {
     opacity: 0;
     transform: translateX(100%);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -455,6 +469,7 @@ body > * {
     opacity: 1;
     transform: translateX(0);
   }
+
   to {
     opacity: 0;
     transform: translateX(100%);
