@@ -3,14 +3,10 @@
 import BoatCard from './BoatCard';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { clientApi, Boat, HomeData } from '@/lib/api';
+import { clientApi, Boat } from '@/lib/api';
 import Image from 'next/image';
 
-interface BoatFleetProps {
-  homeData?: HomeData;
-}
-
-const BoatFleet = ({ homeData }: BoatFleetProps) => {
+const BoatFleet = () => {
   const [boats, setBoats] = useState<Boat[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,19 +14,15 @@ const BoatFleet = ({ homeData }: BoatFleetProps) => {
     const fetchBoats = async () => {
       try {
         setLoading(true);
-        // جلب 6 مراكب من الـ API أو استخدام new_joiners من homeData
-        if (homeData?.new_joiners && homeData.new_joiners.length > 0) {
-          setBoats(homeData.new_joiners.slice(0, 6));
-        } else {
-          const response = await clientApi.getBoats(1, 6);
-          if (response.success && response.data) {
-            const validBoats = response.data.boats.filter(boat => {
-              const hasHourly = boat.price_per_hour !== null && boat.price_per_hour !== undefined;
-              const hasDaily = boat.price_per_day !== null && boat.price_per_day !== undefined;
-              return hasHourly || hasDaily;
-            });
-            setBoats(validBoats);
-          }
+        // Always fetch boats from the API to ensure we get complete boat data with all fields
+        const response = await clientApi.getBoats(1, 6);
+        if (response.success && response.data) {
+          const validBoats = response.data.boats.filter(boat => {
+            const hasHourly = boat.price_per_hour !== null && boat.price_per_hour !== undefined;
+            const hasDaily = boat.price_per_day !== null && boat.price_per_day !== undefined;
+            return hasHourly || hasDaily;
+          });
+          setBoats(validBoats);
         }
       } catch (error) {
         console.error('Error fetching boats:', error);
@@ -39,7 +31,7 @@ const BoatFleet = ({ homeData }: BoatFleetProps) => {
       }
     };
     fetchBoats();
-  }, [homeData]);
+  }, []);
   return (
     <section className="relative w-full overflow-hidden py-16">
       {/* Background Image */}

@@ -60,6 +60,7 @@ export interface Boat {
   max_seats: number;
   max_seats_stay: number;
   location_url?: string; // New field
+  address?: string; // Boat address field
   price_mode?: string; // New field
   total_reviews: number;
   average_rating?: number; // New field
@@ -89,6 +90,7 @@ export interface AddBoatData {
   max_seats_stay?: number;
   description: string;
   location_url?: string; // New field
+  address?: string; // Boat address field
   price_mode?: string; // New field
   categories: number[]; // Array of category IDs
   cities: number[]; // Array of city IDs
@@ -105,6 +107,7 @@ export interface EditBoatData {
   max_seats_stay?: number;
   description?: string;
   location_url?: string; // New field
+  address?: string; // Boat address field
   price_mode?: string; // New field
   categories?: number[];
   cities?: number[];
@@ -731,6 +734,39 @@ export const clientApi = {
     return apiRequest<BoatDetails>(`/client/boats/${id}`);
   },
 
+  getBoatBookedSlots: async (boatId: number, date: string, endDate?: string): Promise<ApiResponse<{
+    boat_id: number;
+    query_start: string;
+    query_end: string;
+    booked_slots: {
+      start: string;
+      end: string;
+      start_date: string;
+      end_date: string;
+      booking_type: string;
+      is_full_day: boolean;
+    }[];
+    booked_dates: string[];
+  }>> => {
+    const url = endDate
+      ? `/client/boats/${boatId}/booked-slots?date=${date}&end_date=${endDate}`
+      : `/client/boats/${boatId}/booked-slots?date=${date}`;
+    return apiRequest(url);
+  },
+
+  getBoatBookedDates: async (boatId: number, year: number, month: number): Promise<ApiResponse<{
+    boat_id: number;
+    year: number;
+    month: number;
+    booked_dates: Record<string, {
+      has_hourly: boolean;
+      has_full_day: boolean;
+      bookings: { start: string; end: string; type: string }[];
+    }>;
+  }>> => {
+    return apiRequest(`/client/boats/${boatId}/booked-dates?year=${year}&month=${month}`);
+  },
+
   getBoatsByCategory: async (categoryId: number): Promise<ApiResponse<{ boats: Boat[]; page: number; pages: number; per_page: number; total: number }>> => {
     return apiRequest<{ boats: Boat[]; page: number; pages: number; per_page: number; total: number }>(`/client/boats/category/${categoryId}`);
   },
@@ -1164,6 +1200,7 @@ export const adminApi = {
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
     if (boatData.location_url) formData.append('location_url', boatData.location_url);
+    if (boatData.address) formData.append('address', boatData.address);
     if (boatData.price_mode) formData.append('price_mode', boatData.price_mode);
     formData.append('description', boatData.description);
 
@@ -1194,7 +1231,8 @@ export const adminApi = {
     if (boatData.price_per_day !== undefined) formData.append('price_per_day', boatData.price_per_day === null ? 'null' : boatData.price_per_day.toString());
     if (boatData.max_seats) formData.append('max_seats', boatData.max_seats.toString());
     if (boatData.max_seats_stay) formData.append('max_seats_stay', boatData.max_seats_stay.toString());
-    if (boatData.location_url) formData.append('location_url', boatData.location_url);
+    if (boatData.location_url !== undefined) formData.append('location_url', boatData.location_url || '');
+    if (boatData.address !== undefined) formData.append('address', boatData.address || '');
     if (boatData.price_mode) formData.append('price_mode', boatData.price_mode);
     if (boatData.description) formData.append('description', boatData.description);
 
