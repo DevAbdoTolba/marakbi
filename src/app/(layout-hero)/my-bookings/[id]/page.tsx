@@ -18,7 +18,8 @@ import {
     FiInfo,
     FiStar,
     FiPhone,
-    FiMessageSquare
+    FiMessageSquare,
+    FiPackage
 } from "react-icons/fi";
 
 export default function BookingDetailsPage() {
@@ -437,8 +438,45 @@ export default function BookingDetailsPage() {
                                                             <span>× {durationText}</span>
                                                         )}
                                                     </>
-                                                );
-                                            })()}
+                                                );                                            })()}
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Selected Services */}
+                                {order.selected_services && order.selected_services.length > 0 && (
+                                    <>
+                                        <div className="pt-2 border-t border-gray-100">
+                                            <div className="flex items-center gap-1.5 mb-2">
+                                                <FiPackage size={14} className="text-gray-400" />
+                                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Add-on Services</span>
+                                            </div>                                            <div className="space-y-1.5">
+                                                {order.selected_services.map((svc, idx) => (
+                                                    <div key={idx} className="flex justify-between items-start text-sm">
+                                                        <div className="flex-1 min-w-0">
+                                                            <span className="text-gray-600 font-medium">{svc.name}</span>
+                                                            {svc.price_mode !== 'per_trip' && svc.person_count && (
+                                                                <p className="text-[11px] text-gray-400 mt-0.5">
+                                                                    {formatCurrency(svc.price)} × {svc.person_count} {svc.person_count === 1 ? 'person' : 'persons'}
+                                                                    {svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 &&
+                                                                        ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))} hr${Math.round(svc.calculated_price / (svc.price * svc.person_count)) !== 1 ? 's' : ''}`
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                            {svc.description && (
+                                                                <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{svc.description}</p>
+                                                            )}
+                                                        </div>
+                                                        <span className="font-medium text-gray-900 ml-2 whitespace-nowrap">
+                                                            {formatCurrency(svc.calculated_price)}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-500">Services Subtotal</span>
+                                            <span className="font-medium text-gray-900">{formatCurrency(order.services_total || 0)}</span>
                                         </div>
                                     </>
                                 )}

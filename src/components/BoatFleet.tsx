@@ -114,6 +114,9 @@ const BoatFleet = () => {
                   rating={boat.average_rating ?? 0}
                   reviewsCount={boat.total_reviews || 0}
                   priceMode={displayMode}
+                  badgeServices={boat.badge_services}
+                  showGuestsBadge={boat.show_guests_badge}
+                  maxGuests={boat.max_seats}
                 />
               );
             })

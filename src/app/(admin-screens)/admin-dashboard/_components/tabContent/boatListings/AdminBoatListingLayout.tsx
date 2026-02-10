@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminReview } from "@/lib/api";
-import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminReview, BoatServiceAssignment, BoatServiceDef } from "@/lib/api";
+import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight, FiHelpCircle } from "react-icons/fi";
 import Image from "next/image";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
@@ -14,13 +14,15 @@ interface BoatFormData {
   max_seats: number;
   max_seats_stay: number;
   description: string;
-  location_url: string; // New field
-  address: string; // Boat address
-  price_mode: string; // New field
+  location_url: string;
+  address: string;
+  price_mode: string;
+  show_guests_badge: boolean;
   categories: number[];
   cities: number[];
   trips: number[];
   user_id: number;
+  services: BoatServiceAssignment[];
 }
 interface BoatStats {
   total_fleet: number;
@@ -61,13 +63,117 @@ export default function AdminBoatListingLayout() {
   const [newImages, setNewImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [removedImageUrls, setRemovedImageUrls] = useState<string[]>([]);
-
   // Modal UI State
-  const [activeTab, setActiveTab] = useState<'details' | 'photos' | 'trips'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'photos' | 'trips' | 'services'>('details');
   const [primaryNewImageIndex, setPrimaryNewImageIndex] = useState<number>(0);
   const [primaryExistingUrl, setPrimaryExistingUrl] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Available services for assignment (no longer fetched from global catalog)
+  // Inline service creation state
+  const [showNewServiceForm, setShowNewServiceForm] = useState(false);
+  const [creatingService, setCreatingService] = useState(false);
+  const [newServiceData, setNewServiceData] = useState<{
+    name: string;
+    description: string;
+    price: number | null;
+    price_mode: 'per_trip' | 'per_person' | 'per_person_per_time';
+    icon: File | null;
+  }>({ name: '', description: '', price: null, price_mode: 'per_trip', icon: null });
+  const resetNewServiceData = () => {
+    setNewServiceData({ name: '', description: '', price: null, price_mode: 'per_trip', icon: null });
+  };
+
+  // Inline service editing state
+  const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
+  const [editServiceData, setEditServiceData] = useState<{
+    name: string;
+    description: string;
+    price_mode: 'per_trip' | 'per_person' | 'per_person_per_time';
+    icon: File | null;
+  }>({ name: '', description: '', price_mode: 'per_trip', icon: null });
+  const [savingService, setSavingService] = useState(false);
+
+  const startEditingService = (svc: BoatServiceDef) => {
+    setEditingServiceId(svc.id);
+    setEditServiceData({
+      name: svc.name,
+      description: svc.description || '',
+      price_mode: svc.price_mode,
+      icon: null,
+    });
+  };
+
+  const cancelEditingService = () => {
+    setEditingServiceId(null);
+    setEditServiceData({ name: '', description: '', price_mode: 'per_trip', icon: null });
+  };
+
+  const handleSaveServiceEdit = async () => {
+    if (!editingServiceId || !editServiceData.name) return;
+    setSavingService(true);
+    try {
+      const response = await adminApi.updateService(editingServiceId, {
+        name: editServiceData.name,
+        description: editServiceData.description || '',
+        price_mode: editServiceData.price_mode,
+      }, editServiceData.icon || undefined);
+      if (response.success && response.data) {
+        const updatedService = response.data.service;
+        // Update the service in formData.services
+        setFormData(prev => ({
+          ...prev,
+          services: prev.services.map(s =>
+            s.service_id === editingServiceId ? { ...s, service: updatedService } : s
+          )
+        }));
+        cancelEditingService();
+        showSuccess('Service updated');
+      } else {
+        showError(response.error || 'Failed to update service');
+      }
+    } catch {
+      showError('Failed to update service');
+    }
+    setSavingService(false);
+  };
+
+  const handleCreateInlineService = async () => {
+    if (!newServiceData.name) return;
+    setCreatingService(true);
+    try {
+      const servicePayload = {
+        name: newServiceData.name,
+        description: newServiceData.description || undefined,
+        default_price: newServiceData.price,
+        price_mode: newServiceData.price_mode,
+      };
+      const response = await adminApi.createService(servicePayload, newServiceData.icon || undefined);
+      if (response.success && response.data) {
+        const createdService = response.data.service;
+        // Auto-assign to this boat
+        setFormData(prev => ({
+          ...prev,
+          services: [...prev.services, {
+            service_id: createdService.id,
+            service: createdService,
+            price: newServiceData.price,
+            is_badge: false,
+            badge_display_name: null,
+            per_person_all_required: true,
+          }]
+        }));
+        resetNewServiceData();
+        setShowNewServiceForm(false);
+        showSuccess('Service created and added');
+      } else {
+        showError(response.error || 'Failed to create service');
+      }
+    } catch {
+      showError('Failed to create service');
+    }
+    setCreatingService(false);
+  };
 
   // View Details Modal State
   const [viewDetailsBoat, setViewDetailsBoat] = useState<BoatDetailsData | null>(null);
@@ -81,7 +187,6 @@ export default function AdminBoatListingLayout() {
   // Confirm Delete Modal
   const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; boatId: number | null }>({ isOpen: false, boatId: null });
   const [deleting, setDeleting] = useState(false);
-
   const [formData, setFormData] = useState<BoatFormData>({
     name: "",
     price_per_hour: 0,
@@ -92,10 +197,12 @@ export default function AdminBoatListingLayout() {
     location_url: "",
     address: "",
     price_mode: "per_time",
+    show_guests_badge: false,
     categories: [],
     cities: [],
     trips: [],
     user_id: 1,
+    services: [],
   });
 
   // User filter from URL
@@ -242,8 +349,7 @@ export default function AdminBoatListingLayout() {
 
   const fetchTrips = async () => {
     const response = await adminApi.getTrips(1, 1000);
-    if (response.success && response.data) {
-      setTrips(response.data.trips);
+    if (response.success && response.data) {      setTrips(response.data.trips);
     }
   };
 
@@ -303,13 +409,11 @@ export default function AdminBoatListingLayout() {
       console.error("Failed to fetch real stats aggregation", err);
     }
   };
-
   useEffect(() => {
     fetchBoats();
     fetchCategories();
     fetchCities();
     fetchTrips();
-    fetchUsers();
     fetchUsers();
     fetchStats();
     fetchRealStats();
@@ -319,7 +423,6 @@ export default function AdminBoatListingLayout() {
   useEffect(() => {
     const action = searchParams.get("action");
     const userId = searchParams.get("user");
-
     if (action === "add" && userId) {
       setEditingBoat(null);
       setFormData({
@@ -332,10 +435,12 @@ export default function AdminBoatListingLayout() {
         location_url: "",
         address: "",
         price_mode: "per_time",
+        show_guests_badge: false,
         categories: [],
         cities: [],
         trips: [],
         user_id: parseInt(userId, 10),
+        services: [],
       });
       setNewImages([]);
       setImagePreviews([]);
@@ -343,7 +448,6 @@ export default function AdminBoatListingLayout() {
       router.replace("/admin-dashboard?tab=boat-listings", { scroll: false });
     }
   }, [searchParams, router]);
-
   const resetForm = () => {
     setFormData({
       name: "",
@@ -355,10 +459,12 @@ export default function AdminBoatListingLayout() {
       location_url: "",
       address: "",
       price_mode: "per_time",
+      show_guests_badge: false,
       categories: [],
       cities: [],
       trips: [],
       user_id: 1,
+      services: [],
     });
     setNewImages([]);
     setImagePreviews([]);
@@ -366,6 +472,9 @@ export default function AdminBoatListingLayout() {
     setActiveTab('details');
     setPrimaryNewImageIndex(0);
     setPrimaryExistingUrl(null);
+    setShowNewServiceForm(false);
+    resetNewServiceData();
+    cancelEditingService();
   };
   // ...
   const openEditModal = async (boat: AdminBoat) => {
@@ -388,11 +497,15 @@ export default function AdminBoatListingLayout() {
         address: (data as any).address || "",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         price_mode: (data as any)['price_mode'] || "per_time",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        show_guests_badge: (data as any).show_guests_badge || false,
         categories: data.categories_full?.map((c) => c.id) || [],
         cities: cityIds,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         trips: data.trips?.map((t: any) => t.id) || [],
-        user_id: data.owner_username ? 0 : 1, // We don't edit user_id for existing boats usually, or need to map it back if we have it
+        user_id: data.owner_username ? 0 : 1,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        services: (data as any).services_full || data.services || [],
       });
       setImagePreviews(data.images || []);
 
@@ -508,6 +621,7 @@ export default function AdminBoatListingLayout() {
       location_url: formData.location_url,
       address: formData.address,
       price_mode: formData.price_mode,
+      show_guests_badge: formData.show_guests_badge,
       categories: formData.categories,
       cities: formData.cities,
       trips: formData.trips,
@@ -515,6 +629,7 @@ export default function AdminBoatListingLayout() {
       removed_images: removedImageUrls.length > 0 ? removedImageUrls : undefined,
       primary_image_url: primaryExistingUrl || undefined,
       primary_new_image_index: !primaryExistingUrl ? primaryNewImageIndex : undefined,
+      services: formData.services,
     };
 
     let response;
@@ -1105,13 +1220,18 @@ export default function AdminBoatListingLayout() {
                     onClick={() => setActiveTab('trips')}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'trips' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
                   >
-                    <FiMap className="inline mr-2" /> Trips
-                  </button>
+                    <FiMap className="inline mr-2" /> Trips                  </button>
                   <button
                     onClick={() => setActiveTab('photos')}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'photos' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
                   >
                     <FiImage className="inline mr-2" /> Photos
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('services')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'services' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                  >
+                    <FiHelpCircle className="inline mr-2" /> Services
                   </button>
                 </div>
               </div>
@@ -1416,6 +1536,341 @@ export default function AdminBoatListingLayout() {
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+              {activeTab === 'services' && (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <FiHelpCircle size={20} className="text-gray-900" />
+                      <h3 className="text-lg font-bold text-gray-900">Boat Services</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewServiceForm(true)}
+                      className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
+                    >
+                      + Add Service
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-6">Create and manage services for this boat. Toggle badges to show on the boat card.</p>
+
+                  {/* Show Guests Badge Toggle */}
+                  <div className="mb-6 p-4 rounded-xl border border-gray-200 bg-gray-50/50">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.show_guests_badge}
+                        onChange={(e) => setFormData(prev => ({ ...prev, show_guests_badge: e.target.checked }))}
+                        className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-500"
+                      />
+                      <div>
+                        <span className="text-sm font-semibold text-gray-700">Show &quot;Max Guests&quot; badge on boat card</span>
+                        <p className="text-xs text-gray-400">Displays &quot;{formData.max_seats} Guests&quot; as a badge alongside service badges</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Inline Add New Service Form */}
+                  {showNewServiceForm && (
+                    <div className="mb-6 rounded-xl border-2 border-blue-200 bg-blue-50/30 p-5">
+                      <h4 className="font-bold text-sm text-gray-900 mb-4">New Service</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Service Name *</label>
+                          <input
+                            type="text"
+                            value={newServiceData.name}
+                            onChange={(e) => setNewServiceData(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            placeholder="e.g. Fishing Equipment"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Pricing Model *</label>
+                          <select
+                            value={newServiceData.price_mode}
+                            onChange={(e) => setNewServiceData(prev => ({ ...prev, price_mode: e.target.value as 'per_trip' | 'per_person' | 'per_person_per_time' }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                          >
+                            <option value="per_trip">Per Trip (flat fee)</option>
+                            <option value="per_person">Per Person</option>
+                            <option value="per_person_per_time">Per Person / Hour</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Price (EGP)</label>
+                          <input
+                            type="number"
+                            value={newServiceData.price ?? ''}
+                            onChange={(e) => setNewServiceData(prev => ({ ...prev, price: e.target.value ? Number(e.target.value) : null }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            placeholder="e.g. 200"
+                            min="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Icon (optional)</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setNewServiceData(prev => ({ ...prev, icon: e.target.files?.[0] || null }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm outline-none file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-700"
+                          />
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
+                        <textarea
+                          value={newServiceData.description}
+                          onChange={(e) => setNewServiceData(prev => ({ ...prev, description: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none"
+                          rows={2}
+                          placeholder="Describe what this service includes..."
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          disabled={creatingService || !newServiceData.name}
+                          onClick={handleCreateInlineService}
+                          className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                        >
+                          {creatingService ? 'Creating...' : 'Create & Add'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowNewServiceForm(false); resetNewServiceData(); }}
+                          className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.services.length === 0 && !showNewServiceForm ? (
+                    <div className="py-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                      <FiHelpCircle size={24} className="mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-500 text-sm">No services added yet. Click &quot;Add Service&quot; to create one.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {formData.services.map((assignment, idx) => {
+                        const svc = assignment.service;
+                        const isEditing = svc && editingServiceId === svc.id;
+                        return (
+                          <div key={assignment.service_id || `new-${idx}`} className={`rounded-xl border-2 ${isEditing ? 'border-blue-400 bg-blue-50/20' : 'border-gray-900 bg-gray-50'} p-4 transition-all`}>
+                            {isEditing ? (
+                              /* ── Inline Edit Mode ── */
+                              <div>
+                                <h4 className="font-bold text-sm text-blue-700 mb-3 flex items-center gap-1.5">
+                                  <FiEdit2 size={13} /> Editing Service
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Service Name *</label>
+                                    <input
+                                      type="text"
+                                      value={editServiceData.name}
+                                      onChange={(e) => setEditServiceData(prev => ({ ...prev, name: e.target.value }))}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Pricing Model *</label>
+                                    <select
+                                      value={editServiceData.price_mode}
+                                      onChange={(e) => setEditServiceData(prev => ({ ...prev, price_mode: e.target.value as 'per_trip' | 'per_person' | 'per_person_per_time' }))}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                    >
+                                      <option value="per_trip">Per Trip (flat fee)</option>
+                                      <option value="per_person">Per Person</option>
+                                      <option value="per_person_per_time">Per Person / Hour</option>
+                                    </select>
+                                  </div>
+                                  <div className="md:col-span-2">
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
+                                    <textarea
+                                      value={editServiceData.description}
+                                      onChange={(e) => setEditServiceData(prev => ({ ...prev, description: e.target.value }))}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none"
+                                      rows={2}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Replace Icon (optional)</label>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => setEditServiceData(prev => ({ ...prev, icon: e.target.files?.[0] || null }))}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm outline-none file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-700"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    type="button"
+                                    disabled={savingService || !editServiceData.name}
+                                    onClick={handleSaveServiceEdit}
+                                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                                  >
+                                    {savingService ? 'Saving...' : 'Save Changes'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={cancelEditingService}
+                                    className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              /* ── View Mode ── */
+                              <>
+                                <div className="flex items-start gap-4">
+                                  {/* Service Icon */}
+                                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden relative flex items-center justify-center">
+                                    {svc?.icon_url ? (
+                                      <Image src={svc.icon_url} alt={svc.name} fill className="object-cover" />
+                                    ) : (
+                                      <FiHelpCircle size={20} className="text-gray-400" />
+                                    )}
+                                  </div>
+
+                                  {/* Service Info */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <h4 className="font-bold text-sm text-gray-900">{svc?.name || 'Service'}</h4>
+                                      <div className="flex items-center gap-2">
+                                        {svc && (
+                                          <button
+                                            type="button"
+                                            onClick={() => startEditingService(svc)}
+                                            className="px-3 py-1 rounded-lg text-xs font-medium border bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 transition-all"
+                                          >
+                                            <FiEdit2 className="inline mr-1" size={12} />Edit
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setFormData(prev => ({
+                                              ...prev,
+                                              services: prev.services.filter((_, i) => i !== idx)
+                                            }));
+                                          }}
+                                          className="px-3 py-1 rounded-lg text-xs font-medium border bg-red-50 text-red-600 border-red-200 hover:bg-red-100 transition-all"
+                                        >
+                                          <FiTrash2 className="inline mr-1" size={12} />Remove
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mb-1">{svc?.description || assignment.badge_display_name || 'No description'}</p>
+                                    <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">
+                                      {svc?.price_mode === 'per_trip' ? 'Per Trip' : svc?.price_mode === 'per_person' ? 'Per Person' : 'Per Person/Hour'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Assignment Controls */}
+                                <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                  {/* Price */}
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Price (EGP)</label>
+                                    <input
+                                      type="number"
+                                      value={assignment.price ?? ''}
+                                      onChange={(e) => {
+                                        setFormData(prev => ({
+                                          ...prev,
+                                          services: prev.services.map((s, i) =>
+                                            i === idx ? { ...s, price: e.target.value ? Number(e.target.value) : null } : s
+                                          )
+                                        }));
+                                      }}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                      placeholder="0"
+                                      min="0"
+                                    />
+                                  </div>
+
+                                  {/* Badge Display Name */}
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Badge Label</label>
+                                    <input
+                                      type="text"
+                                      value={assignment.badge_display_name ?? ''}
+                                      onChange={(e) => {
+                                        setFormData(prev => ({
+                                          ...prev,
+                                          services: prev.services.map((s, i) =>
+                                            i === idx ? { ...s, badge_display_name: e.target.value || null } : s
+                                          )
+                                        }));
+                                      }}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                      placeholder={svc?.name || 'Label'}
+                                    />
+                                  </div>
+
+                                  {/* Show as Badge */}
+                                  <div className="flex items-end pb-1">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={assignment.is_badge}
+                                        onChange={(e) => {
+                                          setFormData(prev => ({
+                                            ...prev,
+                                            services: prev.services.map((s, i) =>
+                                              i === idx ? { ...s, is_badge: e.target.checked } : s
+                                            )
+                                          }));
+                                        }}
+                                        className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-500"
+                                      />
+                                      <span className="text-xs font-semibold text-gray-700">Show as Badge on Card</span>
+                                    </label>
+                                  </div>
+
+                                  {/* Per-Person All Required (only for per_person/per_person_per_time services) */}
+                                  {(svc?.price_mode === 'per_person' || svc?.price_mode === 'per_person_per_time') && (
+                                    <div className="sm:col-span-3 flex items-center pt-2">
+                                      <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={assignment.per_person_all_required !== false}
+                                          onChange={(e) => {
+                                            setFormData(prev => ({
+                                              ...prev,
+                                              services: prev.services.map((s, i) =>
+                                                i === idx ? { ...s, per_person_all_required: e.target.checked } : s
+                                              )
+                                            }));
+                                          }}
+                                          className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-500"
+                                        />
+                                        <div>
+                                          <span className="text-xs font-semibold text-gray-700">Apply to all guests (mandatory)</span>
+                                          <p className="text-[10px] text-gray-400">
+                                            {assignment.per_person_all_required !== false
+                                              ? 'All guests will be charged for this service'
+                                              : 'Customer can choose how many persons want this service'}
+                                          </p>
+                                        </div>
+                                      </label>
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { AdminOrder } from "@/lib/api";
-import { FiX, FiUser, FiCalendar, FiDollarSign, FiAnchor } from "react-icons/fi";
+import { FiX, FiUser, FiCalendar, FiDollarSign, FiAnchor, FiPackage } from "react-icons/fi";
 import Image from "next/image";
 
 interface OrderDetailsModalProps {
@@ -391,8 +391,44 @@ export default function OrderDetailsModal({
                                 </div>
                             </div>
                         )}
-
                         <div className="space-y-2">
+                            {/* Selected Services */}
+                            {order.selected_services && order.selected_services.length > 0 && (
+                                <div className="mb-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <FiPackage size={14} className="text-gray-500" />
+                                        <span className="text-sm font-semibold text-gray-700">Add-on Services</span>
+                                    </div>                                    <div className="space-y-1.5 pl-1">
+                                        {order.selected_services.map((svc, idx) => (
+                                            <div key={idx} className="flex justify-between items-start text-sm">
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="font-medium text-gray-700">{svc.name}</span>
+                                                    <span className="text-[10px] text-gray-400 ml-1.5">
+                                                        ({svc.price_mode === 'per_trip' ? 'flat' : svc.price_mode === 'per_person' ? '/person' : '/person/hr'})
+                                                    </span>
+                                                    {svc.price_mode !== 'per_trip' && svc.person_count && (
+                                                        <p className="text-[11px] text-gray-400 mt-0.5">
+                                                            {formatCurrency(svc.price)} × {svc.person_count} {svc.person_count === 1 ? 'person' : 'persons'}
+                                                            {svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 &&
+                                                                ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))} hr${Math.round(svc.calculated_price / (svc.price * svc.person_count)) !== 1 ? 's' : ''}`
+                                                            }
+                                                        </p>
+                                                    )}
+                                                    {svc.description && (
+                                                        <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{svc.description}</p>
+                                                    )}
+                                                </div>
+                                                <span className="font-medium text-gray-900 ml-2 whitespace-nowrap">{formatCurrency(svc.calculated_price)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm mt-2 pt-2 border-t border-dashed border-gray-200">
+                                        <span className="font-medium text-gray-600">Services Subtotal</span>
+                                        <span className="font-bold text-gray-900">{formatCurrency(order.services_total || 0)}</span>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Subtotal */}
                             <div className="flex justify-between items-center">
                                 <span className="text-sm font-medium text-gray-600">

@@ -122,6 +122,9 @@ export default function BoatDetailsPage() {
       is_trip_booking: !!selectedTrip,
       boat_rating: reviews_summary.average_rating,
       boat_total_reviews: reviews_summary.total_reviews,
+      // Services data (already included from BookingSidebar but ensure it's persisted)
+      selected_services: bookingData.selected_services || [],
+      services_total: bookingData.services_total || 0,
     };
 
     localStorage.setItem('booking_data', JSON.stringify(completeBookingData));
@@ -556,11 +559,53 @@ export default function BoatDetailsPage() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-gray-200">
                   <span className="font-medium text-gray-700 mb-1 sm:mb-0">Owner</span>
-                  <span className="text-gray-600 sm:text-right">{owner.username}</span>
-                </div>
+                  <span className="text-gray-600 sm:text-right">{owner.username}</span>                </div>
               </div>
             </section>
 
+            {/* Boat Services */}
+            {boat.services && boat.services.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-semibold mb-4 font-poppins">Available Services</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {boat.services.map((svc: { service_id: number; service: { id: number; name: string; description: string | null; icon_url: string | null; price_mode: string } | null; price: number | null; is_badge: boolean; badge_display_name: string | null }) => (
+                    <div key={svc.service_id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 group/svc relative">
+                      {/* Icon */}
+                      <div className="w-10 h-10 bg-white rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-gray-200">
+                        {svc.service?.icon_url ? (
+                          <Image
+                            src={svc.service.icon_url}
+                            alt={svc.service?.name || ''}
+                            width={32}
+                            height={32}
+                            className="object-contain"
+                          />
+                        ) : (
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        )}
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-sm mb-1">{svc.badge_display_name || svc.service?.name || 'Service'}</h3>
+                        {svc.service?.description && (
+                          <p className="text-xs text-gray-500 leading-relaxed">{svc.service.description}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          {(svc.price || svc.price === 0) && (
+                            <span className="text-xs font-medium text-[#0F3875]">{svc.price} EGP</span>
+                          )}
+                          <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
+                            {svc.service?.price_mode === 'per_trip' ? 'Per Trip' : svc.service?.price_mode === 'per_person' ? 'Per Person' : 'Per Person/Hour'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Meet Your Captain */}
             <section>
@@ -740,8 +785,7 @@ export default function BoatDetailsPage() {
 
           {/* Right Sidebar - Booking (Fixed Position) */}
           <div className="lg:col-span-1">
-            <div>
-              <BookingSidebar
+            <div>              <BookingSidebar
                 boatId={boat.id}
                 boatName={boat.name}
                 pricePerHour={boat.price_per_hour}
@@ -755,6 +799,7 @@ export default function BoatDetailsPage() {
                 initialGuestCount={searchParams.get("guest_count") ? parseInt(searchParams.get("guest_count")!) : (searchParams.get("min_passengers") ? parseInt(searchParams.get("min_passengers")!) : 2)}
                 locationUrl={boat.location_url}
                 priceMode={boat.price_mode as "per_time" | "per_person" | "per_person_per_time"}
+                boatServices={boat.services}
               />
             </div>
           </div>

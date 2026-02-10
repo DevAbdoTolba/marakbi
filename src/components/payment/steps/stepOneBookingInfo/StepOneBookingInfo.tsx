@@ -85,7 +85,6 @@ export default function StepOneBookingInfo() {
             </div>
           </div>
         </div>
-
         {/* Pricing */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <h3 className="font-semibold mb-4 font-poppins">Price Breakdown</h3>
@@ -95,6 +94,27 @@ export default function StepOneBookingInfo() {
                 <span className="text-gray-600">Base Price</span>
                 <span className="font-semibold">{bookingData.base_price.toFixed(0)} EGP</span>
               </div>
+            )}
+            {/* Selected Services Breakdown */}
+            {Array.isArray(bookingData.selected_services) && bookingData.selected_services.length > 0 && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Add-on Services</span>
+                  <span className="font-semibold">{typeof bookingData.services_total === 'number' ? bookingData.services_total.toFixed(0) : '0'} EGP</span>
+                </div>                {bookingData.selected_services.map((svc: { service_id: number; name: string; price: number; price_mode: string; calculated_price: number; person_count?: number }) => (
+                  <div key={svc.service_id} className="flex justify-between pl-4">
+                    <span className="text-gray-400 text-sm">
+                      {svc.name}
+                      {svc.price_mode !== 'per_trip' && svc.person_count && (
+                        <span className="text-gray-300 text-xs ml-1">
+                          ({svc.price} × {svc.person_count}{svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 ? ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))}h` : ''})
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-gray-500 text-sm">{svc.calculated_price.toFixed(0)} EGP</span>
+                  </div>
+                ))}
+              </>
             )}
             {typeof bookingData.service_fee === 'number' && (
               <div className="flex justify-between">

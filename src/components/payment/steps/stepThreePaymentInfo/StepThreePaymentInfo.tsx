@@ -105,6 +105,8 @@ export default function StepThreePaymentInfo() {
           voyage_type: 'Private' as const,
           trip_id: bookingData.trip_id as number | undefined,
           total_price: (bookingData.total_price as number) || (bookingData.base_price as number),
+          // Selected services
+          selected_services: bookingData.selected_services as { service_id: number; name: string; price: number; price_mode: string; calculated_price: number; person_count?: number }[] | undefined,
           // Contact info
           booking_for: bookingData.booking_for as string,
           contact_first_name: bookingData.contact_first_name as string,
@@ -181,13 +183,33 @@ export default function StepThreePaymentInfo() {
             Duration: {String(bookingData.days)} day{Number(bookingData.days) > 1 ? 's' : ''}
           </p>
         )}
-
         <div className="mt-3 pt-3 border-t border-gray-300 space-y-1">
           {typeof bookingData.base_price === 'number' && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Base Price:</span>
               <span className="font-medium">{bookingData.base_price.toFixed(0)} EGP</span>
             </div>
+          )}
+          {/* Selected Services */}
+          {Array.isArray(bookingData.selected_services) && bookingData.selected_services.length > 0 && (
+            <>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Add-on Services:</span>
+                <span className="font-medium">{typeof bookingData.services_total === 'number' ? (bookingData.services_total as number).toFixed(0) : '0'} EGP</span>
+              </div>              {(bookingData.selected_services as { service_id: number; name: string; price: number; price_mode: string; calculated_price: number; person_count?: number }[]).map((svc) => (
+                <div key={svc.service_id} className="flex justify-between text-xs pl-3">
+                  <span className="text-gray-400">
+                    {svc.name}
+                    {svc.price_mode !== 'per_trip' && svc.person_count && (
+                      <span className="text-gray-300 ml-1">
+                        ({svc.price} × {svc.person_count}{svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 ? ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))}h` : ''})
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-gray-500">{svc.calculated_price.toFixed(0)} EGP</span>
+                </div>
+              ))}
+            </>
           )}
           {typeof bookingData.service_fee === 'number' && (
             <div className="flex justify-between text-sm">

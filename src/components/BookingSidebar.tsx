@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import toast from "react-hot-toast";
-import { clientApi } from "@/lib/api";
+import { clientApi, BoatServiceAssignment } from "@/lib/api";
 
 interface BookedSlot {
     start: string;
@@ -29,6 +29,17 @@ interface BookingSidebarProps {
     initialGuestCount?: number;
     locationUrl?: string;
     priceMode?: "per_time" | "per_person" | "per_person_per_time";
+    // Boat services
+    boatServices?: BoatServiceAssignment[];
+}
+
+export interface SelectedServiceItem {
+    service_id: number;
+    name: string;
+    price: number;
+    price_mode: string;
+    calculated_price: number;
+    person_count?: number;
 }
 
 export interface BookingData {
@@ -44,6 +55,8 @@ export interface BookingData {
     service_fee: number;
     total_price: number;
     trip_id?: number;
+    selected_services?: SelectedServiceItem[];
+    services_total?: number;
 }
 
 type RentalType = "hour" | "day" | "trip";
@@ -62,6 +75,7 @@ export default function BookingSidebar({
     initialGuestCount = 2,
     locationUrl,
     priceMode = "per_time",
+    boatServices = [],
 }: BookingSidebarProps) {
     const [rentalType, setRentalType] = useState<RentalType>(() => {
         if (isTripBooking) return "trip";
@@ -69,6 +83,10 @@ export default function BookingSidebar({
         return "day";
     });
     const [guestCount, setGuestCount] = useState(initialGuestCount);
+    // Selected optional services
+    const [selectedServiceIds, setSelectedServiceIds] = useState<Set<number>>(new Set());
+    // Per-service person count (for per_person/per_person_per_time services with per_person_all_required=false)
+    const [servicePersonCounts, setServicePersonCounts] = useState<Map<number, number>>(new Map());
     // const [hours, setHours] = useState(1); // Removed in favor of start/end time
     const [startTime, setStartTime] = useState<string>("");
     const [endTime, setEndTime] = useState<string>("");
@@ -379,13 +397,10 @@ export default function BookingSidebar({
                     calculatedHours = endHour - startHour;
 
                     if (priceMode === 'per_person') {
-                        // Per person (fixed per session/time independent for now, based on user context)
                         basePrice = (pricePerHour || 0) * guestCount;
                     } else if (priceMode === 'per_person_per_time') {
-                        // Per person per hour
                         basePrice = (pricePerHour || 0) * guestCount * calculatedHours;
                     } else {
-                        // Standard (Per Hour)
                         basePrice = (pricePerHour || 0) * calculatedHours;
                     }
                 }
@@ -399,26 +414,74 @@ export default function BookingSidebar({
                 } else {
                     days = 1;
                 }
-                const effectivePrice = pricePerDay || (pricePerHour ? pricePerHour * 8 : 0);
+                const effectivePriceCalc = pricePerDay || (pricePerHour ? pricePerHour * 8 : 0);
 
                 if (priceMode === 'per_person' || priceMode === 'per_person_per_time') {
-                    // If pricing model is per person, apply guest count to daily rate too
-                    basePrice = effectivePrice * days * guestCount;
+                    basePrice = effectivePriceCalc * days * guestCount;
                 } else {
-                    // Standard Per Day (Flat for the boat)
-                    basePrice = effectivePrice * days;
+                    basePrice = effectivePriceCalc * days;
                 }
             }
         }
 
-        // Service fee calculation based on base price
-        const serviceFee = Math.round(basePrice * serviceFeeRate);
-        const total = basePrice + serviceFee;
+        // Calculate selected services total
+        let servicesTotal = 0;
+        const selectedServicesArr: SelectedServiceItem[] = [];
+        boatServices.forEach(svcAssign => {
+            if (!selectedServiceIds.has(svcAssign.service_id)) return;
+            const svc = svcAssign.service;
+            const svcPrice = svcAssign.price ?? svc?.default_price ?? 0;
+            const svcPriceMode = svc?.price_mode || 'per_trip';
+            let calculatedSvcPrice = 0;
 
-        return { basePrice, serviceFee, total, days, calculatedHours };
+            // Determine person count: use custom count if per_person_all_required is false
+            const perPersonAllRequired = svcAssign.per_person_all_required !== false;
+            const isPerPerson = svcPriceMode === 'per_person' || svcPriceMode === 'per_person_per_time';
+            const svcPersonCount = (!perPersonAllRequired && isPerPerson)
+                ? (servicePersonCounts.get(svcAssign.service_id) ?? guestCount)
+                : guestCount;
+
+            if (svcPriceMode === 'per_trip') {
+                calculatedSvcPrice = svcPrice;
+            } else if (svcPriceMode === 'per_person') {
+                calculatedSvcPrice = svcPrice * svcPersonCount;
+            } else if (svcPriceMode === 'per_person_per_time') {
+                const hrs = calculatedHours || (days * 8) || 1;
+                calculatedSvcPrice = svcPrice * svcPersonCount * hrs;
+            }
+
+            servicesTotal += calculatedSvcPrice;
+            selectedServicesArr.push({
+                service_id: svcAssign.service_id,
+                name: svc?.name || 'Service',
+                price: svcPrice,
+                price_mode: svcPriceMode,
+                calculated_price: calculatedSvcPrice,
+                person_count: isPerPerson ? svcPersonCount : undefined,
+            });
+        });
+
+        // Service fee calculation based on base price + services
+        const totalBeforeFee = basePrice + servicesTotal;
+        const serviceFee = Math.round(totalBeforeFee * serviceFeeRate);
+        const total = totalBeforeFee + serviceFee;
+
+        return { basePrice, serviceFee, total, days, calculatedHours, servicesTotal, selectedServicesArr };
     };
 
-    const { basePrice, serviceFee, total, days, calculatedHours } = calculatePrice();
+    const { basePrice, serviceFee, total, days, calculatedHours, servicesTotal, selectedServicesArr } = calculatePrice();
+
+    const toggleService = (serviceId: number) => {
+        setSelectedServiceIds(prev => {
+            const next = new Set(prev);
+            if (next.has(serviceId)) {
+                next.delete(serviceId);
+            } else {
+                next.add(serviceId);
+            }
+            return next;
+        });
+    };
 
     // Calendar helpers
     const getDaysInMonth = (date: Date) => {
@@ -629,7 +692,6 @@ export default function BookingSidebar({
 
         // Check if user is authenticated
         const accessToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-
         const bookingData: BookingData = {
             boat_id: boatId,
             boat_name: boatName,
@@ -642,10 +704,9 @@ export default function BookingSidebar({
             base_price: basePrice,
             service_fee: serviceFee,
             total_price: total,
-            trip_id: isTripBooking ? undefined : undefined // Add checking if trip_id logic needed? 
-            // Note: trip_id is in props but not in BookingData in this component usage usually? 
-            // Actually it is in BookingData interface. 
-            // In original code it was: trip_id?: number;
+            trip_id: isTripBooking ? undefined : undefined,
+            selected_services: selectedServicesArr.length > 0 ? selectedServicesArr : undefined,
+            services_total: servicesTotal > 0 ? servicesTotal : undefined,
         };
         // Add trip_id if available (not in scope of this change but good to preserve)
         // Original code didn't map trip_id explicitly in bookingData construction?
@@ -993,11 +1054,108 @@ export default function BookingSidebar({
                         className="text-stone-900 text-xl font-medium"
                     >
                         +
-                    </button>
-                </div>
+                    </button>                </div>
             </div>
 
-            {/* Price Breakdown */}
+            {/* Optional Services */}
+            {boatServices.length > 0 && (
+                <div className="mb-6">
+                    <label className="flex items-center gap-2 text-stone-700 text-sm font-normal font-poppins mb-3">
+                        <span className="text-zinc-500">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#757575" />
+                            </svg>
+                        </span>
+                        Add-on Services
+                    </label>                    <div className="space-y-2">
+                        {boatServices.map((svcAssign) => {
+                            const svc = svcAssign.service;
+                            if (!svc) return null;
+                            const svcPrice = svcAssign.price ?? svc.default_price ?? 0;
+                            const isSelected = selectedServiceIds.has(svcAssign.service_id);
+                            const priceModeLabel = svc.price_mode === 'per_trip' ? '' : svc.price_mode === 'per_person' ? '/person' : '/person/hr';
+                            const isPerPerson = svc.price_mode === 'per_person' || svc.price_mode === 'per_person_per_time';
+                            const perPersonAllRequired = svcAssign.per_person_all_required !== false;
+                            const showPersonPicker = isSelected && isPerPerson && !perPersonAllRequired;
+                            const currentPersonCount = servicePersonCounts.get(svcAssign.service_id) ?? guestCount;
+
+                            return (
+                                <div key={svcAssign.service_id}>
+                                    <div
+                                        onClick={() => toggleService(svcAssign.service_id)}
+                                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${isSelected
+                                            ? 'border-[#0F3875] bg-blue-50/50'
+                                            : 'border-neutral-200 hover:border-gray-300'
+                                            }${showPersonPicker ? ' rounded-b-none border-b-0' : ''}`}
+                                    >
+                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#0F3875] border-[#0F3875]' : 'border-gray-300'
+                                            }`}>
+                                            {isSelected && (
+                                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        {svc.icon_url && (
+                                            <div className="w-8 h-8 rounded overflow-hidden relative flex-shrink-0">
+                                                <Image src={svc.icon_url} alt={svc.name} fill className="object-cover" />
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-stone-900 text-sm font-medium font-poppins truncate">{svc.name}</p>
+                                            {svc.description && (
+                                                <p className="text-zinc-400 text-xs font-poppins truncate">{svc.description}</p>
+                                            )}
+                                        </div>
+                                        <span className="text-[#106BD8] text-sm font-semibold font-poppins whitespace-nowrap">
+                                            E£ {svcPrice}{priceModeLabel}
+                                        </span>
+                                    </div>
+                                    {/* Person count picker for per-person services where admin allows choosing */}
+                                    {showPersonPicker && (
+                                        <div className="flex items-center justify-between px-3 py-2 bg-blue-50/30 border border-[#0F3875] border-t-0 rounded-b-lg"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <span className="text-zinc-600 text-xs font-poppins">How many persons?</span>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setServicePersonCounts(prev => {
+                                                            const next = new Map(prev);
+                                                            next.set(svcAssign.service_id, Math.max(1, currentPersonCount - 1));
+                                                            return next;
+                                                        });
+                                                    }}
+                                                    disabled={currentPersonCount <= 1}
+                                                    className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                >
+                                                    −
+                                                </button>
+                                                <span className="text-stone-900 text-sm font-semibold font-poppins min-w-[20px] text-center">{currentPersonCount}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setServicePersonCounts(prev => {
+                                                            const next = new Map(prev);
+                                                            next.set(svcAssign.service_id, Math.min(guestCount, currentPersonCount + 1));
+                                                            return next;
+                                                        });
+                                                    }}
+                                                    disabled={currentPersonCount >= guestCount}
+                                                    className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}            {/* Price Breakdown */}
             <div className="mb-6 pt-4 border-t border-gray-100">
                 <div className="flex justify-between items-center mb-2">
                     <span className="text-zinc-500 text-sm font-normal font-poppins">
@@ -1007,6 +1165,30 @@ export default function BookingSidebar({
                         E£ {basePrice}
                     </span>
                 </div>
+                {servicesTotal > 0 && (
+                    <div className="mb-2">
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-zinc-500 text-sm font-normal font-poppins">
+                                Add-on Services
+                            </span>
+                            <span className="text-stone-900 text-sm font-medium font-poppins">
+                                E£ {servicesTotal}
+                            </span>
+                        </div>                        {selectedServicesArr.map(svc => (
+                            <div key={svc.service_id} className="flex justify-between items-center ml-2">
+                                <span className="text-zinc-400 text-xs font-normal font-poppins">
+                                    {svc.name}
+                                    {svc.price_mode !== 'per_trip' && svc.person_count && (
+                                        <span className="text-zinc-400"> — {svc.price} × {svc.person_count} {svc.person_count === 1 ? 'person' : 'persons'}{svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 ? ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))} hr${Math.round(svc.calculated_price / (svc.price * svc.person_count)) !== 1 ? 's' : ''}` : ''}</span>
+                                    )}
+                                </span>
+                                <span className="text-zinc-500 text-xs font-poppins">
+                                    E£ {svc.calculated_price}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
                 <div className="flex justify-between items-center mb-3">
                     <span className="text-zinc-500 text-sm font-normal font-poppins">
                         Service fee ({serviceFeeRate * 100}%)

@@ -47,6 +47,26 @@ export interface AuthUser {
   role?: string;
 }
 
+// Boat Service Types
+export interface BoatServiceDef {
+  id: number;
+  name: string;
+  description: string | null;
+  default_price: number | null;
+  price_mode: 'per_trip' | 'per_person' | 'per_person_per_time';
+  icon_url: string | null;
+  created_at: string;
+}
+
+export interface BoatServiceAssignment {
+  service_id: number;
+  service: BoatServiceDef | null;
+  price: number | null;
+  is_badge: boolean;
+  badge_display_name: string | null;
+  per_person_all_required?: boolean;
+}
+
 // Boat Types
 export interface Boat {
   id: number;
@@ -59,14 +79,16 @@ export interface Boat {
   price_per_day?: number;
   max_seats: number;
   max_seats_stay: number;
-  location_url?: string; // New field
-  address?: string; // Boat address field
-  price_mode?: string; // New field
+  location_url?: string;
+  address?: string;
+  price_mode?: string;
   total_reviews: number;
-  average_rating?: number; // New field
+  average_rating?: number;
   user_id: number;
-  owner_username?: string;
-  created_at: string;
+  owner_username?: string;  created_at: string;
+  services?: BoatServiceAssignment[];
+  badge_services?: BoatServiceAssignment[];
+  show_guests_badge?: boolean;
   trips?: Array<{
     id: number;
     city_id: number;
@@ -89,14 +111,16 @@ export interface AddBoatData {
   max_seats?: number;
   max_seats_stay?: number;
   description: string;
-  location_url?: string; // New field
-  address?: string; // Boat address field
-  price_mode?: string; // New field
-  categories: number[]; // Array of category IDs
-  cities: number[]; // Array of city IDs
-  trips?: number[]; // Array of trip IDs
-  boat_images?: File[]; // Array of image files
-  primary_new_image_index?: number; // Index in boat_images to be primary
+  location_url?: string;
+  address?: string;
+  price_mode?: string;
+  show_guests_badge?: boolean;
+  categories: number[];
+  cities: number[];
+  trips?: number[];
+  boat_images?: File[];
+  primary_new_image_index?: number;
+  services?: BoatServiceAssignment[];
 }
 
 export interface EditBoatData {
@@ -106,9 +130,10 @@ export interface EditBoatData {
   max_seats?: number;
   max_seats_stay?: number;
   description?: string;
-  location_url?: string; // New field
-  address?: string; // Boat address field
-  price_mode?: string; // New field
+  location_url?: string;
+  address?: string;
+  price_mode?: string;
+  show_guests_badge?: boolean;
   categories?: number[];
   cities?: number[];
   trips?: number[];
@@ -116,6 +141,7 @@ export interface EditBoatData {
   removed_images?: string[];
   primary_image_url?: string;
   primary_new_image_index?: number;
+  services?: BoatServiceAssignment[];
 }
 
 
@@ -142,7 +168,7 @@ export interface BoatDetails {
   boat: Boat;
   owner: BoatOwner;
   reviews: BoatReview[];
-  service_fee_rate: number;  // Service fee rate from backend
+  service_fee_rate: number; // Service fee rate from backend
   reviews_summary: {
     average_rating: number;
     total_reviews: number;
@@ -410,6 +436,18 @@ export interface Order {
     available_seats: number;
   };
   profile?: Record<string, unknown>;
+  // Selected services snapshot
+  selected_services?: Array<{
+    service_id: number;
+    name: string;
+    description?: string | null;
+    icon_url?: string | null;
+    price: number;
+    price_mode: string;
+    calculated_price: number;
+    person_count?: number | null;
+  }>;
+  services_total?: number;
 }
 
 
@@ -432,6 +470,7 @@ export interface OrderData {
   payment_method: 'card' | 'cash';
   platform: 'web' | 'mobile';
   voyage_type: 'Private' | 'Sharing' | 'Travel' | 'Stay' | 'Fishing' | 'Occasion' | 'Water_activities';
+  selected_services?: { service_id: number; name: string; price: number; price_mode: string; calculated_price: number; person_count?: number }[];
 }
 
 export interface CreateOrderResponse {
@@ -1001,7 +1040,18 @@ export interface AdminOrder {
     voyage_id: number;
     status: string;
     payment_status: string;
+  }>;  // Selected services snapshot
+  selected_services?: Array<{
+    service_id: number;
+    name: string;
+    description?: string | null;
+    icon_url?: string | null;
+    price: number;
+    price_mode: string;
+    calculated_price: number;
+    person_count?: number | null;
   }>;
+  services_total?: number;
 }
 
 export interface AdminBoat {
@@ -1018,9 +1068,12 @@ export interface AdminBoat {
   trips?: AdminTrip[];
   max_seats: number;
   max_seats_stay: number;
-  location_url?: string; // New field
-  owner_username: string | null;
-  created_at: string;
+  location_url?: string;
+  owner_username: string | null;  created_at: string;
+  services?: BoatServiceAssignment[];
+  badge_services?: BoatServiceAssignment[];
+  services_full?: BoatServiceAssignment[];
+  show_guests_badge?: boolean;
 }
 
 export interface AdminTrip {
@@ -1203,10 +1256,14 @@ export const adminApi = {
     if (boatData.address) formData.append('address', boatData.address);
     if (boatData.price_mode) formData.append('price_mode', boatData.price_mode);
     formData.append('description', boatData.description);
-
     boatData.categories.forEach(id => formData.append('categories', id.toString()));
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+    if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
+
+    if (boatData.services) {
+      formData.append('services', JSON.stringify(boatData.services));
+    }
 
     if (boatData.primary_new_image_index !== undefined) {
       formData.append('primary_new_image_index', boatData.primary_new_image_index.toString());
@@ -1235,10 +1292,14 @@ export const adminApi = {
     if (boatData.address !== undefined) formData.append('address', boatData.address || '');
     if (boatData.price_mode) formData.append('price_mode', boatData.price_mode);
     if (boatData.description) formData.append('description', boatData.description);
-
     if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+    if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
+
+    if (boatData.services !== undefined) {
+      formData.append('services', JSON.stringify(boatData.services));
+    }
 
     if (boatData.primary_image_url) formData.append('primary_image_url', boatData.primary_image_url);
     if (boatData.primary_new_image_index !== undefined) {
@@ -1402,7 +1463,40 @@ export const adminApi = {
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
     imageUrls.forEach(url => formData.append('image_urls', url));
     return adminFormRequest(`/admin/boats/${boatId}`, formData, 'PUT');
-  }
+  },
+
+  // Services
+  getServices: async (): Promise<ApiResponse<{ services: BoatServiceDef[] }>> => apiRequest('/admin/services'),
+  getService: async (serviceId: number): Promise<ApiResponse<BoatServiceDef & { boats: { id: number; name: string; is_badge: boolean; badge_display_name: string | null; price: number | null }[] }>> => apiRequest(`/admin/services/${serviceId}`),
+  createService: async (serviceData: { name: string; description?: string; default_price?: number | null; price_mode: string; icon_url?: string }, iconFile?: File): Promise<ApiResponse<{ message: string; service: BoatServiceDef }>> => {
+    let iconUrl = serviceData.icon_url;
+    if (iconFile) {
+      const { uploadToCloudinary } = await import('./cloudinaryUpload');
+      iconUrl = await uploadToCloudinary(iconFile, 'marakbi/services');
+    }
+    const formData = new FormData();
+    formData.append('name', serviceData.name);
+    if (serviceData.description) formData.append('description', serviceData.description);
+    if (serviceData.default_price !== undefined && serviceData.default_price !== null) formData.append('default_price', serviceData.default_price.toString());
+    formData.append('price_mode', serviceData.price_mode);
+    if (iconUrl) formData.append('icon_url', iconUrl);
+    return adminFormRequest('/admin/services', formData);
+  },
+  updateService: async (serviceId: number, serviceData: { name?: string; description?: string; default_price?: number | null; price_mode?: string; icon_url?: string }, iconFile?: File): Promise<ApiResponse<{ message: string; service: BoatServiceDef }>> => {
+    let iconUrl = serviceData.icon_url;
+    if (iconFile) {
+      const { uploadToCloudinary } = await import('./cloudinaryUpload');
+      iconUrl = await uploadToCloudinary(iconFile, 'marakbi/services');
+    }
+    const formData = new FormData();
+    if (serviceData.name) formData.append('name', serviceData.name);
+    if (serviceData.description !== undefined) formData.append('description', serviceData.description || '');
+    if (serviceData.default_price !== undefined) formData.append('default_price', serviceData.default_price === null ? 'null' : serviceData.default_price.toString());
+    if (serviceData.price_mode) formData.append('price_mode', serviceData.price_mode);
+    if (iconUrl) formData.append('icon_url', iconUrl);
+    return adminFormRequest(`/admin/services/${serviceId}`, formData, 'PUT');
+  },
+  deleteService: async (serviceId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/services/${serviceId}`, { method: 'DELETE' }),
 };
 
 

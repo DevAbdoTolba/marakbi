@@ -702,6 +702,9 @@ export default function BoatListingLayout() {
                   reviewsCount={boat.total_reviews || 0}
                   guestCount={minPassengers ? parseInt(minPassengers) : undefined}
                   priceMode={displayMode}
+                  badgeServices={boat.badge_services}
+                  showGuestsBadge={boat.show_guests_badge}
+                  maxGuests={boat.max_seats}
                 />
               );
             })
