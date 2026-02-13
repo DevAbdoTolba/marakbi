@@ -1,26 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import TripDetails from "./tripDetails/TripDetails";
 import useFormStep from "@/hooks/useFormStep";
+import useBookingStore from "@/hooks/useBookingStore";
 import Image from "next/image";
+import { IoArrowBack } from "react-icons/io5";
 
 export default function StepOneBookingInfo() {
   const router = useRouter();
   const { setStep } = useFormStep();
-  const [bookingData, setBookingData] = useState<Record<string, unknown> | null>(null);
-
-  useEffect(() => {
-    // Load booking data from localStorage
-    const savedBooking = localStorage.getItem('booking_data');
-    if (savedBooking) {
-      setBookingData(JSON.parse(savedBooking));
-    } else {
-      // If no booking data, redirect to home
-      router.push('/');
-    }
-  }, [router]);
+  const bookingData = useBookingStore((s) => s.bookingData);
 
   if (!bookingData) {
     return (
@@ -42,7 +33,16 @@ export default function StepOneBookingInfo() {
     >
       {/* Left side: Booking details */}
       <div className="w-full lg:w-[60%]">
-        <h2 className="text-2xl font-bold mb-6 font-poppins">Booking Information</h2>
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => router.back()}
+            className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-600 hover:text-sky-900"
+            aria-label="Go back"
+          >
+            <IoArrowBack size={22} />
+          </button>
+          <h2 className="text-2xl font-bold font-poppins">Booking Information</h2>
+        </div>
 
         {/* Booking Details */}
         <div className="bg-gray-50 p-6 rounded-lg mb-6">
@@ -130,10 +130,7 @@ export default function StepOneBookingInfo() {
                 </span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <button
+          </div>        </div>        <button
           onClick={() => setStep(2)}
           className="mt-6 w-full px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors"
         >

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import { clientApi, BoatServiceAssignment } from "@/lib/api";
+import useBookingStore from "@/hooks/useBookingStore";
 
 interface BookedSlot {
     start: string;
@@ -77,21 +78,91 @@ export default function BookingSidebar({
     priceMode = "per_time",
     boatServices = [],
 }: BookingSidebarProps) {
+    // Restore previous selections from Zustand store (e.g. when navigating back from payment)
+    const getStoredBooking = () => {
+        const stored = useBookingStore.getState().bookingData;
+        if (stored && stored.boat_id === boatId) return stored;
+        return null;
+    };
+
     const [rentalType, setRentalType] = useState<RentalType>(() => {
+        const s = getStoredBooking();
+        if (s) {
+            if (s.rental_type === 'hourly') return 'hour';
+            if (s.rental_type === 'daily') return 'day';
+            if (s.rental_type === 'trip') return 'trip';
+        }
         if (isTripBooking) return "trip";
         if (pricePerHour) return "hour";
         return "day";
     });
-    const [guestCount, setGuestCount] = useState(initialGuestCount);
+    const [guestCount, setGuestCount] = useState(() => {
+        const s = getStoredBooking();
+        return s ? s.guest_count : initialGuestCount;
+    });
     // Selected optional services
-    const [selectedServiceIds, setSelectedServiceIds] = useState<Set<number>>(new Set());
+    const [selectedServiceIds, setSelectedServiceIds] = useState<Set<number>>(() => {
+        const s = getStoredBooking();
+        if (s?.selected_services) {
+            return new Set(s.selected_services.map((svc: { service_id: number }) => svc.service_id));
+        }
+        return new Set();
+    });
     // Per-service person count (for per_person/per_person_per_time services with per_person_all_required=false)
-    const [servicePersonCounts, setServicePersonCounts] = useState<Map<number, number>>(new Map());
+    const [servicePersonCounts, setServicePersonCounts] = useState<Map<number, number>>(() => {
+        const s = getStoredBooking();
+        if (s?.selected_services) {
+            const map = new Map<number, number>();
+            (s.selected_services as { service_id: number; person_count?: number }[]).forEach(svc => {
+                if (svc.person_count != null) {
+                    map.set(svc.service_id, svc.person_count);
+                }
+            });
+            return map;
+        }
+        return new Map();
+    });
     // const [hours, setHours] = useState(1); // Removed in favor of start/end time
-    const [startTime, setStartTime] = useState<string>("");
-    const [endTime, setEndTime] = useState<string>("");
-    const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [startTime, setStartTime] = useState<string>(() => {
+        const s = getStoredBooking();
+        if (s?.start_date) {
+            const d = new Date(s.start_date as string);
+            return `${d.getUTCHours().toString().padStart(2, '0')}:00`;
+        }
+        return "";
+    });
+    const [endTime, setEndTime] = useState<string>(() => {
+        const s = getStoredBooking();
+        if (s?.end_date && (s.rental_type === 'hourly' || s.rental_type === 'trip')) {
+            const d = new Date(s.end_date as string);
+            return `${d.getUTCHours().toString().padStart(2, '0')}:00`;
+        }
+        return "";
+    });
+    const [selectedDates, setSelectedDates] = useState<Date[]>(() => {
+        const s = getStoredBooking();
+        if (s?.start_date) {
+            const start = new Date(s.start_date as string);
+            const startLocal = new Date(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+            if (s.rental_type === 'daily' && s.end_date) {
+                const end = new Date(s.end_date as string);
+                const endLocal = new Date(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+                if (startLocal.getTime() !== endLocal.getTime()) {
+                    return [startLocal, endLocal];
+                }
+            }
+            return [startLocal];
+        }
+        return [];
+    });
+    const [currentMonth, setCurrentMonth] = useState(() => {
+        const s = getStoredBooking();
+        if (s?.start_date) {
+            const d = new Date(s.start_date as string);
+            return new Date(d.getUTCFullYear(), d.getUTCMonth(), 1);
+        }
+        return new Date();
+    });
     const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -326,22 +397,21 @@ export default function BookingSidebar({
         }
 
         return endOptions;
-    };
-
-    useEffect(() => {
+    };    useEffect(() => {
         if (isTripBooking) {
             setRentalType("trip");
         } else {
             // Reset to defaults if switching back (though unlikely in this flow)
             if (rentalType === 'trip') setRentalType('hour');
         }
-    }, [isTripBooking]);
-
-    useEffect(() => {
+    }, [isTripBooking]);    useEffect(() => {
+        // Don't override guest count if restoring from Zustand store
+        const stored = useBookingStore.getState().bookingData;
+        if (stored && stored.boat_id === boatId) return;
         if (initialGuestCount) {
             setGuestCount(initialGuestCount);
         }
-    }, [initialGuestCount]);
+    }, [initialGuestCount, boatId]);
 
     useEffect(() => {
         // Ensure guestCount is within valid range upon initialization

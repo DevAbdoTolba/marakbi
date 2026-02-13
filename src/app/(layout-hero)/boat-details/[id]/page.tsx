@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
+import useBookingStore from "@/hooks/useBookingStore";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
 import { FiClock, FiMapPin } from "react-icons/fi";
 
@@ -125,9 +126,7 @@ export default function BoatDetailsPage() {
       // Services data (already included from BookingSidebar but ensure it's persisted)
       selected_services: bookingData.selected_services || [],
       services_total: bookingData.services_total || 0,
-    };
-
-    localStorage.setItem('booking_data', JSON.stringify(completeBookingData));
+    };    useBookingStore.getState().setBookingData(completeBookingData);
     router.push('/payment');
   };
 

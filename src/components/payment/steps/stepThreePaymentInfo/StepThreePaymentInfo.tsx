@@ -1,38 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { customerApi, clientApi, type TripBookingRequest } from "@/lib/api";
 import useFormStep from "@/hooks/useFormStep";
+import useBookingStore from "@/hooks/useBookingStore";
 import toast from "react-hot-toast";
+import { IoArrowBack } from "react-icons/io5";
 
 export default function StepThreePaymentInfo() {
   const router = useRouter();
   const { setStep } = useFormStep();
+  const bookingData = useBookingStore((s) => s.bookingData);
+  const clearBookingData = useBookingStore((s) => s.clearBookingData);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
-  const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState("");
-  const [bookingData, setBookingData] = useState<Record<string, unknown> | null>(null);
-
-  useEffect(() => {
-    // تحميل بيانات الحجز من localStorage
-    // Check for pending booking data first (from login redirect)
-    let savedBooking = localStorage.getItem('pending_booking_data');
-    if (savedBooking) {
-      // Move pending booking to active booking
-      localStorage.setItem('booking_data', savedBooking);
-      localStorage.removeItem('pending_booking_data');
-    } else {
-      savedBooking = localStorage.getItem('booking_data');
-    }
-
-    if (savedBooking) {
-      setBookingData(JSON.parse(savedBooking));
-    } else {
-      // لو مفيش بيانات حجز، رجع للصفحة الأولى
-      setStep(1);
-    }
-  }, [setStep]);
+  const [processing, setProcessing] = useState(false);  const [error, setError] = useState("");
 
   const handleConfirmPayment = async () => {
     if (!bookingData) return;
@@ -126,8 +108,7 @@ export default function StepThreePaymentInfo() {
 
         if (paymentMethod === 'card' && paymentUrl) {
           window.location.href = paymentUrl;
-        } else {
-          localStorage.removeItem('booking_data');
+        } else {          clearBookingData();
           toast.success('Booking created successfully! Payment will be collected in cash.');
           router.push('/my-bookings');
         }
@@ -150,9 +131,17 @@ export default function StepThreePaymentInfo() {
     );
   }
 
-  return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6 font-poppins">Payment Method</h2>
+  return (    <div className="max-w-2xl mx-auto p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => setStep(2)}
+          className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-600 hover:text-sky-900"
+          aria-label="Go back"
+        >
+          <IoArrowBack size={22} />
+        </button>
+        <h2 className="text-2xl font-bold font-poppins">Payment Method</h2>
+      </div>
 
       {/* Booking Summary */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6">
@@ -267,19 +256,11 @@ export default function StepThreePaymentInfo() {
         <div className="mb-4 bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
-      )}
-
-      <div className="flex gap-4">
-        <button
-          onClick={() => setStep(2)}
-          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          Back
-        </button>
+      )}      <div>
         <button
           onClick={handleConfirmPayment}
           disabled={processing}
-          className="flex-1 px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors disabled:opacity-50"
+          className="w-full px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors disabled:opacity-50"
         >
           {processing ? "Processing..." : `Confirm & ${paymentMethod === 'card' ? 'Pay' : 'Book'}`}
         </button>

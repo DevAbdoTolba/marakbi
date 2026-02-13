@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { customerApi } from "@/lib/api";
 import useFormStep from "@/hooks/useFormStep";
+import useBookingStore from "@/hooks/useBookingStore";
+import { IoArrowBack } from "react-icons/io5";
 
-export default function StepTwoPersonalInfo() {
-  const { setStep } = useFormStep();
+export default function StepTwoPersonalInfo() {  const { setStep } = useFormStep();
+  const updateBookingData = useBookingStore((s) => s.updateBookingData);
   const [loading, setLoading] = useState(true);
   const [bookingFor, setBookingFor] = useState<'self' | 'other'>('self');
 
@@ -36,25 +38,22 @@ export default function StepTwoPersonalInfo() {
       } finally {
         setLoading(false);
       }
-    };
-
-    // Check if there's already saved contact info
-    const savedBooking = localStorage.getItem('booking_data');
-    if (savedBooking) {
-      const data = JSON.parse(savedBooking);
+    };    // Check if there's already saved contact info in the store
+    const data = useBookingStore.getState().bookingData;
+    if (data) {
       if (data.booking_for) {
-        setBookingFor(data.booking_for);
+        setBookingFor(data.booking_for as 'self' | 'other');
       }
       if (data.contact_phone) {
         if (data.booking_for === 'self') {
-          setSelfPhone(data.contact_phone);
+          setSelfPhone(data.contact_phone as string);
         } else {
-          setOtherPhone(data.contact_phone);
+          setOtherPhone(data.contact_phone as string);
         }
       }
-      if (data.contact_first_name) setFirstName(data.contact_first_name);
-      if (data.contact_last_name) setLastName(data.contact_last_name);
-      if (data.booking_notes) setNotes(data.booking_notes);
+      if (data.contact_first_name) setFirstName(data.contact_first_name as string);
+      if (data.contact_last_name) setLastName(data.contact_last_name as string);
+      if (data.booking_notes) setNotes(data.booking_notes as string);
     }
 
     loadProfile();
@@ -74,19 +73,15 @@ export default function StepTwoPersonalInfo() {
         setError("First name, last name, and phone number are required");
         return;
       }
-    }
+    }    // Save contact info to Zustand store for step 3
+    updateBookingData({
+      booking_for: bookingFor,
+      contact_first_name: bookingFor === 'other' ? firstName : null,
+      contact_last_name: bookingFor === 'other' ? lastName : null,
+      contact_phone: bookingFor === 'self' ? selfPhone : otherPhone,
+      booking_notes: notes || null,
+    });
 
-    // Save contact info to localStorage for step 3
-    const savedBooking = localStorage.getItem('booking_data');
-    const bookingData = savedBooking ? JSON.parse(savedBooking) : {};
-
-    bookingData.booking_for = bookingFor;
-    bookingData.contact_first_name = bookingFor === 'other' ? firstName : null;
-    bookingData.contact_last_name = bookingFor === 'other' ? lastName : null;
-    bookingData.contact_phone = bookingFor === 'self' ? selfPhone : otherPhone;
-    bookingData.booking_notes = notes || null;
-
-    localStorage.setItem('booking_data', JSON.stringify(bookingData));
     setStep(3);
   };
 
@@ -98,9 +93,17 @@ export default function StepTwoPersonalInfo() {
     );
   }
 
-  return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6 font-poppins">Contact Information</h2>
+  return (    <div className="max-w-2xl mx-auto p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => setStep(1)}
+          className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-600 hover:text-sky-900"
+          aria-label="Go back"
+        >
+          <IoArrowBack size={22} />
+        </button>
+        <h2 className="text-2xl font-bold font-poppins">Contact Information</h2>
+      </div>
 
       {/* Booking For Toggle */}
       <div className="mb-6">
@@ -216,18 +219,10 @@ export default function StepTwoPersonalInfo() {
         <div className="mt-4 bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
-      )}
-
-      <div className="mt-6 flex gap-4">
-        <button
-          onClick={() => setStep(1)}
-          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          Back
-        </button>
+      )}      <div className="mt-6">
         <button
           onClick={handleContinue}
-          className="flex-1 px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors"
+          className="w-full px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors"
         >
           Continue to Payment
         </button>
