@@ -20,6 +20,15 @@ export default function StepOneBookingInfo() {
       </div>
     );
   }
+  const handleBack = () => {
+    // Navigate explicitly to boat details page instead of router.back(),
+    // because history may point to /login in the login-redirect flow.
+    let url = `/boat-details/${bookingData.boat_id}`;
+    if (bookingData.trip_id) {
+      url += `?trip_id=${bookingData.trip_id}`;
+    }
+    router.push(url);
+  };
 
   return (
     <div
@@ -35,7 +44,7 @@ export default function StepOneBookingInfo() {
       <div className="w-full lg:w-[60%]">
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => router.back()}
+            onClick={handleBack}
             className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-600 hover:text-sky-900"
             aria-label="Go back"
           >

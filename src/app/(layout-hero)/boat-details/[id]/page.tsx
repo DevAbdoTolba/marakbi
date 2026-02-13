@@ -125,8 +125,20 @@ export default function BoatDetailsPage() {
       boat_total_reviews: reviews_summary.total_reviews,
       // Services data (already included from BookingSidebar but ensure it's persisted)
       selected_services: bookingData.selected_services || [],
-      services_total: bookingData.services_total || 0,
-    };    useBookingStore.getState().setBookingData(completeBookingData);
+      services_total: bookingData.services_total || 0,    };
+
+    // Check if user is authenticated
+    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+
+    if (!accessToken) {
+      // Save fully enriched data so payment page has everything it needs
+      localStorage.setItem('pending_booking_data', JSON.stringify(completeBookingData));
+      localStorage.setItem('intended_url', '/payment');
+      window.location.href = '/login';
+      return;
+    }
+
+    useBookingStore.getState().setBookingData(completeBookingData);
     router.push('/payment');
   };
 

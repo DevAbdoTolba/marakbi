@@ -758,11 +758,7 @@ export default function BookingSidebar({
             const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
             const day = targetDate.getDate().toString().padStart(2, '0');
             endDateIso = `${year}-${month}-${day}T23:59:59.000Z`;
-        }
-
-        // Check if user is authenticated
-        const accessToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-        const bookingData: BookingData = {
+        }        const bookingData: BookingData = {
             boat_id: boatId,
             boat_name: boatName,
             guest_count: guestCount,
@@ -778,16 +774,6 @@ export default function BookingSidebar({
             selected_services: selectedServicesArr.length > 0 ? selectedServicesArr : undefined,
             services_total: servicesTotal > 0 ? servicesTotal : undefined,
         };
-        // Add trip_id if available (not in scope of this change but good to preserve)
-        // Original code didn't map trip_id explicitly in bookingData construction?
-        // Ah, interface has it.
-
-        if (!accessToken) {
-            localStorage.setItem('pending_booking_data', JSON.stringify(bookingData));
-            localStorage.setItem('intended_url', '/payment');
-            window.location.href = '/login';
-            return;
-        }
 
         onBookingRequest(bookingData);
     };

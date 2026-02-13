@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import PaymentHeader from "./PaymentHeader";
 import useFormStep from "@/hooks/useFormStep";
@@ -15,10 +15,18 @@ export default function PaymentLayout() {
   const bookingData = useBookingStore((s) => s.bookingData);
   const setBookingData = useBookingStore((s) => s.setBookingData);
   const [hydrated, setHydrated] = useState(false);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
-    // If store already has data, we're good
-    if (bookingData) {
+    // Guard against React Strict Mode double-invocation:
+    // The first run removes pending_booking_data from localStorage,
+    // so the second run would find nothing and redirect home.
+    if (hydratedRef.current) return;
+
+    // Check Zustand store directly (not the closure value which may be stale)
+    const storeData = useBookingStore.getState().bookingData;
+    if (storeData) {
+      hydratedRef.current = true;
       setHydrated(true);
       return;
     }
@@ -26,6 +34,7 @@ export default function PaymentLayout() {
     // Check for pending_booking_data (login redirect flow)
     const pending = localStorage.getItem('pending_booking_data');
     if (pending) {
+      hydratedRef.current = true;
       setBookingData(JSON.parse(pending));
       localStorage.removeItem('pending_booking_data');
       setHydrated(true);
