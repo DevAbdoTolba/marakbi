@@ -4,8 +4,8 @@
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-// export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
-export const BASE_URL = 'http://127.0.0.1:8787';
+export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
+// export const BASE_URL = 'http://127.0.0.1:8787';
 
 
 // Toggle for verbose API logging in the console
