@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { validateEmail, validateEgyptianPhone, VALIDATION_MESSAGES } from "@/lib/validation";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,7 @@ export default function ContactPage() {
     message: string;
   }>({ type: null, message: "" });
   const [showNotification, setShowNotification] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; phone?: string }>({});
 
   // إخفاء الـ notification بعد 5 ثواني
   useEffect(() => {
@@ -35,14 +37,30 @@ export default function ContactPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    // Clear field error on change
+    if (name === 'email' || name === 'phone') {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Frontend validation
+    const errors: { email?: string; phone?: string } = {};
+    if (!validateEmail(formData.email)) {
+      errors.email = VALIDATION_MESSAGES.INVALID_EMAIL;
+    }
+    if (formData.phone && !validateEgyptianPhone(formData.phone)) {
+      errors.phone = VALIDATION_MESSAGES.INVALID_PHONE;
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus({ type: null, message: "" });
 
@@ -102,19 +120,17 @@ export default function ContactPage() {
       {showNotification && submitStatus.type && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
           <div
-            className={`flex items-center gap-3 min-w-[350px] max-w-md p-4 rounded-lg shadow-2xl border-2 ${
-              submitStatus.type === "success"
+            className={`flex items-center gap-3 min-w-[350px] max-w-md p-4 rounded-lg shadow-2xl border-2 ${submitStatus.type === "success"
                 ? "bg-gradient-to-r from-green-50 to-green-100 border-green-400"
                 : "bg-gradient-to-r from-red-50 to-red-100 border-red-400"
-            }`}
+              }`}
           >
             {/* Icon */}
             <div
-              className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                submitStatus.type === "success"
+              className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${submitStatus.type === "success"
                   ? "bg-green-500"
                   : "bg-red-500"
-              }`}
+                }`}
             >
               {submitStatus.type === "success" ? (
                 <svg
@@ -150,20 +166,18 @@ export default function ContactPage() {
             {/* Message */}
             <div className="flex-1">
               <h3
-                className={`font-poppins font-semibold text-base mb-1 ${
-                  submitStatus.type === "success"
+                className={`font-poppins font-semibold text-base mb-1 ${submitStatus.type === "success"
                     ? "text-green-800"
                     : "text-red-800"
-                }`}
+                  }`}
               >
                 {submitStatus.type === "success" ? "Success!" : "Error!"}
               </h3>
               <p
-                className={`font-poppins text-sm ${
-                  submitStatus.type === "success"
+                className={`font-poppins text-sm ${submitStatus.type === "success"
                     ? "text-green-700"
                     : "text-red-700"
-                }`}
+                  }`}
               >
                 {submitStatus.message}
               </p>
@@ -175,11 +189,10 @@ export default function ContactPage() {
                 setShowNotification(false);
                 setSubmitStatus({ type: null, message: "" });
               }}
-              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                submitStatus.type === "success"
+              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${submitStatus.type === "success"
                   ? "hover:bg-green-200 text-green-600"
                   : "hover:bg-red-200 text-red-600"
-              }`}
+                }`}
             >
               <svg
                 className="w-5 h-5"
@@ -259,9 +272,12 @@ export default function ContactPage() {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="Email"
-                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
+                      className={`w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all ${fieldErrors.email ? 'border-red-500' : 'border-transparent'}`}
                       required
                     />
+                    {fieldErrors.email && (
+                      <p className="mt-1 text-sm text-red-600 font-poppins">{fieldErrors.email}</p>
+                    )}
                   </div>
 
                   {/* Phone */}
@@ -271,10 +287,13 @@ export default function ContactPage() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder="Phone"
-                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
+                      placeholder="Phone (e.g. 01012345678)"
+                      className={`w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all ${fieldErrors.phone ? 'border-red-500' : 'border-transparent'}`}
                       required
                     />
+                    {fieldErrors.phone && (
+                      <p className="mt-1 text-sm text-red-600 font-poppins">{fieldErrors.phone}</p>
+                    )}
                   </div>
                 </div>
 
@@ -308,11 +327,10 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full sm:w-auto px-8 py-4 font-poppins font-medium text-base rounded-lg transition-colors mt-6 ${
-                    isSubmitting
+                  className={`w-full sm:w-auto px-8 py-4 font-poppins font-medium text-base rounded-lg transition-colors mt-6 ${isSubmitting
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-orange-300 text-black hover:bg-amber-300"
-                  }`}
+                    }`}
                 >
                   {isSubmitting ? "Sending..." : "Send Message"}
                 </button>
@@ -406,7 +424,7 @@ export default function ContactPage() {
                   {/* Business Hours */}
                   <div className="flex gap-3 items-start">
                     <div className="bg-[rgba(3,2,19,0.1)] rounded-[10px] w-10 h-10 flex items-center justify-center flex-shrink-0">
-                    <Image
+                      <Image
                         src="/icons/contact-4.svg"
                         alt="Location"
                         width={20}
@@ -463,7 +481,7 @@ export default function ContactPage() {
                       height={16}
                     />
                   </Link>
-                  
+
                   <Link
                     href="https://www.x.com/marakbi"
                     target="_blank"

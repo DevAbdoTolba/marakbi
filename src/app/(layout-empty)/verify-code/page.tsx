@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import Image from 'next/image';
+import Link from 'next/link';
 
 
 export default function VerifyCodePage() {
@@ -53,7 +54,7 @@ export default function VerifyCodePage() {
       } else {
         setError(response.error || 'Invalid verification code. Please try again.');
       }
-      
+
     } catch (err) {
       console.error('Verification error:', err);
       setError('Invalid verification code. Please try again.');
@@ -67,14 +68,14 @@ export default function VerifyCodePage() {
     setResendTimer(60);
     setCanResend(false);
     setError('');
-    
+
     try {
       const response = await authApi.resendCode();
-      
+
       if (!response.success) {
         setError(response.error || 'Failed to resend code. Please try again.');
       }
-      
+
     } catch (err) {
       console.error('Resend error:', err);
       setError('Failed to resend code. Please try again.');
@@ -87,32 +88,34 @@ export default function VerifyCodePage() {
     <div className="auth-page-container">
       {/* Left Side - Image */}
       <div className="auth-left-side">
-        <Image 
+        <Image
           className="auth-left-image"
-          src="/images/Rectangle 3463875.png" 
+          src="/images/Rectangle 3463875.png"
           alt="Verification background"
           width={500}
           height={700}
         />
-        
+
         {/* Circle Background */}
         <div className="auth-logo-container">
-          <Image 
-            src="/icons/Ellipse 46.svg" 
+          <Image
+            src="/icons/Ellipse 46.svg"
             alt="Circle Background"
             width={200}
             height={200}
             className="auth-circle-bg"
           />
-          
+
           {/* Logo */}
           <div className="auth-logo">
-            <Image 
-              src="/logo.png" 
-              alt="Marakbi Logo"
-              width={200}
-              height={110}
-            />
+            <Link href="/">
+              <Image
+                src="/logo.png"
+                alt="Marakbi Logo"
+                width={200}
+                height={110}
+              />
+            </Link>
           </div>
         </div>
       </div>
@@ -149,7 +152,7 @@ export default function VerifyCodePage() {
               <label className="block text-black text-base mb-2">
                 Enter Code
               </label>
-              <input 
+              <input
                 type="password"
                 placeholder="**************"
                 value={code}
@@ -175,9 +178,8 @@ export default function VerifyCodePage() {
                     type="button"
                     onClick={handleResendCode}
                     disabled={loading}
-                    className={`text-blue-600 font-medium bg-none border-none cursor-pointer text-base underline ${
-                      loading ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                    className={`text-blue-600 font-medium bg-none border-none cursor-pointer text-base underline ${loading ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                   >
                     Resend
                   </button>
@@ -190,13 +192,12 @@ export default function VerifyCodePage() {
             </div>
 
             {/* Verify Button */}
-            <button 
+            <button
               type="button"
               onClick={handleVerify}
               disabled={loading || !code}
-              className={`w-[70%] h-12 bg-blue-800 rounded-lg border-none text-white text-base font-medium cursor-pointer transition-colors ${
-                loading || !code ? 'bg-gray-400 cursor-not-allowed' : 'hover:bg-blue-900'
-              } ${loading ? 'opacity-50' : ''}`}
+              className={`w-[70%] h-12 bg-blue-800 rounded-lg border-none text-white text-base font-medium cursor-pointer transition-colors ${loading || !code ? 'bg-gray-400 cursor-not-allowed' : 'hover:bg-blue-900'
+                } ${loading ? 'opacity-50' : ''}`}
             >
               {loading ? 'Verifying...' : 'Verify'}
             </button>

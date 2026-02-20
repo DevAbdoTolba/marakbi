@@ -13,6 +13,7 @@ import AdminCitiesLayout from "./tabContent/cities/AdminCitiesLayout";
 import AdminReviewsLayout from "./tabContent/reviews/AdminReviewsLayout";
 // import AdminVoyagesLayout from "./tabContent/voyages/AdminVoyagesLayout";
 import AdminCategoriesLayout from "./tabContent/categories/AdminCategoriesLayout";
+import AdminFacilitiesLayout from "./tabContent/facilities/AdminFacilitiesLayout";
 import { adminApi, AdminStats } from "@/lib/api";
 
 export default function AdminDashboardLayout() {
@@ -98,6 +99,7 @@ export default function AdminDashboardLayout() {
           {currentTab === "reviews" && <AdminReviewsLayout />}
           {/* Voyages tab removed - merged into Bookings */}
           {currentTab === "categories" && <AdminCategoriesLayout />}
+          {currentTab === "facilities" && <AdminFacilitiesLayout />}
         </div>
       </div>
     </div>

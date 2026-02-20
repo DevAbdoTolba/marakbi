@@ -10,7 +10,7 @@ import { IoArrowBack } from "react-icons/io5";
 
 export default function StepOneBookingInfo() {
   const router = useRouter();
-  const { setStep } = useFormStep();
+  const { setStep, completeStep } = useFormStep();
   const bookingData = useBookingStore((s) => s.bookingData);
 
   if (!bookingData) {
@@ -140,9 +140,9 @@ export default function StepOneBookingInfo() {
               </div>
             </div>
           </div>        </div>        <button
-          onClick={() => setStep(2)}
-          className="mt-6 w-full px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors"
-        >
+            onClick={() => { completeStep(1); setStep(2); }}
+            className="mt-6 w-full px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors"
+          >
           Continue
         </button>
       </div>

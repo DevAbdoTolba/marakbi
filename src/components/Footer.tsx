@@ -40,7 +40,9 @@ const Footer = () => {
           {/* Column 1: Logo and Description */}
           <div className="space-y-4 md:col-span-2 md:pr-4 lg:pr-6">
             <div className="flex items-center space-x-3">
-              <Logo variant="white" width={64} height={80} />
+              <Link href="/">
+                <Logo variant="white" width={64} height={80} />
+              </Link>
             </div>
             <p className="text-gray-300 text-sm md:text-base leading-6 md:leading-7 font-poppins">
               <span>Marakbi is your premier digital gateway to</span><br />

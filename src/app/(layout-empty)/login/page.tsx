@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi, storage } from '@/lib/api';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -134,12 +135,14 @@ export default function LoginPage() {
 
           {/* Logo */}
           <div className="auth-logo">
-            <Image
-              src="/logo.png"
-              alt="Marakbi Logo"
-              width={200}
-              height={110}
-            />
+            <Link href="/">
+              <Image
+                src="/logo.png"
+                alt="Marakbi Logo"
+                width={200}
+                height={110}
+              />
+            </Link>
           </div>
         </div>
       </div>
@@ -203,8 +206,8 @@ export default function LoginPage() {
                 <div
                   onClick={() => setRememberMe(!rememberMe)}
                   className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${rememberMe
-                      ? 'bg-[#093b77] border-[#093b77]'
-                      : 'bg-white border-gray-400 hover:border-gray-500'
+                    ? 'bg-[#093b77] border-[#093b77]'
+                    : 'bg-white border-gray-400 hover:border-gray-500'
                     }`}
                 >
                   {rememberMe && (

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminReview, BoatServiceAssignment, BoatServiceDef } from "@/lib/api";
+import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminReview, BoatServiceAssignment, BoatServiceDef, BoatFacilityDef } from "@/lib/api";
 import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight, FiHelpCircle } from "react-icons/fi";
 import Image from "next/image";
 import { useToast } from "../../ToastProvider";
@@ -23,6 +23,7 @@ interface BoatFormData {
   trips: number[];
   user_id: number;
   services: BoatServiceAssignment[];
+  facilities: BoatFacilityDef[];
 }
 interface BoatStats {
   total_fleet: number;
@@ -64,7 +65,7 @@ export default function AdminBoatListingLayout() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [removedImageUrls, setRemovedImageUrls] = useState<string[]>([]);
   // Modal UI State
-  const [activeTab, setActiveTab] = useState<'details' | 'photos' | 'trips' | 'services'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'photos' | 'trips' | 'services' | 'facilities'>('details');
   const [primaryNewImageIndex, setPrimaryNewImageIndex] = useState<number>(0);
   const [primaryExistingUrl, setPrimaryExistingUrl] = useState<string | null>(null);
 
@@ -175,6 +176,76 @@ export default function AdminBoatListingLayout() {
     setCreatingService(false);
   };
 
+  const startEditingFacility = (fac: BoatFacilityDef) => {
+    setEditingFacilityId(fac.id);
+    setEditFacilityData({
+      name: fac.name,
+      description: fac.description || '',
+      icon: null,
+    });
+  };
+
+  const cancelEditingFacility = () => {
+    setEditingFacilityId(null);
+    setEditFacilityData({ name: '', description: '', icon: null });
+  };
+
+  const handleSaveFacilityEdit = async () => {
+    if (!editingFacilityId || !editFacilityData.name) return;
+    setSavingFacility(true);
+    try {
+      const response = await adminApi.updateFacility(editingFacilityId, {
+        name: editFacilityData.name,
+        description: editFacilityData.description || '',
+      }, editFacilityData.icon || undefined);
+      if (response.success && response.data) {
+        const updatedFacility = response.data.facility;
+
+        setFormData(prev => ({
+          ...prev,
+          facilities: prev.facilities.map(f =>
+            f.id === editingFacilityId ? updatedFacility : f
+          )
+        }));
+        cancelEditingFacility();
+        showSuccess('Facility updated');
+      } else {
+        showError(response.error || 'Failed to update facility');
+      }
+    } catch {
+      showError('Failed to update facility');
+    }
+    setSavingFacility(false);
+  };
+
+  const handleCreateInlineFacility = async () => {
+    if (!newFacilityData.name) return;
+    setCreatingFacility(true);
+    try {
+      const facilityPayload = {
+        name: newFacilityData.name,
+        description: newFacilityData.description || undefined,
+      };
+      const response = await adminApi.createFacility(facilityPayload, newFacilityData.icon || undefined);
+      if (response.success && response.data) {
+        const createdFacility = response.data.facility;
+
+        setFormData(prev => ({
+          ...prev,
+          facilities: [...prev.facilities, createdFacility]
+        }));
+        resetNewFacilityData();
+        setShowNewFacilityForm(false);
+        showSuccess('Facility created and added');
+      } else {
+        showError(response.error || 'Failed to create facility');
+      }
+    } catch {
+      showError('Failed to create facility');
+    }
+    setCreatingFacility(false);
+  };
+
   // View Details Modal State
   const [viewDetailsBoat, setViewDetailsBoat] = useState<BoatDetailsData | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -203,7 +274,29 @@ export default function AdminBoatListingLayout() {
     trips: [],
     user_id: 1,
     services: [],
+    facilities: [],
   });
+
+  // Inline facility creation state
+  const [showNewFacilityForm, setShowNewFacilityForm] = useState(false);
+  const [creatingFacility, setCreatingFacility] = useState(false);
+  const [newFacilityData, setNewFacilityData] = useState<{
+    name: string;
+    description: string;
+    icon: File | null;
+  }>({ name: '', description: '', icon: null });
+  const resetNewFacilityData = () => {
+    setNewFacilityData({ name: '', description: '', icon: null });
+  };
+
+  // Inline facility editing state
+  const [editingFacilityId, setEditingFacilityId] = useState<number | null>(null);
+  const [editFacilityData, setEditFacilityData] = useState<{
+    name: string;
+    description: string;
+    icon: File | null;
+  }>({ name: '', description: '', icon: null });
+  const [savingFacility, setSavingFacility] = useState(false);
 
   // User filter from URL
   const [userFilter, setUserFilter] = useState<number | undefined>(() => {
@@ -349,7 +442,8 @@ export default function AdminBoatListingLayout() {
 
   const fetchTrips = async () => {
     const response = await adminApi.getTrips(1, 1000);
-    if (response.success && response.data) {      setTrips(response.data.trips);
+    if (response.success && response.data) {
+      setTrips(response.data.trips);
     }
   };
 
@@ -441,6 +535,7 @@ export default function AdminBoatListingLayout() {
         trips: [],
         user_id: parseInt(userId, 10),
         services: [],
+        facilities: [],
       });
       setNewImages([]);
       setImagePreviews([]);
@@ -465,6 +560,7 @@ export default function AdminBoatListingLayout() {
       trips: [],
       user_id: 1,
       services: [],
+      facilities: [],
     });
     setNewImages([]);
     setImagePreviews([]);
@@ -475,6 +571,9 @@ export default function AdminBoatListingLayout() {
     setShowNewServiceForm(false);
     resetNewServiceData();
     cancelEditingService();
+    setShowNewFacilityForm(false);
+    resetNewFacilityData();
+    cancelEditingFacility();
   };
   // ...
   const openEditModal = async (boat: AdminBoat) => {
@@ -506,6 +605,7 @@ export default function AdminBoatListingLayout() {
         user_id: data.owner_username ? 0 : 1,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         services: (data as any).services_full || data.services || [],
+        facilities: data.facilities || [],
       });
       setImagePreviews(data.images || []);
 
@@ -630,6 +730,7 @@ export default function AdminBoatListingLayout() {
       primary_image_url: primaryExistingUrl || undefined,
       primary_new_image_index: !primaryExistingUrl ? primaryNewImageIndex : undefined,
       services: formData.services,
+      facilities: formData.facilities.map(f => f.id),
     };
 
     let response;
@@ -1232,6 +1333,12 @@ export default function AdminBoatListingLayout() {
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'services' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
                   >
                     <FiHelpCircle className="inline mr-2" /> Services
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('facilities')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'facilities' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                  >
+                    <FiCheck className="inline mr-2" /> Facilities
                   </button>
                 </div>
               </div>
@@ -1874,6 +1981,194 @@ export default function AdminBoatListingLayout() {
                 </div>
               )}
 
+              {activeTab === 'facilities' && (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <FiCheck size={20} className="text-gray-900" />
+                      <h3 className="text-lg font-bold text-gray-900">Boat Facilities</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewFacilityForm(true)}
+                      className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
+                    >
+                      + Add Facility
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-6">Manage facilities available on this boat.</p>
+
+                  {showNewFacilityForm && (
+                    <div className="mb-6 rounded-xl border-2 border-green-200 bg-green-50/30 p-5">
+                      <h4 className="font-bold text-sm text-gray-900 mb-4">New Facility</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Facility Name *</label>
+                          <input
+                            type="text"
+                            value={newFacilityData.name}
+                            onChange={(e) => setNewFacilityData(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none"
+                            placeholder="e.g. WiFi, Air Conditioning"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Facility Icon</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                setNewFacilityData(prev => ({ ...prev, icon: e.target.files![0] }));
+                              }
+                            }}
+                            className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                          />
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
+                        <textarea
+                          value={newFacilityData.description}
+                          onChange={(e) => setNewFacilityData(prev => ({ ...prev, description: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none resize-none"
+                          rows={2}
+                          placeholder="Describe this facility..."
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          disabled={creatingFacility || !newFacilityData.name}
+                          onClick={handleCreateInlineFacility}
+                          className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                        >
+                          {creatingFacility ? 'Creating...' : 'Create & Add'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowNewFacilityForm(false); resetNewFacilityData(); }}
+                          className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.facilities.length === 0 && !showNewFacilityForm ? (
+                    <div className="py-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                      <FiCheck size={24} className="mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-500 text-sm">No facilities added yet. Click &quot;Add Facility&quot; to create one.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {formData.facilities.map((fac, idx) => {
+                        const isEditing = editingFacilityId === fac.id;
+                        return (
+                          <div key={fac.id || `new-fac-${idx}`} className={`rounded-xl border-2 ${isEditing ? 'border-green-400 bg-green-50/20' : 'border-gray-900 bg-gray-50'} p-4 transition-all`}>
+                            {isEditing ? (
+                              <div>
+                                <h4 className="font-bold text-sm text-green-700 mb-3 flex items-center gap-1.5">
+                                  <FiEdit2 size={13} /> Editing Facility
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Facility Name *</label>
+                                    <input
+                                      type="text"
+                                      value={editFacilityData.name}
+                                      onChange={(e) => setEditFacilityData(prev => ({ ...prev, name: e.target.value }))}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Facility Icon (Optional)</label>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                          setEditFacilityData(prev => ({ ...prev, icon: e.target.files![0] }));
+                                        }
+                                      }}
+                                      className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                                    />
+                                  </div>
+                                  <div className="md:col-span-2">
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
+                                    <textarea
+                                      value={editFacilityData.description}
+                                      onChange={(e) => setEditFacilityData(prev => ({ ...prev, description: e.target.value }))}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none resize-none"
+                                      rows={2}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    type="button"
+                                    disabled={savingFacility || !editFacilityData.name}
+                                    onClick={handleSaveFacilityEdit}
+                                    className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                                  >
+                                    {savingFacility ? 'Saving...' : 'Save Changes'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={cancelEditingFacility}
+                                    className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden relative flex items-center justify-center">
+                                  {fac.image_url ? (
+                                    <Image src={fac.image_url} alt={fac.name} fill className="object-cover" />
+                                  ) : (
+                                    <FiCheck size={20} className="text-gray-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <h4 className="font-bold text-sm text-gray-900">{fac.name}</h4>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => startEditingFacility(fac)}
+                                        className="px-3 py-1 rounded-lg text-xs font-medium border bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 transition-all"
+                                      >
+                                        <FiEdit2 className="inline mr-1" size={12} />Edit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setFormData(prev => ({
+                                            ...prev,
+                                            facilities: prev.facilities.filter(f => f.id !== fac.id)
+                                          }));
+                                        }}
+                                        className="px-3 py-1 rounded-lg text-xs font-medium border bg-red-50 text-red-600 border-red-200 hover:bg-red-100 transition-all"
+                                      >
+                                        <FiTrash2 className="inline mr-1" size={12} />Remove
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-gray-500">{fac.description || 'No description'}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {activeTab === 'photos' && (
                 // Photos Tab
                 <div>
@@ -1994,7 +2289,8 @@ export default function AdminBoatListingLayout() {
 
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Confirm Delete */}
       <ConfirmModal
@@ -2007,6 +2303,6 @@ export default function AdminBoatListingLayout() {
         onCancel={() => setConfirmDelete({ isOpen: false, boatId: null })}
         isLoading={deleting}
       />
-    </div>
+    </div >
   );
 }

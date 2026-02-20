@@ -16,6 +16,7 @@ export default function BoatDetailsPage() {
   const [boatData, setBoatData] = useState<ApiBoatDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [showAllFacilities, setShowAllFacilities] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mobileImageIndex, setMobileImageIndex] = useState(0);
@@ -125,7 +126,8 @@ export default function BoatDetailsPage() {
       boat_total_reviews: reviews_summary.total_reviews,
       // Services data (already included from BookingSidebar but ensure it's persisted)
       selected_services: bookingData.selected_services || [],
-      services_total: bookingData.services_total || 0,    };
+      services_total: bookingData.services_total || 0,
+    };
 
     // Check if user is authenticated
     const accessToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -618,7 +620,65 @@ export default function BoatDetailsPage() {
               </section>
             )}
 
-            {/* Meet Your Captain */}
+            {/* Boat Facilities */}
+            {boat.facilities && boat.facilities.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-semibold mb-4 font-poppins">Boat Facilities</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {(showAllFacilities ? boat.facilities : boat.facilities.slice(0, 6)).map((facility: { id: number; name: string; description?: string | null; image_url?: string | null }) => (
+                    <div
+                      key={facility.id}
+                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 hover:border-gray-200 transition-all cursor-default group/fac relative"
+                    >
+                      {/* Icon */}
+                      <div className="w-8 h-8 bg-white rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-gray-200">
+                        {facility.image_url ? (
+                          <Image
+                            src={facility.image_url}
+                            alt={facility.name}
+                            width={24}
+                            height={24}
+                            className="object-contain"
+                          />
+                        ) : (
+                          <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      {/* Name */}
+                      <span className="text-sm font-medium text-gray-800 truncate">{facility.name}</span>
+
+                      {/* Tooltip */}
+                      {facility.description && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/fac:opacity-100 transition-opacity pointer-events-none whitespace-normal max-w-[220px] text-center z-50 shadow-lg">
+                          {facility.description}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {boat.facilities.length > 6 && (
+                  <button
+                    onClick={() => setShowAllFacilities(!showAllFacilities)}
+                    className="mt-4 text-sm font-medium text-[#0F3875] hover:text-[#0F3875]/80 transition-colors flex items-center gap-1"
+                  >
+                    {showAllFacilities ? (
+                      <>
+                        Show less
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
+                      </>
+                    ) : (
+                      <>
+                        Show {boat.facilities.length - 6} more
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                      </>
+                    )}
+                  </button>
+                )}
+              </section>
+            )}
             <section>
               <h2 className="text-2xl font-semibold mb-4 font-poppins">Meet Your Captain</h2>
               <div className="bg-gray-50 rounded-lg p-6">
@@ -797,21 +857,21 @@ export default function BoatDetailsPage() {
           {/* Right Sidebar - Booking (Fixed Position) */}
           <div className="lg:col-span-1">
             <div>              <BookingSidebar
-                boatId={boat.id}
-                boatName={boat.name}
-                pricePerHour={boat.price_per_hour}
-                pricePerDay={boat.price_per_day}
-                maxGuests={boat.max_seats}
-                serviceFeeRate={boatData.service_fee_rate}
-                onBookingRequest={handleRequestToBook}
-                isTripBooking={!!selectedTrip}
-                tripDuration={selectedTrip?.voyage_hours}
-                tripPrice={selectedTrip?.total_price}
-                initialGuestCount={searchParams.get("guest_count") ? parseInt(searchParams.get("guest_count")!) : (searchParams.get("min_passengers") ? parseInt(searchParams.get("min_passengers")!) : 2)}
-                locationUrl={boat.location_url}
-                priceMode={boat.price_mode as "per_time" | "per_person" | "per_person_per_time"}
-                boatServices={boat.services}
-              />
+              boatId={boat.id}
+              boatName={boat.name}
+              pricePerHour={boat.price_per_hour}
+              pricePerDay={boat.price_per_day}
+              maxGuests={boat.max_seats}
+              serviceFeeRate={boatData.service_fee_rate}
+              onBookingRequest={handleRequestToBook}
+              isTripBooking={!!selectedTrip}
+              tripDuration={selectedTrip?.voyage_hours}
+              tripPrice={selectedTrip?.total_price}
+              initialGuestCount={searchParams.get("guest_count") ? parseInt(searchParams.get("guest_count")!) : (searchParams.get("min_passengers") ? parseInt(searchParams.get("min_passengers")!) : 2)}
+              locationUrl={boat.location_url}
+              priceMode={boat.price_mode as "per_time" | "per_person" | "per_person_per_time"}
+              boatServices={boat.services}
+            />
             </div>
           </div>
         </div>

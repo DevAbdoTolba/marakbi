@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { authApi } from '@/lib/api';
 
 
@@ -51,7 +52,7 @@ export default function SignUpPage() {
 
       if (response.success) {
         setSuccess('Account created successfully! Redirecting to login...');
-        
+
         // Navigate to login page after successful registration
         setTimeout(() => {
           router.push('/login');
@@ -59,7 +60,7 @@ export default function SignUpPage() {
       } else {
         setError(response.error || 'Sign up failed. Please try again.');
       }
-      
+
     } catch (err: unknown) {
       console.error('Sign up error:', err);
       setError(err instanceof Error ? err.message : 'Sign up failed. Please try again.');
@@ -72,32 +73,34 @@ export default function SignUpPage() {
     <div className="auth-page-container">
       {/* Left Side - Image */}
       <div className="auth-left-side">
-        <Image 
+        <Image
           className="auth-left-image"
-          src="/images/Rectangle 3463873.png" 
+          src="/images/Rectangle 3463873.png"
           alt="Yacht background"
           width={500}
           height={700}
         />
-        
+
         {/* Circle Background */}
         <div className="auth-logo-container">
-          <Image 
-            src="/icons/Ellipse 46.svg" 
+          <Image
+            src="/icons/Ellipse 46.svg"
             alt="Circle Background"
             width={200}
             height={200}
             className="auth-circle-bg"
           />
-          
+
           {/* Logo */}
           <div className="auth-logo">
-            <Image 
-              src="/logo.png" 
-              alt="Marakbi Logo"
-              width={200}
-              height={110}
-            />
+            <Link href="/">
+              <Image
+                src="/logo.png"
+                alt="Marakbi Logo"
+                width={200}
+                height={110}
+              />
+            </Link>
           </div>
         </div>
       </div>
@@ -122,7 +125,7 @@ export default function SignUpPage() {
               <label className="block text-gray-600 text-sm font-semibold mb-2 capitalize">
                 Full Name
               </label>
-              <input 
+              <input
                 type="text"
                 placeholder="Your Name"
                 value={fullName}
@@ -137,7 +140,7 @@ export default function SignUpPage() {
               <label className="block text-gray-600 text-sm font-semibold mb-2 capitalize">
                 Email Address
               </label>
-              <input 
+              <input
                 type="email"
                 placeholder="Your@Example.Com"
                 value={email}
@@ -152,7 +155,7 @@ export default function SignUpPage() {
               <label className="block text-gray-600 text-sm font-semibold mb-2 capitalize">
                 Password
               </label>
-              <input 
+              <input
                 type="password"
                 placeholder="**************"
                 value={password}
@@ -167,7 +170,7 @@ export default function SignUpPage() {
               <label className="block text-gray-600 text-sm font-semibold mb-2 capitalize">
                 Confirm Password
               </label>
-              <input 
+              <input
                 type="password"
                 placeholder="**************"
                 value={confirmPassword}
@@ -182,20 +185,19 @@ export default function SignUpPage() {
               <label className="flex items-start gap-3 cursor-pointer text-sm text-gray-500 leading-5">
                 <div
                   onClick={() => setAgreeTerms(!agreeTerms)}
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0 mt-0.5 ${
-                    agreeTerms 
-                      ? 'bg-[#093b77] border-[#093b77]' 
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0 mt-0.5 ${agreeTerms
+                      ? 'bg-[#093b77] border-[#093b77]'
                       : 'bg-white border-gray-400 hover:border-gray-500'
-                  }`}
+                    }`}
                 >
                   {agreeTerms && (
-                    <svg 
-                      className="w-3 h-3 text-white" 
-                      fill="none" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth="3" 
-                      viewBox="0 0 24 24" 
+                    <svg
+                      className="w-3 h-3 text-white"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="3"
+                      viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
                       <path d="M5 13l4 4L19 7"></path>
@@ -204,15 +206,15 @@ export default function SignUpPage() {
                 </div>
                 <span>
                   I Agree To The{' '}
-                  <a 
-                    href="#" 
+                  <a
+                    href="#"
                     className="text-blue-600 no-underline"
                   >
                     Terms Of Service
                   </a>
                   {' '}And{' '}
-                  <a 
-                    href="#" 
+                  <a
+                    href="#"
                     className="text-blue-600 no-underline"
                   >
                     Privacy Policy
@@ -236,7 +238,7 @@ export default function SignUpPage() {
             )}
 
             {/* Sign Up Button */}
-            <button 
+            <button
               type="button"
               onClick={handleSignUp}
               disabled={loading}
@@ -257,58 +259,58 @@ export default function SignUpPage() {
               </button>
             </p>
 
-             {/* Separator */}
-             <div className="flex items-center my-5">
-               <div className="flex-1 h-px bg-gray-300" />
-               <span className="px-4 text-sm text-gray-400 font-normal">
-                 Or continue with
-               </span>
-               <div className="flex-1 h-px bg-gray-300" />
-             </div>
+            {/* Separator */}
+            <div className="flex items-center my-5">
+              <div className="flex-1 h-px bg-gray-300" />
+              <span className="px-4 text-sm text-gray-400 font-normal">
+                Or continue with
+              </span>
+              <div className="flex-1 h-px bg-gray-300" />
+            </div>
 
-             {/* Social Login Icons */}
-             <div className="flex justify-between items-center w-full px-12">
-               {/* Facebook */}
-               <button
-                 type="button"
-                 onClick={() => console.log('Facebook login clicked')}
-                 className="w-12 h-12 rounded-full border-none cursor-pointer bg-transparent flex items-center justify-center p-2"
-               >
-                 <Image 
-                   src="/icons/flat-color-icons_fb.svg" 
-                   alt="Facebook"
-                   width={32}
-                   height={32}
-                 />
-               </button>
+            {/* Social Login Icons */}
+            <div className="flex justify-between items-center w-full px-12">
+              {/* Facebook */}
+              <button
+                type="button"
+                onClick={() => console.log('Facebook login clicked')}
+                className="w-12 h-12 rounded-full border-none cursor-pointer bg-transparent flex items-center justify-center p-2"
+              >
+                <Image
+                  src="/icons/flat-color-icons_fb.svg"
+                  alt="Facebook"
+                  width={32}
+                  height={32}
+                />
+              </button>
 
-               {/* Google */}
-               <button
-                 type="button"
-                 onClick={() => console.log('Google login clicked')}
-                 className="w-12 h-12 rounded-full border-none cursor-pointer bg-transparent flex items-center justify-center p-2"
-               >
-                 <Image 
-                   src="/icons/flat-color-icons_google.svg" 
-                   alt="Google"
-                   width={32}
-                   height={32}
-                 />
-               </button>
+              {/* Google */}
+              <button
+                type="button"
+                onClick={() => console.log('Google login clicked')}
+                className="w-12 h-12 rounded-full border-none cursor-pointer bg-transparent flex items-center justify-center p-2"
+              >
+                <Image
+                  src="/icons/flat-color-icons_google.svg"
+                  alt="Google"
+                  width={32}
+                  height={32}
+                />
+              </button>
 
-               {/* Apple */}
-               <button
-                 type="button"
-                 onClick={() => console.log('Apple login clicked')}
-                 className="w-12 h-12 rounded-full border-none cursor-pointer bg-transparent flex items-center justify-center p-2"
-               >
-                 <Image 
-                   src="/icons/flat-color-icons_apple.svg" 
-                   alt="Apple"
-                   width={32}
-                   height={32}
-                 />
-               </button>
+              {/* Apple */}
+              <button
+                type="button"
+                onClick={() => console.log('Apple login clicked')}
+                className="w-12 h-12 rounded-full border-none cursor-pointer bg-transparent flex items-center justify-center p-2"
+              >
+                <Image
+                  src="/icons/flat-color-icons_apple.svg"
+                  alt="Apple"
+                  width={32}
+                  height={32}
+                />
+              </button>
             </div>
           </form>
         </div>

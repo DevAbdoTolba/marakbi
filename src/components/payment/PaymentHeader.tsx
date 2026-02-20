@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Logo from "../Logo";
 import StepCounter from "./stepCounter/StepCounter";
 
@@ -22,7 +23,9 @@ export default function PaymentHeader() {
       {/* Logo — hidden on small screens */}
       <div className="absolute left-0">
         <div className="hidden md:block">
-          <Logo width={40} height={100} className="mr-auto" />
+          <Link href="/">
+            <Logo width={40} height={100} className="mr-auto" />
+          </Link>
         </div>
       </div>
 

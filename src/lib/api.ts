@@ -4,8 +4,8 @@
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
-// export const BASE_URL = 'http://127.0.0.1:8787';
+// export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
+export const BASE_URL = 'http://127.0.0.1:8787';
 
 
 // Toggle for verbose API logging in the console
@@ -67,6 +67,15 @@ export interface BoatServiceAssignment {
   per_person_all_required?: boolean;
 }
 
+// Boat Facility Types
+export interface BoatFacilityDef {
+  id: number;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  created_at: string;
+}
+
 // Boat Types
 export interface Boat {
   id: number;
@@ -85,10 +94,11 @@ export interface Boat {
   total_reviews: number;
   average_rating?: number;
   user_id: number;
-  owner_username?: string;  created_at: string;
+  owner_username?: string; created_at: string;
   services?: BoatServiceAssignment[];
   badge_services?: BoatServiceAssignment[];
   show_guests_badge?: boolean;
+  facilities?: BoatFacilityDef[];
   trips?: Array<{
     id: number;
     city_id: number;
@@ -121,6 +131,7 @@ export interface AddBoatData {
   boat_images?: File[];
   primary_new_image_index?: number;
   services?: BoatServiceAssignment[];
+  facilities?: number[];
 }
 
 export interface EditBoatData {
@@ -142,6 +153,7 @@ export interface EditBoatData {
   primary_image_url?: string;
   primary_new_image_index?: number;
   services?: BoatServiceAssignment[];
+  facilities?: number[];
 }
 
 
@@ -1069,11 +1081,12 @@ export interface AdminBoat {
   max_seats: number;
   max_seats_stay: number;
   location_url?: string;
-  owner_username: string | null;  created_at: string;
+  owner_username: string | null; created_at: string;
   services?: BoatServiceAssignment[];
   badge_services?: BoatServiceAssignment[];
   services_full?: BoatServiceAssignment[];
   show_guests_badge?: boolean;
+  facilities?: BoatFacilityDef[];
 }
 
 export interface AdminTrip {
@@ -1264,6 +1277,9 @@ export const adminApi = {
     if (boatData.services) {
       formData.append('services', JSON.stringify(boatData.services));
     }
+    if (boatData.facilities) {
+      formData.append('facilities', JSON.stringify(boatData.facilities));
+    }
 
     if (boatData.primary_new_image_index !== undefined) {
       formData.append('primary_new_image_index', boatData.primary_new_image_index.toString());
@@ -1299,6 +1315,9 @@ export const adminApi = {
 
     if (boatData.services !== undefined) {
       formData.append('services', JSON.stringify(boatData.services));
+    }
+    if (boatData.facilities) {
+      formData.append('facilities', JSON.stringify(boatData.facilities));
     }
 
     if (boatData.primary_image_url) formData.append('primary_image_url', boatData.primary_image_url);
@@ -1497,6 +1516,35 @@ export const adminApi = {
     return adminFormRequest(`/admin/services/${serviceId}`, formData, 'PUT');
   },
   deleteService: async (serviceId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/services/${serviceId}`, { method: 'DELETE' }),
+
+  // Facilities
+  getFacilities: async (): Promise<ApiResponse<{ facilities: BoatFacilityDef[] }>> => apiRequest('/admin/facilities'),
+  getFacility: async (facilityId: number): Promise<ApiResponse<BoatFacilityDef & { boats: { id: number; name: string }[] }>> => apiRequest(`/admin/facilities/${facilityId}`),
+  createFacility: async (data: { name: string; description?: string; image_url?: string }, imageFile?: File): Promise<ApiResponse<{ message: string; facility: BoatFacilityDef }>> => {
+    let imageUrl = data.image_url;
+    if (imageFile) {
+      const { uploadToCloudinary } = await import('./cloudinaryUpload');
+      imageUrl = await uploadToCloudinary(imageFile, 'marakbi/facilities');
+    }
+    const formData = new FormData();
+    formData.append('name', data.name);
+    if (data.description) formData.append('description', data.description);
+    if (imageUrl) formData.append('image_url', imageUrl);
+    return adminFormRequest('/admin/facilities', formData);
+  },
+  updateFacility: async (facilityId: number, data: { name?: string; description?: string; image_url?: string }, imageFile?: File): Promise<ApiResponse<{ message: string; facility: BoatFacilityDef }>> => {
+    let imageUrl = data.image_url;
+    if (imageFile) {
+      const { uploadToCloudinary } = await import('./cloudinaryUpload');
+      imageUrl = await uploadToCloudinary(imageFile, 'marakbi/facilities');
+    }
+    const formData = new FormData();
+    if (data.name) formData.append('name', data.name);
+    if (data.description !== undefined) formData.append('description', data.description || '');
+    if (imageUrl) formData.append('image_url', imageUrl);
+    return adminFormRequest(`/admin/facilities/${facilityId}`, formData, 'PUT');
+  },
+  deleteFacility: async (facilityId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/facilities/${facilityId}`, { method: 'DELETE' }),
 };
 
 
