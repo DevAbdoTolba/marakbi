@@ -1,6 +1,6 @@
-import AdminDashboardHeader from "./_components/AdminDashboardHeader";
 import React, { ReactNode } from "react";
 import { Inter } from "next/font/google";
+import AdminDashboardHeader from "./_components/AdminDashboardHeader";
 
 const inter = Inter({
   subsets: ["latin"],
