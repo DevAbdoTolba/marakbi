@@ -53,20 +53,6 @@ const AboutApp = () => {
               </li>
             </ul>
 
-            <div className="mt-6 sm:mt-8">
-              <Image
-                src="/images/image 2.png"
-                alt="App Store"
-                width={208}
-                height={44}
-                className="w-40 h-9 sm:w-52 sm:h-11"
-              />
-            </div>
-            <div className="pl-3 sm:pl-4 mb-6 sm:mb-8">
-              <p className="text-black text-xs sm:text-sm font-normal font-poppins leading-6 sm:leading-9">
-                CTO & Founder, Marakbi App
-              </p>
-            </div>
           </div>
 
           {/* Right Side: Image */}

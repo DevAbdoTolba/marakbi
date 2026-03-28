@@ -404,7 +404,7 @@ export default function OurTeamPage() {
                   <h3 className="text-2xl font-bold text-[#106BD8] font-poppins mb-2">
                     Nesma Ghazaly
                   </h3>
-                  <p className="text-gray-600 font-poppins">CTO & Founder</p>
+                  <p className="text-gray-600 font-poppins">Founder</p>
                 </div>
                 <div className="w-10 h-10 border border-[#106BD8] rounded-full flex items-center justify-center hover:bg-[#106BD8] transition-all duration-200 cursor-pointer group">
                   <svg
@@ -440,7 +440,7 @@ export default function OurTeamPage() {
                   <h3 className="text-2xl font-bold text-[#106BD8] font-poppins mb-2">
                     Ahmed Bastawi
                   </h3>
-                  <p className="text-gray-600 font-poppins">PR-Co-Founder</p>
+                  <p className="text-gray-600 font-poppins">Co-Founder</p>
                 </div>
                 <div className="w-10 h-10 border border-[#106BD8] rounded-full flex items-center justify-center hover:bg-[#106BD8] transition-all duration-200 cursor-pointer group">
                   <svg
