@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
         hostname: "res.cloudinary.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
     ],
     // Allow using specific quality values in <Image quality={...} />
     // to avoid Next.js 16 warning about images.qualities

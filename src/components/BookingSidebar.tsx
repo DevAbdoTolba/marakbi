@@ -18,7 +18,7 @@ interface BookingSidebarProps {
     tripPrice?: number;
     initialGuestCount?: number;
     locationUrl?: string;
-    priceMode?: "per_time" | "per_person" | "per_person_per_time";
+    priceMode?: "per_time" | "per_person" | "per_person_per_time" | "per_trip";
 }
 
 export interface BookingData {
@@ -116,6 +116,9 @@ export default function BookingSidebar({
             basePrice = tripPrice;
             // Set duration for display/logic
             calculatedHours = tripDuration;
+        } else if (priceMode === 'per_trip') {
+            // Per Trip: flat price regardless of hours/days/guests
+            basePrice = pricePerHour || pricePerDay || 0;
         } else if (rentalType === "hour") {
             if (startTime && endTime) {
                 const startHour = parseInt(startTime.split(":")[0]);
@@ -323,7 +326,10 @@ export default function BookingSidebar({
     let priceUnitLabel = "/Hour";
     let priceDailyUnitLabel = "/Day"; // Default
 
-    if (priceMode === 'per_person') {
+    if (priceMode === 'per_trip') {
+        priceUnitLabel = "/Trip";
+        priceDailyUnitLabel = "/Trip";
+    } else if (priceMode === 'per_person') {
         priceUnitLabel = "/Person";
         priceDailyUnitLabel = "/Person/Day";
     } else if (priceMode === 'per_person_per_time') {
@@ -355,6 +361,7 @@ export default function BookingSidebar({
 
     const breakdownLabel = () => {
         if (isTripBooking) return 'Flat Rate';
+        if (priceMode === 'per_trip') return 'Flat Rate (Per Trip)';
         if (rentalType === 'day') {
             if (priceMode === 'per_person' || priceMode === 'per_person_per_time') {
                 return `E£ ${effectivePrice} × ${guestCount} guests × ${days} days`;
@@ -375,8 +382,8 @@ export default function BookingSidebar({
 
     return (
         <div className="bg-white rounded-lg border border-stone-300 p-4 shadow-lg">
-            {!isTripBooking ? (
-                /* Rental Type Tabs - Hide for Trip Booking */
+            {!isTripBooking && priceMode !== 'per_trip' ? (
+                /* Rental Type Tabs - Hide for Trip Booking and Per Trip pricing */
                 <div className="flex justify-start items-center gap-2 mb-6">
                     {pricePerHour && (
                         <button

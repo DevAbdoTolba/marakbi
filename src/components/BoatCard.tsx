@@ -19,7 +19,9 @@ interface BoatCardProps {
 const BoatCard = ({ boatId, imageUrl, name, price, location, guests, status, rooms, rating = 0, reviewsCount = 0, guestCount, priceMode = 'per_time' }: BoatCardProps) => {
   // Determine label based on priceMode
   let priceUnit = ' /Hour';
-  if (priceMode === 'per_person') {
+  if (priceMode === 'per_trip') {
+    priceUnit = ' /Trip';
+  } else if (priceMode === 'per_person') {
     priceUnit = ' /Person';
   } else if (priceMode === 'per_person_per_time') {
     priceUnit = ' /Person/Hr';
