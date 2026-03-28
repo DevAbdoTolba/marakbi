@@ -392,10 +392,10 @@ export default function OurTeamPage() {
             <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
                 <Image
-                  src="/images/founder-nesma.png"
+                  src="/images/founder 2.png"
                   alt="Ahmed Bastawi"
                   fill
-                  className="object-contain scale-110"
+                  className="object-contain"
                 />
                 <div className="absolute top-4 right-4"></div>
               </div>
@@ -428,10 +428,10 @@ export default function OurTeamPage() {
             <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
                 <Image
-                  src="/images/founder 2.png"
+                  src="/images/founder-nesma.png"
                   alt="Nesma Ghazaly"
                   fill
-                  className="object-contain"
+                  className="object-contain scale-110"
                 />
                 <div className="absolute top-4 right-4"></div>
               </div>
