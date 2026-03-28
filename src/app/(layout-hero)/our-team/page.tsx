@@ -392,10 +392,10 @@ export default function OurTeamPage() {
             <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
                 <Image
-                  src="/images/founder 2.png"
+                  src="/images/founder-nesma.png"
                   alt="Ahmed Bastawi"
                   fill
-                  className="object-contain"
+                  className="object-contain scale-110"
                 />
                 <div className="absolute top-4 right-4"></div>
               </div>
@@ -404,7 +404,7 @@ export default function OurTeamPage() {
                   <h3 className="text-2xl font-bold text-[#106BD8] font-poppins mb-2">
                     Ahmed Bastawi
                   </h3>
-                  <p className="text-gray-600 font-poppins">CTO & Founder</p>
+                  <p className="text-gray-600 font-poppins">PR-Co-Founder</p>
                 </div>
                 <div className="w-10 h-10 border border-[#106BD8] rounded-full flex items-center justify-center hover:bg-[#106BD8] transition-all duration-200 cursor-pointer group">
                   <svg
@@ -428,10 +428,10 @@ export default function OurTeamPage() {
             <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
                 <Image
-                  src="/images/founder-nesma.png"
+                  src="/images/founder 2.png"
                   alt="Nesma Ghazaly"
                   fill
-                  className="object-contain scale-110"
+                  className="object-contain"
                 />
                 <div className="absolute top-4 right-4"></div>
               </div>
@@ -440,7 +440,7 @@ export default function OurTeamPage() {
                   <h3 className="text-2xl font-bold text-[#106BD8] font-poppins mb-2">
                     Nesma Ghazaly
                   </h3>
-                  <p className="text-gray-600 font-poppins">PR-Co-Founder</p>
+                  <p className="text-gray-600 font-poppins">CTO & Founder</p>
                 </div>
                 <div className="w-10 h-10 border border-[#106BD8] rounded-full flex items-center justify-center hover:bg-[#106BD8] transition-all duration-200 cursor-pointer group">
                   <svg
