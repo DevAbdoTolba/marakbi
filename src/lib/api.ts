@@ -4,8 +4,7 @@
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
-// export const BASE_URL = 'http://127.0.0.1:8787';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
 
 
 // Toggle for verbose API logging in the console
@@ -47,6 +46,26 @@ export interface AuthUser {
   role?: string;
 }
 
+// Service Types
+export interface BoatService {
+  id: number;
+  name: string;
+  description: string | null;
+  default_price: number | null;
+  price_mode: 'per_trip' | 'per_person' | 'per_person_per_time';
+  icon_url: string | null;
+  created_at: string;
+}
+
+export interface BoatServiceAssociation {
+  service_id: number;
+  service: BoatService | null;
+  price: number | null;
+  is_badge: boolean;
+  badge_display_name: string | null;
+  per_person_all_required: boolean;
+}
+
 // Boat Types
 export interface Boat {
   id: number;
@@ -59,13 +78,15 @@ export interface Boat {
   price_per_day?: number;
   max_seats: number;
   max_seats_stay: number;
-  location_url?: string; // New field
-  price_mode?: string; // New field
+  location_url?: string;
+  price_mode?: string;
   total_reviews: number;
-  average_rating?: number; // New field
+  average_rating?: number;
   user_id: number;
   owner_username?: string;
   created_at: string;
+  services?: BoatServiceAssociation[];
+  badge_services?: BoatServiceAssociation[];
   trips?: Array<{
     id: number;
     city_id: number;

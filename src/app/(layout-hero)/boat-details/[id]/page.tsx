@@ -3,7 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL } from "@/lib/api";
+import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAssociation } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
 import { FiClock, FiMapPin } from "react-icons/fi";
@@ -534,6 +534,63 @@ export default function BoatDetailsPage() {
               </div>
             </section>
 
+
+            {/* Available Services */}
+            {boat.services && boat.services.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-semibold mb-4 font-poppins">Available Services</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {boat.services.map((assoc: BoatServiceAssociation) => {
+                    const service = assoc.service;
+                    if (!service) return null;
+                    const price = assoc.price ?? service.default_price;
+                    const priceModeLabel =
+                      service.price_mode === 'per_person'
+                        ? 'Per Person'
+                        : service.price_mode === 'per_person_per_time'
+                          ? 'Per Person/Time'
+                          : 'Per Trip';
+
+                    return (
+                      <div
+                        key={assoc.service_id}
+                        className="flex items-start gap-4 bg-gray-50 border border-gray-100 rounded-xl p-4"
+                      >
+                        <div className="flex-shrink-0 w-10 h-10 rounded-lg border border-gray-200 bg-white flex items-center justify-center overflow-hidden">
+                          {service.icon_url ? (
+                            <Image
+                              src={normalizeImageUrl(service.icon_url)}
+                              alt={service.name}
+                              width={32}
+                              height={32}
+                              className="object-contain"
+                            />
+                          ) : (
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-semibold text-gray-900 font-poppins">{service.name}</h3>
+                          {service.description && (
+                            <p className="text-xs text-gray-500 mt-0.5">{service.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            {price != null && (
+                              <span className="text-xs font-medium text-[#0f3875]">{Number(price).toFixed(2)} EGP</span>
+                            )}
+                            <span className="text-[10px] text-gray-500 bg-gray-200 rounded px-1.5 py-0.5">
+                              {priceModeLabel}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* Meet Your Captain */}
             <section>
