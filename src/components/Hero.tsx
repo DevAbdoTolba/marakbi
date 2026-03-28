@@ -79,7 +79,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative w-full h-auto sm:h-240 overflow-hidden">
+    <section className="relative w-full h-auto sm:h-240 overflow-hidden sm:overflow-visible">
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
@@ -192,9 +192,24 @@ const Hero = () => {
         </div>
       </div>
 
+      {/* Wave transition — blends hero bottom into the white section below */}
+      <div className="hidden sm:block absolute bottom-0 left-0 w-full z-10">
+        <svg
+          className="w-full block"
+          viewBox="0 0 1440 80"
+          preserveAspectRatio="none"
+          style={{ height: '80px' }}
+        >
+          <path
+            d="M0,80 L0,80 C200,80 380,80 500,40 C580,15 650,0 720,0 C790,0 860,15 940,40 C1060,80 1240,80 1440,80 L1440,80 Z"
+            fill="white"
+          />
+        </svg>
+      </div>
+
       {/* Featured Activities Section - Hidden on Mobile */}
-      <div className="hidden sm:block absolute bottom-0 left-1/2 transform -translate-x-1/2 max-w-5xl w-[600px] px-4">
-        <div className="bg-white rounded-tl-lg rounded-tr-lg shadow-lg">
+      <div className="hidden sm:block absolute -bottom-12 left-1/2 transform -translate-x-1/2 max-w-5xl w-[600px] px-4 z-20">
+        <div className="bg-white rounded-t-[28px]">
           <div className="p-4 min-h-[200px] overflow-hidden">
             <h2 className="text-blue-700 text-lg font-medium font-poppins capitalize mb-4">
               Featured Activities
