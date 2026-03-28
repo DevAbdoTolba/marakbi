@@ -388,23 +388,23 @@ export default function OurTeamPage() {
 
           {/* Team Members Carousel */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Ahmed Bastawi */}
+            {/* Nesma Ghazaly */}
             <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
                 <Image
-                  src="/images/founder 2.png"
-                  alt="Ahmed Bastawi"
+                  src="/images/founder-nesma.png"
+                  alt="Nesma Ghazaly"
                   fill
-                  className="object-contain"
+                  className="object-contain scale-110"
                 />
                 <div className="absolute top-4 right-4"></div>
               </div>
               <div className="p-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-2xl font-bold text-[#106BD8] font-poppins mb-2">
-                    Ahmed Bastawi
+                    Nesma Ghazaly
                   </h3>
-                  <p className="text-gray-600 font-poppins">PR-Co-Founder</p>
+                  <p className="text-gray-600 font-poppins">CTO & Founder</p>
                 </div>
                 <div className="w-10 h-10 border border-[#106BD8] rounded-full flex items-center justify-center hover:bg-[#106BD8] transition-all duration-200 cursor-pointer group">
                   <svg
@@ -424,23 +424,23 @@ export default function OurTeamPage() {
               </div>
             </div>
 
-            {/* Nesma Ghazaly */}
+            {/* Ahmed Bastawi */}
             <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
                 <Image
-                  src="/images/founder-nesma.png"
-                  alt="Nesma Ghazaly"
+                  src="/images/founder 2.png"
+                  alt="Ahmed Bastawi"
                   fill
-                  className="object-contain scale-110"
+                  className="object-contain"
                 />
                 <div className="absolute top-4 right-4"></div>
               </div>
               <div className="p-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-2xl font-bold text-[#106BD8] font-poppins mb-2">
-                    Nesma Ghazaly
+                    Ahmed Bastawi
                   </h3>
-                  <p className="text-gray-600 font-poppins">CTO & Founder</p>
+                  <p className="text-gray-600 font-poppins">PR-Co-Founder</p>
                 </div>
                 <div className="w-10 h-10 border border-[#106BD8] rounded-full flex items-center justify-center hover:bg-[#106BD8] transition-all duration-200 cursor-pointer group">
                   <svg
