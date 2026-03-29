@@ -5,13 +5,15 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Rating } from '@smastrom/react-rating';
 import { clientApi, storage } from '@/lib/api';
-import type { BoatDetails, BoatReview } from '@/lib/api';
+import type { BoatDetails } from '@/lib/api';
+import { FiDroplet, FiMessageCircle, FiCheckCircle, FiDollarSign } from 'react-icons/fi';
+import type { IconType } from 'react-icons';
 
-const CATEGORY_RATINGS = [
-  { key: 'cleanliness', icon: '\u2728', label: 'Cleanliness', desc: 'How clean was the boat?' },
-  { key: 'communication', icon: '\uD83D\uDCAC', label: 'Communication', desc: 'How responsive was the owner?' },
-  { key: 'accuracy', icon: '\u2713', label: 'Accuracy', desc: 'Did it match the listing?' },
-  { key: 'value', icon: '\uD83D\uDCB0', label: 'Value for Money', desc: 'Was it worth the price?' },
+const CATEGORY_RATINGS: { key: string; Icon: IconType; label: string; desc: string }[] = [
+  { key: 'cleanliness', Icon: FiDroplet, label: 'Cleanliness', desc: 'How clean was the boat?' },
+  { key: 'communication', Icon: FiMessageCircle, label: 'Communication', desc: 'How responsive was the owner?' },
+  { key: 'accuracy', Icon: FiCheckCircle, label: 'Accuracy', desc: 'Did it match the listing?' },
+  { key: 'value', Icon: FiDollarSign, label: 'Value for Money', desc: 'Was it worth the price?' },
 ];
 
 const REVIEW_GUIDELINES = [
@@ -185,7 +187,7 @@ export default function WriteReviewPage() {
                 {CATEGORY_RATINGS.map((cat) => (
                   <div key={cat.key} className="bg-[#f9fafb] rounded-[10px] p-4">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-2xl sm:text-3xl">{cat.icon}</span>
+                      <cat.Icon className="w-6 h-6 sm:w-7 sm:h-7 text-[#093b77]" />
                       <div>
                         <p className="text-base sm:text-lg font-semibold text-[#0a0a0a]">{cat.label}</p>
                         <p className="text-xs sm:text-sm text-[#4a5565]">{cat.desc}</p>
@@ -226,7 +228,7 @@ export default function WriteReviewPage() {
               <textarea
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
-                placeholder={`Tell us about your experience...\n\n\u2022 What made your trip special?\n\u2022 How was the boat condition?\n\u2022 How was the crew/service?\n\u2022 What could be improved?\n\u2022 Would you recommend to others?`}
+                placeholder={`Tell us about your experience...\n\n- What made your trip special?\n- How was the boat condition?\n- How was the crew/service?\n- What could be improved?\n- Would you recommend to others?`}
                 className="w-full bg-[#f3f3f5] rounded-[8px] px-3 py-2 text-sm sm:text-base text-[#0a0a0a] placeholder-[#717182] outline-none focus:ring-1 focus:ring-[#093b77] min-h-[200px] sm:min-h-[300px] resize-y"
               />
               {reviewText.length < 10 && reviewText.length > 0 && (
