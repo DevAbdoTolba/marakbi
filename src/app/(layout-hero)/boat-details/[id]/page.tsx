@@ -3,10 +3,11 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAssociation } from "@/lib/api";
+import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAssociation, storage } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
 import { FiClock, FiMapPin } from "react-icons/fi";
+import { Rating } from "@smastrom/react-rating";
 
 export default function BoatDetailsPage() {
   const params = useParams();
@@ -15,6 +16,7 @@ export default function BoatDetailsPage() {
   const [boatData, setBoatData] = useState<ApiBoatDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [deletingReview, setDeletingReview] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mobileImageIndex, setMobileImageIndex] = useState(0);
@@ -666,22 +668,23 @@ export default function BoatDetailsPage() {
 
             {/* Customer reviews */}
             <section>
-              <h2 className="text-2xl font-semibold mb-6 font-poppins">Customer Reviews</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold font-poppins">Customer Reviews</h2>
+                {storage.getUser() && !boatData.user_review && (
+                  <button
+                    onClick={() => router.push(`/write-review/${boat.id}`)}
+                    className="px-4 sm:px-6 py-2 bg-[#093b77] text-white text-sm font-medium rounded-lg hover:bg-[#0a4a94] transition"
+                  >
+                    Write a Review
+                  </button>
+                )}
+              </div>
               <div className="flex flex-col md:flex-row gap-8 mb-8">
                 {/* Rating Summary */}
                 <div className="text-center">
-                  <div className="text-6xl font-bold mb-2">{reviews_summary.average_rating.toFixed(1)}</div>
+                  <div className="text-5xl sm:text-6xl font-bold mb-2">{reviews_summary.average_rating.toFixed(1)}</div>
                   <div className="flex justify-center mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Image
-                        key={i}
-                        src="/icons/Star Icon.svg"
-                        alt="Star"
-                        width={32}
-                        height={32}
-                        className={`${i < Math.floor(reviews_summary.average_rating) ? "opacity-100" : "opacity-30"}`}
-                      />
-                    ))}
+                    <Rating style={{ maxWidth: 160 }} value={reviews_summary.average_rating} readOnly />
                   </div>
                   <p className="text-gray-600">
                     Based on {totalRating} Reviews
@@ -712,37 +715,72 @@ export default function BoatDetailsPage() {
                 </div>
               </div>
 
+              {/* User's own review (if exists) */}
+              {boatData.user_review && (
+                <div className="border border-[#093b77]/20 bg-blue-50/30 rounded-lg p-4 sm:p-6 mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-[#093b77]">Your Review</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => router.push(`/write-review/${boat.id}?edit=${boatData.user_review!.id}`)}
+                        className="text-xs px-3 py-1 border border-[#093b77] text-[#093b77] rounded hover:bg-[#093b77] hover:text-white transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Are you sure you want to delete your review?')) return;
+                          setDeletingReview(true);
+                          const res = await clientApi.deleteOwnBoatReview(boat.id, boatData.user_review!.id);
+                          if (res.success) {
+                            const refreshed = await clientApi.getBoatById(boat.id);
+                            if (refreshed.success && refreshed.data) setBoatData(refreshed.data);
+                          }
+                          setDeletingReview(false);
+                        }}
+                        disabled={deletingReview}
+                        className="text-xs px-3 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition disabled:opacity-50"
+                      >
+                        {deletingReview ? '...' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Rating style={{ maxWidth: 90 }} value={boatData.user_review.rating} readOnly />
+                    <span className="text-sm text-gray-500">
+                      {new Date(boatData.user_review.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-gray-700">{boatData.user_review.comment}</p>
+                </div>
+              )}
+
               {/* Reviews List */}
               <div className="space-y-6">
-                {reviews.length === 0 ? (
+                {reviews.length === 0 && !boatData.user_review ? (
                   <p className="text-gray-500 text-center py-8">No reviews yet.</p>
                 ) : (
-                  (showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
-                    <div key={review.id} className="border-b border-gray-200 pb-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-semibold">
-                          {review.username.charAt(0).toUpperCase()}
+                  (showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => {
+                    const currentUser = storage.getUser();
+                    if (currentUser && review.user_id === currentUser.id) return null;
+                    return (
+                      <div key={review.id} className="border-b border-gray-200 pb-6">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-semibold">
+                            {review.username.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold">{review.username}</p>
+                            <p className="text-sm text-gray-600">{new Date(review.created_at).toLocaleDateString()}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold">{review.username}</p>
-                          <p className="text-sm text-gray-600">{new Date(review.created_at).toLocaleDateString()}</p>
+                        <div className="mb-2">
+                          <Rating style={{ maxWidth: 90 }} value={review.rating} readOnly />
                         </div>
+                        <p className="text-gray-700 mb-3">{review.comment}</p>
                       </div>
-                      <div className="flex items-center mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Image
-                            key={i}
-                            src="/icons/Star Icon.svg"
-                            alt="Star"
-                            width={16}
-                            height={16}
-                            className={`${i < review.rating ? "opacity-100" : "opacity-30"}`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-gray-700 mb-3">{review.comment}</p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
+    "@smastrom/react-rating": "^1.5.0",
     "lucide-react": "^0.545.0",
     "next": "^15.5.9",
     "react": "19.1.0",

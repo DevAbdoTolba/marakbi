@@ -155,13 +155,15 @@ export interface BoatReview {
   rating: number;
   comment: string;
   created_at: string;
+  updated_at?: string | null;
 }
 
 export interface BoatDetails {
   boat: Boat;
   owner: BoatOwner;
   reviews: BoatReview[];
-  service_fee_rate: number;  // Service fee rate from backend
+  user_review?: BoatReview | null;
+  service_fee_rate: number;
   reviews_summary: {
     average_rating: number;
     total_reviews: number;
@@ -789,6 +791,19 @@ export const clientApi = {
     return apiRequest<ReviewResponse>(`/client/boats/${boatId}/reviews`, {
       method: 'POST',
       body: JSON.stringify(reviewData)
+    });
+  },
+
+  updateBoatReview: async (boatId: number, reviewId: number, reviewData: ReviewData): Promise<ApiResponse<ReviewResponse>> => {
+    return apiRequest<ReviewResponse>(`/client/boats/${boatId}/reviews/${reviewId}`, {
+      method: 'PUT',
+      body: JSON.stringify(reviewData)
+    });
+  },
+
+  deleteOwnBoatReview: async (boatId: number, reviewId: number): Promise<ApiResponse<{ message: string }>> => {
+    return apiRequest<{ message: string }>(`/client/boats/${boatId}/reviews/${reviewId}`, {
+      method: 'DELETE'
     });
   },
 
