@@ -8,6 +8,7 @@ import Image from 'next/image';
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,47 +33,38 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Simple validation
       if (!username || !password) {
         setError('Please fill in all fields');
         setLoading(false);
         return;
       }
 
-      // Username validation
       if (username.length < 3) {
         setError('Username must be at least 3 characters long');
         setLoading(false);
         return;
       }
 
-      // Password validation
       if (password.length < 6) {
         setError('Password must be at least 6 characters long');
         setLoading(false);
         return;
       }
 
-      // Call API
-      const response = await authApi.login({
-        username,
-        password
-      });
+      const response = await authApi.login({ username, password });
 
       if (response.success && response.data) {
-        // Save tokens and user data
         storage.setTokens({
           access_token: response.data.access_token,
-          refresh_token: response.data.refresh_token
+          refresh_token: response.data.refresh_token,
         });
 
         storage.setUser({
           id: response.data.user_id,
           username: response.data.username,
-          role: 'user'
+          role: 'user',
         });
 
-        // Save credentials if remember me is checked
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
           localStorage.setItem('savedUsername', username);
@@ -83,27 +75,23 @@ export default function LoginPage() {
           localStorage.removeItem('savedPassword');
         }
 
-        // Also set cookie for middleware
         document.cookie = `access_token=${response.data.access_token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
 
-        // Check if there's an intended URL to redirect to (for booking flow)
         const intendedUrl = localStorage.getItem('intended_url');
         if (intendedUrl) {
-          localStorage.removeItem('intended_url'); // Clean up
+          localStorage.removeItem('intended_url');
           router.push(intendedUrl);
         } else {
-          // Redirect to home page
           router.push('/');
         }
       } else {
-        // Show specific error message from API
-        const errorMsg = response.error || 'Login failed. Please check your username and password.';
-        setError(errorMsg);
+        setError(
+          response.error ||
+            'Login failed. Please check your username and password.'
+        );
       }
-
     } catch (err: unknown) {
       console.error('Login error:', err);
-      // Don't show technical error messages to user
       setError('Login failed. Please check your username and password.');
     } finally {
       setLoading(false);
@@ -118,28 +106,20 @@ export default function LoginPage() {
           className="auth-left-image"
           src="/images/Rectangle 3463861.png"
           alt="Sailboat"
-          width={500}
-          height={700}
+          fill
+          sizes="(max-width: 768px) 100vw, 43vw"
+          priority
         />
-
-        {/* Circle Background */}
         <div className="auth-logo-container">
           <Image
             src="/icons/Ellipse 46.svg"
-            alt="Circle Background"
-            width={200}
-            height={200}
+            alt=""
+            width={174}
+            height={174}
             className="auth-circle-bg"
           />
-
-          {/* Logo */}
           <div className="auth-logo">
-            <Image
-              src="/logo.png"
-              alt="Marakbi Logo"
-              width={200}
-              height={110}
-            />
+            <Image src="/logo.png" alt="Marakbi Logo" width={200} height={110} />
           </div>
         </div>
       </div>
@@ -148,11 +128,11 @@ export default function LoginPage() {
       <div className="auth-form-container">
         <div className="auth-form-content">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-5xl font-bold text-black mb-2 text-center font-poppins">
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-3xl md:text-[42px] font-bold text-black mb-2 text-center">
               Welcome Back
             </h1>
-            <p className="text-xl font-medium text-gray-500 mb-24 text-center capitalize">
+            <p className="text-base md:text-[22px] font-medium text-[#7d7d7d] text-center capitalize">
               log in to continue your adventure
             </p>
           </div>
@@ -164,15 +144,16 @@ export default function LoginPage() {
               e.preventDefault();
               handleLogin();
             }}
+            className="mt-8 md:mt-16"
           >
-            {/* Username Field */}
-            <div className="mb-8">
-              <label className="block text-gray-600 text-sm font-semibold mb-2 capitalize">
-                Username
+            {/* Email Field */}
+            <div className="mb-5 md:mb-7">
+              <label className="block text-[#616161] text-sm font-semibold mb-2 capitalize">
+                Email
               </label>
               <input
                 type="text"
-                placeholder="Username"
+                placeholder="Email address"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="auth-input"
@@ -182,30 +163,51 @@ export default function LoginPage() {
             </div>
 
             {/* Password Field */}
-            <div className="mb-5">
-              <label className="block text-gray-600 text-sm font-semibold mb-2 capitalize">
+            <div className="mb-4 md:mb-5">
+              <label className="block text-[#616161] text-sm font-semibold mb-2 capitalize">
                 Password
               </label>
-              <input
-                type="password"
-                placeholder="**************"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="auth-input"
-                required
-                minLength={6}
-              />
+              <div className="auth-input-group">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="**************"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="auth-input pr-12"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="auth-eye-icon"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Remember Me & Forget Password */}
-            <div className="flex justify-between items-center mb-10">
+            <div className="flex justify-between items-center mb-8 md:mb-12">
               <label className="flex items-center gap-2 cursor-pointer">
                 <div
                   onClick={() => setRememberMe(!rememberMe)}
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${rememberMe
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                    rememberMe
                       ? 'bg-[#093b77] border-[#093b77]'
-                      : 'bg-white border-gray-400 hover:border-gray-500'
-                    }`}
+                      : 'bg-white border-[#7d7d7d]'
+                  }`}
                 >
                   {rememberMe && (
                     <svg
@@ -217,29 +219,25 @@ export default function LoginPage() {
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
-                      <path d="M5 13l4 4L19 7"></path>
+                      <path d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                 </div>
-                <span className="text-gray-500 capitalize">
+                <span className="text-[#7d7d7d] text-base capitalize">
                   Remember me
                 </span>
               </label>
               <button
                 type="button"
                 onClick={() => router.push('/forgot-password')}
-                className="auth-link-button capitalize"
+                className="auth-link-button capitalize text-sm md:text-base"
               >
                 Forget Password?
               </button>
             </div>
 
             {/* Error Message */}
-            {error && (
-              <div className="auth-error-message">
-                {error}
-              </div>
-            )}
+            {error && <div className="auth-error-message">{error}</div>}
 
             {/* Login Button */}
             <button
@@ -251,14 +249,14 @@ export default function LoginPage() {
             </button>
 
             {/* Sign Up Link */}
-            <p className="text-center text-base text-gray-500 capitalize">
-              You Don&apos;t Have An Account?{' '}
+            <p className="text-center text-base text-[#7d7d7d] capitalize">
+              you don&apos;t have an account?{' '}
               <button
                 type="button"
                 onClick={() => router.push('/signup')}
                 className="auth-link-button"
               >
-                Sign Up
+                Sign up
               </button>
             </p>
           </form>
