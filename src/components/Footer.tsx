@@ -36,9 +36,9 @@ const Footer = () => {
     <footer className="text-white bg-gradient-to-t from-[#083872] via-[#0A4489] to-[#106BD8]">
       {/* Main Footer Grid */}
       <div className="container mx-auto px-4 sm:px-6 md:px-8 pt-12 md:pt-16 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-10 gap-8 md:gap-6">
           {/* Column 1: Logo and Description */}
-          <div className="space-y-4 md:col-span-2 md:pr-4 lg:pr-6">
+          <div className="space-y-4 md:col-span-3 md:pr-4 lg:pr-6">
             <div className="flex items-center space-x-3">
               <Logo variant="white" width={64} height={80} />
             </div>
@@ -55,7 +55,7 @@ const Footer = () => {
           </div>
 
           {/* Column 2: Services */}
-          <div>
+          <div className="md:col-span-2">
             <h4 className="text-lg md:text-xl text-amber-300 font-semibold mb-4 md:mb-6 font-poppins">Marakbi Services</h4>
             <ul className="space-y-2 md:space-y-3 text-sm md:text-base list-disc list-inside">
               <li>
@@ -158,7 +158,7 @@ const Footer = () => {
           </div>
 
           {/* Column 3: Useful Links */}
-          <div>
+          <div className="md:col-span-2">
             <h4 className="text-lg md:text-xl text-amber-300 font-semibold mb-4 md:mb-6 font-poppins">Useful Links</h4>
             <ul className="space-y-2 md:space-y-3 text-sm md:text-base list-disc list-inside">
               <li>
@@ -190,12 +190,12 @@ const Footer = () => {
           </div>
 
           {/* Column 4: Subscribe */}
-          <div>
+          <div className="md:col-span-3">
             <h4 className="text-lg md:text-xl text-amber-300 font-semibold mb-4 md:mb-6 font-poppins">Subscribe</h4>
             <p className="text-gray-300 text-sm md:text-base font-poppins mb-6">If you want to stay updated and receive regular information subscribing is a great option.</p>
             <p className="text-gray-300 mb-3 text-sm md:text-base font-poppins">Email Newsletter</p>
             <div className="flex items-stretch w-full rounded-lg md:rounded-xl overflow-hidden shadow-sm">
-              <div className="relative bg-white/90 flex-[3]">
+              <div className="relative bg-white/90 flex-[2]">
                 <input
                   type="email"
                   placeholder="Your Email"
