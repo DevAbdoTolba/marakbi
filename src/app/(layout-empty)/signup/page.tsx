@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { authApi } from '@/lib/api';
+import { authApi, storage } from '@/lib/api';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -106,10 +106,25 @@ export default function SignUpPage() {
       });
 
       if (response.success) {
-        setSuccess('Account created successfully! Redirecting to login...');
-        setTimeout(() => {
-          router.push('/login');
-        }, 2000);
+        // Auto-login after successful registration
+        const loginRes = await authApi.login({ username: fullName, password });
+        if (loginRes.success && loginRes.data) {
+          storage.setTokens({
+            access_token: loginRes.data.access_token,
+            refresh_token: loginRes.data.refresh_token,
+          });
+          storage.setUser({
+            id: loginRes.data.user_id,
+            username: loginRes.data.username,
+            role: 'user',
+          });
+          document.cookie = `access_token=${loginRes.data.access_token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+          router.push('/');
+        } else {
+          // Fallback: redirect to login if auto-login fails
+          setSuccess('Account created! Redirecting to login...');
+          setTimeout(() => router.push('/login'), 1500);
+        }
       } else {
         // Map backend field errors to our field error state
         if (response.fieldErrors && Object.keys(response.fieldErrors).length > 0) {
