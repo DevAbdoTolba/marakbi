@@ -31,9 +31,9 @@ export default function ForgotPasswordPage() {
       if (response.success) {
         setSuccess(response.data?.message || 'Password reset code has been sent to your email');
 
-        // Navigate to verification page after showing success message
+        // Navigate to verification page with email
         setTimeout(() => {
-          router.push('/verify-code');
+          router.push(`/verify-code?email=${encodeURIComponent(email)}`);
         }, 1500);
       } else {
         setError(response.error || 'Failed to send reset code. Please try again.');

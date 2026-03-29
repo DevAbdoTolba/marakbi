@@ -724,16 +724,17 @@ export const authApi = {
     });
   },
 
-  verifyCode: async (code: string): Promise<ApiResponse<{ message: string }>> => {
-    return apiRequest<{ message: string }>('/auth/verify-code', {
+  verifyCode: async (email: string, code: string): Promise<ApiResponse<{ message: string; reset_token?: string }>> => {
+    return apiRequest<{ message: string; reset_token?: string }>('/auth/verify-code', {
       method: 'POST',
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ email, code })
     });
   },
 
-  resendCode: async (): Promise<ApiResponse<{ message: string }>> => {
+  resendCode: async (email: string): Promise<ApiResponse<{ message: string }>> => {
     return apiRequest<{ message: string }>('/auth/resend-code', {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify({ email })
     });
   }
 };
