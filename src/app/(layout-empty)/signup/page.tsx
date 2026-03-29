@@ -5,6 +5,35 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { authApi } from '@/lib/api';
 
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+const VALID_TLDS = new Set([
+  "com","org","net","edu","gov","mil","int","co","io","dev","app","me",
+  "info","biz","name","pro","museum","coop","aero","xyz","online","store",
+  "site","tech","space","fun","website","cloud","ai","uk","us","ca","au",
+  "de","fr","it","es","nl","be","at","ch","ru","cn","jp","kr","in","br",
+  "mx","ar","za","eg","sa","ae","qa","kw","om","bh","jo","lb","ps","iq",
+  "ly","tn","ma","dz","sd","sy","ye","tr","pk","bd","lk","mm","th","vn",
+  "id","ph","my","sg","hk","tw","nz","se","no","dk","fi","pl","cz","pt",
+  "gr","ie","ro","hu","bg","hr","sk","si","lt","lv","ee","is","lu","mt",
+  "cy","ua","by","md","ge","am","az","kz","uz","cl","pe","co","ve","ec",
+  "uy","py","bo","cr","pa","do","gt","hn","sv","ni","cu","tt","jm","ht",
+]);
+
+function validateEmailClient(email: string): string | null {
+  if (!EMAIL_REGEX.test(email)) {
+    return "Please enter a valid email address";
+  }
+  const parts = email.toLowerCase().split("@")[1].split(".");
+  const tld = parts[parts.length - 1];
+  if (!VALID_TLDS.has(tld)) {
+    return "Please enter an email with a valid domain";
+  }
+  return null;
+}
+
+type FieldErrors = Record<string, string>;
+
 export default function SignUpPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -13,35 +42,63 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const clearFieldError = (field: string) => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const handleSignUp = async () => {
-    setError('');
+    setFieldErrors({});
     setSuccess('');
     setLoading(true);
 
+    // Client-side validation
+    const errors: FieldErrors = {};
+
+    if (!fullName.trim()) {
+      errors.username = 'Full name is required';
+    } else if (fullName.trim().length < 3) {
+      errors.username = 'Full name must be at least 3 characters';
+    }
+
+    if (!email.trim()) {
+      errors.email = 'Email is required';
+    } else {
+      const emailErr = validateEmailClient(email);
+      if (emailErr) errors.email = emailErr;
+    }
+
+    if (!password) {
+      errors.password_hash = 'Password is required';
+    } else if (password.length < 6) {
+      errors.password_hash = 'Password must be at least 6 characters';
+    }
+
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (password && password !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!agreeTerms) {
+      errors.terms = 'You must agree to the Terms of Service and Privacy Policy';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (!fullName || !email || !password || !confirmPassword) {
-        setError('Please fill in all fields');
-        setLoading(false);
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        setError('Passwords do not match');
-        setLoading(false);
-        return;
-      }
-
-      if (!agreeTerms) {
-        setError('Please agree to the Terms of Service and Privacy Policy');
-        setLoading(false);
-        return;
-      }
-
       const response = await authApi.register({
         username: fullName,
         email,
@@ -54,13 +111,24 @@ export default function SignUpPage() {
           router.push('/login');
         }, 2000);
       } else {
-        setError(response.error || 'Sign up failed. Please try again.');
+        // Map backend field errors to our field error state
+        if (response.fieldErrors && Object.keys(response.fieldErrors).length > 0) {
+          const mapped: FieldErrors = {};
+          for (const [field, messages] of Object.entries(response.fieldErrors)) {
+            if (Array.isArray(messages) && messages.length > 0) {
+              mapped[field] = messages[0];
+            }
+          }
+          setFieldErrors(mapped);
+        } else {
+          setFieldErrors({ _general: response.error || 'Sign up failed. Please try again.' });
+        }
       }
     } catch (err: unknown) {
       console.error('Sign up error:', err);
-      setError(
-        err instanceof Error ? err.message : 'Sign up failed. Please try again.'
-      );
+      setFieldErrors({
+        _general: err instanceof Error ? err.message : 'Sign up failed. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -79,6 +147,12 @@ export default function SignUpPage() {
       <circle cx="12" cy="12" r="3" />
     </svg>
   );
+
+  const inputClass = (field: string) =>
+    `auth-input ${fieldErrors[field] ? 'border border-red-500 !bg-red-50/30' : ''}`;
+
+  const inputGroupClass = (field: string) =>
+    `auth-input-group ${fieldErrors[field] ? '[&>.auth-input]:border [&>.auth-input]:border-red-500 [&>.auth-input]:!bg-red-50/30' : ''}`;
 
   return (
     <div className="auth-page-container">
@@ -119,6 +193,14 @@ export default function SignUpPage() {
             </p>
           </div>
 
+          {/* General Error */}
+          {fieldErrors._general && (
+            <div className="auth-error-message">{fieldErrors._general}</div>
+          )}
+
+          {/* Success Message */}
+          {success && <div className="auth-success-message">{success}</div>}
+
           {/* Form */}
           <form
             noValidate
@@ -137,10 +219,13 @@ export default function SignUpPage() {
                 type="text"
                 placeholder="Your Name"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="auth-input"
+                onChange={(e) => { setFullName(e.target.value); clearFieldError('username'); }}
+                className={inputClass('username')}
                 required
               />
+              <p className={`text-xs mt-1 min-h-[16px] ${fieldErrors.username ? 'text-red-500' : 'text-transparent'}`}>
+                {fieldErrors.username || '\u00A0'}
+              </p>
             </div>
 
             {/* Email Field */}
@@ -152,10 +237,13 @@ export default function SignUpPage() {
                 type="email"
                 placeholder="your@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="auth-input"
+                onChange={(e) => { setEmail(e.target.value); clearFieldError('email'); }}
+                className={inputClass('email')}
                 required
               />
+              <p className={`text-xs mt-1 min-h-[16px] ${fieldErrors.email ? 'text-red-500' : 'text-transparent'}`}>
+                {fieldErrors.email || '\u00A0'}
+              </p>
             </div>
 
             {/* Password Field */}
@@ -163,12 +251,12 @@ export default function SignUpPage() {
               <label className="block text-[#616161] text-sm font-semibold mb-2 capitalize">
                 Password
               </label>
-              <div className="auth-input-group">
+              <div className={inputGroupClass('password_hash')}>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="**************"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); clearFieldError('password_hash'); clearFieldError('confirmPassword'); }}
                   className="auth-input pr-12"
                   required
                 />
@@ -181,6 +269,9 @@ export default function SignUpPage() {
                   {showPassword ? <EyeIcon /> : <EyeOffIcon />}
                 </button>
               </div>
+              <p className={`text-xs mt-1 min-h-[16px] ${fieldErrors.password_hash ? 'text-red-500' : 'text-transparent'}`}>
+                {fieldErrors.password_hash || '\u00A0'}
+              </p>
             </div>
 
             {/* Confirm Password Field */}
@@ -188,12 +279,12 @@ export default function SignUpPage() {
               <label className="block text-[#616161] text-sm font-semibold mb-2 capitalize">
                 Confirm Password
               </label>
-              <div className="auth-input-group">
+              <div className={inputGroupClass('confirmPassword')}>
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="**************"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => { setConfirmPassword(e.target.value); clearFieldError('confirmPassword'); }}
                   className="auth-input pr-12"
                   required
                 />
@@ -201,24 +292,27 @@ export default function SignUpPage() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="auth-eye-icon"
-                  aria-label={
-                    showConfirmPassword ? 'Hide password' : 'Show password'
-                  }
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                 >
                   {showConfirmPassword ? <EyeIcon /> : <EyeOffIcon />}
                 </button>
               </div>
+              <p className={`text-xs mt-1 min-h-[16px] ${fieldErrors.confirmPassword ? 'text-red-500' : 'text-transparent'}`}>
+                {fieldErrors.confirmPassword || '\u00A0'}
+              </p>
             </div>
 
             {/* Terms Agreement */}
             <div className="mb-5 md:mb-6">
               <label className="flex items-start gap-2 cursor-pointer">
                 <div
-                  onClick={() => setAgreeTerms(!agreeTerms)}
+                  onClick={() => { setAgreeTerms(!agreeTerms); clearFieldError('terms'); }}
                   className={`w-4 h-4 rounded-[3px] border flex items-center justify-center transition-all duration-200 flex-shrink-0 mt-0.5 cursor-pointer ${
-                    agreeTerms
-                      ? 'bg-[#093b77] border-[#093b77]'
-                      : 'bg-white border-[#7d7d7d]'
+                    fieldErrors.terms
+                      ? 'border-red-500 bg-red-50/30'
+                      : agreeTerms
+                        ? 'bg-[#093b77] border-[#093b77]'
+                        : 'bg-white border-[#7d7d7d]'
                   }`}
                 >
                   {agreeTerms && (
@@ -235,30 +329,21 @@ export default function SignUpPage() {
                     </svg>
                   )}
                 </div>
-                <span className="text-sm md:text-base text-black leading-snug">
+                <span className={`text-sm md:text-base leading-snug ${fieldErrors.terms ? 'text-red-500' : 'text-black'}`}>
                   I agree to the{' '}
-                  <a
-                    href="/terms"
-                    className="text-[#106bd8] underline"
-                  >
+                  <a href="/terms" className="text-[#106bd8] underline">
                     Terms of Service
                   </a>
                   {' '}and{' '}
-                  <a
-                    href="/privacy"
-                    className="text-[#106bd8] underline"
-                  >
+                  <a href="/privacy" className="text-[#106bd8] underline">
                     Privacy Policy
                   </a>
                 </span>
               </label>
+              <p className={`text-xs mt-1 min-h-[16px] ${fieldErrors.terms ? 'text-red-500' : 'text-transparent'}`}>
+                {fieldErrors.terms || '\u00A0'}
+              </p>
             </div>
-
-            {/* Error Message */}
-            {error && <div className="auth-error-message">{error}</div>}
-
-            {/* Success Message */}
-            {success && <div className="auth-success-message">{success}</div>}
 
             {/* Sign Up Button */}
             <button
@@ -297,38 +382,21 @@ export default function SignUpPage() {
                 onClick={() => console.log('Facebook login clicked')}
                 className="w-12 h-12 rounded-full border-none cursor-pointer bg-transparent flex items-center justify-center p-2"
               >
-                <Image
-                  src="/icons/flat-color-icons_fb.svg"
-                  alt="Facebook"
-                  width={32}
-                  height={32}
-                />
+                <Image src="/icons/flat-color-icons_fb.svg" alt="Facebook" width={32} height={32} />
               </button>
-
               <button
                 type="button"
                 onClick={() => console.log('Google login clicked')}
                 className="w-12 h-12 rounded-full border-none cursor-pointer bg-transparent flex items-center justify-center p-2"
               >
-                <Image
-                  src="/icons/flat-color-icons_google.svg"
-                  alt="Google"
-                  width={32}
-                  height={32}
-                />
+                <Image src="/icons/flat-color-icons_google.svg" alt="Google" width={32} height={32} />
               </button>
-
               <button
                 type="button"
                 onClick={() => console.log('Apple login clicked')}
                 className="w-12 h-12 rounded-full border-none cursor-pointer bg-transparent flex items-center justify-center p-2"
               >
-                <Image
-                  src="/icons/flat-color-icons_apple.svg"
-                  alt="Apple"
-                  width={32}
-                  height={32}
-                />
+                <Image src="/icons/flat-color-icons_apple.svg" alt="Apple" width={32} height={32} />
               </button>
             </div>
           </form>
