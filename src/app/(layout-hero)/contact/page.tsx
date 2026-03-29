@@ -102,7 +102,7 @@ export default function ContactPage() {
       {showNotification && submitStatus.type && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
           <div
-            className={`flex items-center gap-3 min-w-[350px] max-w-md p-4 rounded-lg shadow-2xl border-2 ${
+            className={`flex items-center gap-3 min-w-[280px] sm:min-w-[350px] max-w-md p-4 rounded-lg shadow-2xl border-2 ${
               submitStatus.type === "success"
                 ? "bg-gradient-to-r from-green-50 to-green-100 border-green-400"
                 : "bg-gradient-to-r from-red-50 to-red-100 border-red-400"
@@ -202,9 +202,9 @@ export default function ContactPage() {
       {/* Main Content Section */}
       <section className="bg-white py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[869px_auto] gap-8 lg:gap-8 xl:gap-12 justify-items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 lg:gap-8 xl:gap-12 justify-items-start">
             {/* Left Column - Contact Form */}
-            <div className="border border-[#cacaca] rounded-lg p-4 sm:p-6 md:p-8 lg:p-11 h-fit w-full">
+            <div className="border border-[#cacaca] rounded-lg p-4 sm:p-6 md:p-8 lg:p-11 h-fit w-full lg:max-w-[869px]">
               {/* Form Title */}
               <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-poppins font-medium capitalize text-black mb-4 leading-[normal]">
                 Contact Form
@@ -230,7 +230,7 @@ export default function ContactPage() {
                       value={formData.firstName}
                       onChange={handleChange}
                       placeholder="First Name"
-                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
+                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-base sm:text-lg md:text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
                       required
                     />
                   </div>
@@ -243,7 +243,7 @@ export default function ContactPage() {
                       value={formData.lastName}
                       onChange={handleChange}
                       placeholder="Last Name"
-                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
+                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-base sm:text-lg md:text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
                       required
                     />
                   </div>
@@ -259,7 +259,7 @@ export default function ContactPage() {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="Email"
-                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
+                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-base sm:text-lg md:text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
                       required
                     />
                   </div>
@@ -272,7 +272,7 @@ export default function ContactPage() {
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="Phone"
-                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
+                      className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-base sm:text-lg md:text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
                       required
                     />
                   </div>
@@ -286,7 +286,7 @@ export default function ContactPage() {
                     value={formData.subject}
                     onChange={handleChange}
                     placeholder="Subject"
-                    className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
+                    className="w-full h-[60px] px-4 py-3 bg-[#f7f7f7] rounded-lg border-none outline-none text-base sm:text-lg md:text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
                     required
                   />
                 </div>
@@ -299,7 +299,7 @@ export default function ContactPage() {
                     onChange={handleChange}
                     placeholder="Message"
                     rows={6}
-                    className="w-full min-h-[228px] px-4 py-6 bg-[#f7f7f7] rounded-lg border-none outline-none text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 resize-none focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
+                    className="w-full min-h-[150px] sm:min-h-[228px] px-4 py-6 bg-[#f7f7f7] rounded-lg border-none outline-none text-base sm:text-lg md:text-[22px] font-poppins font-normal text-black placeholder:text-gray-500 resize-none focus:ring-2 focus:ring-[#093b77] focus:ring-opacity-20 transition-all"
                     required
                   />
                 </div>

@@ -114,7 +114,7 @@ export default function SetPasswordPage() {
 
           {/* Header */}
           <div className="mb-10">
-            <h1 className="text-4xl font-bold text-black mb-3 text-left font-poppins">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-3 text-left font-poppins">
               Set a password
             </h1>
             <p className="text-base text-gray-500 mb-10 text-left leading-relaxed font-poppins">
@@ -166,7 +166,7 @@ export default function SetPasswordPage() {
               type="button"
               onClick={handleSetPassword}
               disabled={loading || !password || !confirmPassword}
-              className={`w-[70%] h-12 rounded-lg border-none text-white text-base font-medium cursor-pointer transition-colors ${
+              className={`w-full sm:w-[70%] h-12 rounded-lg border-none text-white text-base font-medium cursor-pointer transition-colors ${
                 loading || !password || !confirmPassword ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-800 hover:bg-blue-900'
               } ${loading ? 'opacity-50' : ''}`}
             >

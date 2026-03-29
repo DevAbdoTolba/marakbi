@@ -134,7 +134,7 @@ export default function VerifyCodePage() {
 
           {/* Header */}
           <div className="mb-10">
-            <h1 className="text-4xl font-bold text-black mb-3 text-left font-poppins">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-3 text-left font-poppins">
               Verify code
             </h1>
             <p className="text-base text-black mb-10 text-left font-poppins">
@@ -194,7 +194,7 @@ export default function VerifyCodePage() {
               type="button"
               onClick={handleVerify}
               disabled={loading || !code}
-              className={`w-[70%] h-12 bg-blue-800 rounded-lg border-none text-white text-base font-medium cursor-pointer transition-colors ${
+              className={`w-full sm:w-[70%] h-12 bg-blue-800 rounded-lg border-none text-white text-base font-medium cursor-pointer transition-colors ${
                 loading || !code ? 'bg-gray-400 cursor-not-allowed' : 'hover:bg-blue-900'
               } ${loading ? 'opacity-50' : ''}`}
             >

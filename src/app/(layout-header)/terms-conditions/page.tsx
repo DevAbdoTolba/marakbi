@@ -13,7 +13,7 @@ export default function TermsConditionsPage() {
           </div>
 
           {/* Main Content - All in Gray Background */}
-          <div className="bg-gray-100 pt-16 px-24 pb-24 rounded-lg">
+          <div className="bg-gray-100 pt-16 px-4 sm:px-8 md:px-16 lg:px-24 pb-8 sm:pb-12 md:pb-24 rounded-lg">
             {/* Empty space under Terms & Conditions */}
             <div className="mb-8"></div>
 
@@ -22,7 +22,7 @@ export default function TermsConditionsPage() {
               {/* Main Heading */}
               <div className="mb-16">
                 <h2
-                  className="text-4xl font-semibold text-gray-900 mb-6 font-poppins"
+                  className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 mb-6 font-poppins"
                   style={{ fontWeight: 600 }}
                 >
                   Welcome to <span className="text-blue-600">Marakbi</span> –
@@ -30,7 +30,7 @@ export default function TermsConditionsPage() {
                   Egypt.
                 </h2>
                 <p
-                  className="text-2xl text-gray-900 font-poppins"
+                  className="text-lg sm:text-xl md:text-2xl text-gray-900 font-poppins"
                   style={{ fontWeight: 600 }}
                 >
                   By using our services, you agree to our Terms and Conditions

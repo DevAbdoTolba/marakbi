@@ -199,7 +199,7 @@ export default function BookingDetailsPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
 
                     {/* Main Info Column */}
                     <div className="md:col-span-2 space-y-6">
@@ -207,7 +207,7 @@ export default function BookingDetailsPage() {
                         {/* Trip Details Card with Slider */}
                         {order.trip_id && order.trip && (
                             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                                <div className="relative h-64 w-full group">
+                                <div className="relative h-48 sm:h-56 md:h-64 w-full group">
                                     {order.trip.images && order.trip.images.length > 0 ? (
                                         <>
                                             <Image
@@ -262,7 +262,7 @@ export default function BookingDetailsPage() {
                                     )}
                                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/10 via-transparent to-black/60 pointer-events-none"></div>
                                     <div className="absolute bottom-4 left-4 text-white z-10 pointer-events-none">
-                                        <h2 className="text-2xl font-bold mb-1 shadow-black drop-shadow-md">{title}</h2>
+                                        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 shadow-black drop-shadow-md">{title}</h2>
                                         <div className="flex items-center gap-2 text-white/90 drop-shadow-md">
                                             <FiMapPin size={16} /> {location}
                                         </div>
@@ -279,7 +279,7 @@ export default function BookingDetailsPage() {
 
                         {/* Boat Details Card with Slider */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div className="relative h-64 w-full group">
+                            <div className="relative h-48 sm:h-56 md:h-64 w-full group">
                                 {order.boat?.images && order.boat.images.length > 0 ? (
                                     <>
                                         <Image
@@ -334,7 +334,7 @@ export default function BookingDetailsPage() {
                                 )}
                                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/10 via-transparent to-black/60 pointer-events-none"></div>
                                 <div className="absolute bottom-4 left-4 text-white z-10 pointer-events-none">
-                                    <h2 className="text-2xl font-bold mb-1 shadow-black drop-shadow-md">{order.boat?.name || title}</h2>
+                                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 shadow-black drop-shadow-md">{order.boat?.name || title}</h2>
                                     <div className="flex items-center gap-2 text-white/90 drop-shadow-md mb-1">
                                         <FiMapPin size={16} /> {order.boat?.cities?.[0] || location}
                                     </div>
@@ -360,7 +360,7 @@ export default function BookingDetailsPage() {
                                 <FiCalendar className="text-[#106BD8]" /> Schedule
                             </h3>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Start</span>
                                     <div className="font-bold text-gray-900 text-lg">{formatTime(order.start_date)}</div>

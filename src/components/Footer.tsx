@@ -36,21 +36,14 @@ const Footer = () => {
     <footer className="text-white bg-gradient-to-t from-[#083872] via-[#0A4489] to-[#106BD8]">
       {/* Main Footer Grid */}
       <div className="container mx-auto px-4 sm:px-6 md:px-8 pt-12 md:pt-16 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-10 gap-8 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-10 gap-8 md:gap-6">
           {/* Column 1: Logo and Description */}
           <div className="space-y-4 md:col-span-3 md:pr-4 lg:pr-6">
             <div className="flex items-center space-x-3">
               <Logo variant="white" width={64} height={80} />
             </div>
             <p className="text-gray-300 text-sm md:text-base leading-6 md:leading-7 font-poppins">
-              <span>Marakbi is your premier digital gateway to</span><br />
-              <span>effortless boat rentals across Egypt&apos;s</span><br />
-              <span>majestic Nile and vibrant Red Sea. We</span><br />
-              <span>connect you with a diverse fleet, from</span><br />
-              <span>authentic feluccas to luxury yachts,</span><br />
-              <span>blending local expertise with cutting-edge</span><br />
-              <span>technology for your unforgettable aquatic</span><br />
-              <span>adventure.</span>
+              Marakbi is your premier digital gateway to effortless boat rentals across Egypt&apos;s majestic Nile and vibrant Red Sea. We connect you with a diverse fleet, from authentic feluccas to luxury yachts, blending local expertise with cutting-edge technology for your unforgettable aquatic adventure.
             </p>
           </div>
 

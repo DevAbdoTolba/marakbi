@@ -51,11 +51,11 @@ const FeaturedServices = () => {
                   className="w-14 h-14"
                 />
               </div>
-              <h3 className="text-black text-xl font-normal font-['Inter'] capitalize mb-2">
+              <h3 className="text-black text-base sm:text-lg md:text-xl font-normal font-['Inter'] capitalize mb-2">
                 {service.title}
               </h3>
               <div className="w-14 h-1 bg-orange-300 mb-4"></div>
-              <p className="text-sky-950 text-sm font-normal font-['Inter'] capitalize max-w-44 leading-9">
+              <p className="text-sky-950 text-sm font-normal font-['Inter'] capitalize max-w-full sm:max-w-44 leading-9">
                 {service.description}
               </p>
             </div>

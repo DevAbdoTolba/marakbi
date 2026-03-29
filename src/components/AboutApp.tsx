@@ -62,7 +62,7 @@ const AboutApp = () => {
               alt="Boat Image"
               width={640}
               height={661}
-              className="w-full max-w-md sm:max-w-lg lg:w-[640px] lg:h-[661px] object-cover rounded-lg"
+              className="w-full max-w-md sm:max-w-lg lg:max-w-[640px] h-auto rounded-lg"
             />
           </div>
         </div>

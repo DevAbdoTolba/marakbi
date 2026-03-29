@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
 
           {/* Header */}
           <div className="mb-10">
-            <h1 className="text-5xl font-bold text-black mb-5 text-left leading-tight font-poppins">
+            <h1 className="text-3xl md:text-5xl font-bold text-black mb-5 text-left leading-tight font-poppins">
               Forgot your password?
             </h1>
             <p className="text-base text-black mb-10 leading-relaxed font-poppins">

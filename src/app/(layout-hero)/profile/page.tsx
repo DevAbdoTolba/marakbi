@@ -253,10 +253,10 @@ export default function ProfilePage() {
           <div className="lg:col-span-1 flex">
             <div className="bg-white py-8 rounded-lg shadow-sm w-full flex flex-col">
               <div className="text-center mb-8">
-                <h2 className="text-5xl font-bold text-gray-900 mb-2 font-poppins">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 font-poppins">
                   Welcome!
                 </h2>
-                <p className="text-blue-500 text-5xl font-bold font-poppins">
+                <p className="text-blue-500 text-3xl sm:text-4xl lg:text-5xl font-bold font-poppins">
                   {user.fullName?.split(" ")[0] || "User"}
                 </p>
               </div>
@@ -264,7 +264,7 @@ export default function ProfilePage() {
               {/* Profile Picture */}
               <div className="flex justify-center mb-6">
                 <div className="relative">
-                  <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden relative">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden relative">
                     {profileImage ? (
                       <Image
                         src={profileImage}
@@ -379,7 +379,7 @@ export default function ProfilePage() {
 
           {/* Right Content - Edit Profile Form */}
           <div className="lg:col-span-2 flex">
-            <div className="bg-white rounded-lg p-8 shadow-sm w-full flex flex-col">
+            <div className="bg-white rounded-lg p-4 sm:p-6 md:p-8 shadow-sm w-full flex flex-col">
               <h2 className="text-2xl font-medium text-blue-500 mb-6 font-poppins">
                 Edit Your Profile
               </h2>

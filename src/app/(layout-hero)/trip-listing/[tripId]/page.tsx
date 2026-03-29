@@ -99,7 +99,7 @@ export default function TripBoatsPage() {
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             {/* 1. Full-Width Image Slider */}
-            <div className="relative w-full h-[500px] bg-gray-900 overflow-hidden">
+            <div className="relative w-full h-[250px] sm:h-[350px] md:h-[500px] bg-gray-900 overflow-hidden">
                 {tripImages.map((img, index) => (
                     <div
                         key={index}
@@ -134,7 +134,7 @@ export default function TripBoatsPage() {
             {/* 2. Trip Details (Name, Description, Tags) */}
             <div className="container mx-auto px-4 py-10">
                 <div className="max-w-4xl mx-auto text-center">
-                    <h1 className="text-4xl md:text-5xl font-bold text-sky-900 mb-6 font-poppins">{trip.name}</h1>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-sky-900 mb-6 font-poppins">{trip.name}</h1>
                     <p className="text-gray-600 text-lg leading-relaxed mb-8">{trip.description}</p>
 
                     <div className="flex flex-wrap justify-center gap-4 text-sm font-medium">
