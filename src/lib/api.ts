@@ -813,6 +813,10 @@ export const clientApi = {
       method: 'POST',
       body: JSON.stringify(bookingData)
     });
+  },
+
+  getBoatRecommendations: async (boatId: number): Promise<ApiResponse<{ boat_id: number; total_recommendations: number; same_operator: Boat[]; other_operators: Boat[] }>> => {
+    return apiRequest<{ boat_id: number; total_recommendations: number; same_operator: Boat[]; other_operators: Boat[] }>(`/client/boats/${boatId}/recommendations`);
   }
 };
 
