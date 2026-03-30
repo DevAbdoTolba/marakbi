@@ -2,7 +2,7 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { clientApi, BoatDetails as ApiBoatDetails, Boat, Trip, BASE_URL, BoatServiceAssociation, storage } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
@@ -20,7 +20,11 @@ export default function BoatDetailsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mobileImageIndex, setMobileImageIndex] = useState(0);
+  const [recPage, setRecPage] = useState(1);
+  const [recHasMore, setRecHasMore] = useState(false);
+  const [recLoading, setRecLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<{ same_operator: Boat[]; other_operators: Boat[] }>({ same_operator: [], other_operators: [] });
+  const recCacheRef = React.useRef<Map<number, { same_operator: Boat[]; other_operators: Boat[]; hasMore: boolean }>>(new Map());
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
 
@@ -77,14 +81,40 @@ export default function BoatDetailsPage() {
 
     if (params.id) {
       fetchBoatDetails();
-      // Fetch recommendations
-      clientApi.getBoatRecommendations(parseInt(params.id as string)).then((res) => {
-        if (res.success && res.data) {
-          setRecommendations({ same_operator: res.data.same_operator, other_operators: res.data.other_operators });
-        }
-      });
     }
   }, [params.id, tripId]);
+
+  // Fetch recommendations with caching
+  const fetchRecommendations = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+
+    const cached = recCacheRef.current.get(page);
+    if (cached) {
+      setRecommendations({ same_operator: cached.same_operator, other_operators: cached.other_operators });
+      setRecHasMore(cached.hasMore);
+      setRecPage(page);
+      return;
+    }
+
+    setRecLoading(true);
+    const res = await clientApi.getBoatRecommendations(boatId, page, 5);
+    if (res.success && res.data) {
+      const data = { same_operator: res.data.same_operator, other_operators: res.data.other_operators, hasMore: res.data.has_more };
+      recCacheRef.current.set(page, data);
+      setRecommendations({ same_operator: data.same_operator, other_operators: data.other_operators });
+      setRecHasMore(data.hasMore);
+      setRecPage(page);
+    }
+    setRecLoading(false);
+  }, [params.id]);
+
+  useEffect(() => {
+    if (params.id) {
+      recCacheRef.current.clear();
+      fetchRecommendations(1);
+    }
+  }, [params.id, fetchRecommendations]);
 
   // Handle keyboard navigation for image modal
   useEffect(() => {
@@ -676,8 +706,27 @@ export default function BoatDetailsPage() {
             {/* Recommendations */}
             {(recommendations.same_operator.length > 0 || recommendations.other_operators.length > 0) && (
               <section>
-                <h2 className="text-xl sm:text-2xl font-semibold mb-6 font-poppins">Similar Boats You May Like</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl sm:text-2xl font-semibold font-poppins">Similar Boats You May Like</h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fetchRecommendations(recPage - 1)}
+                      disabled={recPage <= 1 || recLoading}
+                      className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <button
+                      onClick={() => fetchRecommendations(recPage + 1)}
+                      disabled={!recHasMore || recLoading}
+                      className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                </div>
 
+                <div className={recLoading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
                 {recommendations.same_operator.length > 0 && (
                   <div className="mb-8">
                     <h3 className="text-base sm:text-lg font-medium text-[#616161] mb-4">From the same operator</h3>
@@ -743,6 +792,7 @@ export default function BoatDetailsPage() {
                     </div>
                   </div>
                 )}
+                </div>
               </section>
             )}
 

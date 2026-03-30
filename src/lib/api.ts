@@ -815,8 +815,8 @@ export const clientApi = {
     });
   },
 
-  getBoatRecommendations: async (boatId: number): Promise<ApiResponse<{ boat_id: number; total_recommendations: number; same_operator: Boat[]; other_operators: Boat[] }>> => {
-    return apiRequest<{ boat_id: number; total_recommendations: number; same_operator: Boat[]; other_operators: Boat[] }>(`/client/boats/${boatId}/recommendations`);
+  getBoatRecommendations: async (boatId: number, page = 1, perPage = 5): Promise<ApiResponse<{ boat_id: number; page: number; per_page: number; total: number; has_more: boolean; min_score: number; same_operator: Boat[]; other_operators: Boat[] }>> => {
+    return apiRequest<{ boat_id: number; page: number; per_page: number; total: number; has_more: boolean; min_score: number; same_operator: Boat[]; other_operators: Boat[] }>(`/client/boats/${boatId}/recommendations?page=${page}&per_page=${perPage}`);
   }
 };
 
