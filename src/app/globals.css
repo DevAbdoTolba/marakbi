@@ -414,7 +414,7 @@ button:disabled {
   opacity: 0.5;
 }
 
-button:not(:disabled):hover {
+button:not(:disabled):not(.auth-eye-icon):hover {
   transform: translateY(-1px);
 }
 
