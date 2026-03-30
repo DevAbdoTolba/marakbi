@@ -15,7 +15,11 @@ export default function BoatDetailsPage() {
   const searchParams = useSearchParams();
   const [boatData, setBoatData] = useState<ApiBoatDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewTotalPages, setReviewTotalPages] = useState(1);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [paginatedReviews, setPaginatedReviews] = useState<import('@/lib/api').BoatReview[]>([]);
+  const reviewCacheRef = React.useRef<Map<number, import('@/lib/api').BoatReview[]>>(new Map());
   const [deletingReview, setDeletingReview] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -113,8 +117,33 @@ export default function BoatDetailsPage() {
     if (params.id) {
       recCacheRef.current.clear();
       fetchRecommendations(1);
+      reviewCacheRef.current.clear();
+      fetchReviews(1);
     }
   }, [params.id, fetchRecommendations]);
+
+  // Fetch reviews with caching
+  const fetchReviews = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+
+    const cached = reviewCacheRef.current.get(page);
+    if (cached) {
+      setPaginatedReviews(cached);
+      setReviewPage(page);
+      return;
+    }
+
+    setReviewsLoading(true);
+    const res = await clientApi.getBoatReviewsPaginated(boatId, page, 5);
+    if (res.success && res.data) {
+      reviewCacheRef.current.set(page, res.data.reviews);
+      setPaginatedReviews(res.data.reviews);
+      setReviewTotalPages(res.data.pagination.pages);
+      setReviewPage(page);
+    }
+    setReviewsLoading(false);
+  }, [params.id]);
 
   // Handle keyboard navigation for image modal
   useEffect(() => {
@@ -886,11 +915,11 @@ export default function BoatDetailsPage() {
               )}
 
               {/* Reviews List */}
-              <div className="space-y-6">
-                {reviews.length === 0 && !boatData.user_review ? (
+              <div className={`space-y-6 ${reviewsLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                {paginatedReviews.length === 0 && !boatData.user_review ? (
                   <p className="text-gray-500 text-center py-8">No reviews yet.</p>
                 ) : (
-                  (showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => {
+                  paginatedReviews.map((review) => {
                     const currentUser = storage.getUser();
                     if (currentUser && review.user_id === currentUser.id) return null;
                     return (
@@ -914,13 +943,25 @@ export default function BoatDetailsPage() {
                 )}
               </div>
 
-              {reviews.length > 3 && (
-                <button
-                  onClick={() => setShowAllReviews(!showAllReviews)}
-                  className="mt-6 px-8 py-3 border-2 border-[#0C4A8C] text-[#0C4A8C] rounded-lg hover:bg-[#0C4A8C] hover:text-white transition-colors"
-                >
-                  {showAllReviews ? "Show Less" : "Show All Comments"}
-                </button>
+              {/* Review Pagination */}
+              {reviewTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-6">
+                  <button
+                    onClick={() => fetchReviews(reviewPage - 1)}
+                    disabled={reviewPage <= 1 || reviewsLoading}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <span className="text-sm text-gray-500">Page {reviewPage} of {reviewTotalPages}</span>
+                  <button
+                    onClick={() => fetchReviews(reviewPage + 1)}
+                    disabled={reviewPage >= reviewTotalPages || reviewsLoading}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </div>
               )}
             </section>
 
