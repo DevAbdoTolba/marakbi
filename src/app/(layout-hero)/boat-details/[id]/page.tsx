@@ -673,6 +673,79 @@ export default function BoatDetailsPage() {
               </div>
             </section>
 
+            {/* Recommendations */}
+            {(recommendations.same_operator.length > 0 || recommendations.other_operators.length > 0) && (
+              <section>
+                <h2 className="text-xl sm:text-2xl font-semibold mb-6 font-poppins">Similar Boats You May Like</h2>
+
+                {recommendations.same_operator.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-base sm:text-lg font-medium text-[#616161] mb-4">From the same operator</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {recommendations.same_operator.map((rec) => (
+                        <button
+                          key={rec.id}
+                          onClick={() => router.push(`/boat-details/${rec.id}`)}
+                          className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition"
+                        >
+                          <div className="relative h-36 sm:h-40">
+                            {rec.images?.[0] ? (
+                              <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" />
+                            ) : (
+                              <div className="w-full h-full bg-gray-100" />
+                            )}
+                          </div>
+                          <div className="p-3 sm:p-4">
+                            <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
+                              <div className="flex items-center gap-1">
+                                <Rating style={{ maxWidth: 70 }} value={rec.average_rating || 0} readOnly />
+                                <span className="text-xs text-gray-500">({rec.total_reviews})</span>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {recommendations.other_operators.length > 0 && (
+                  <div>
+                    <h3 className="text-base sm:text-lg font-medium text-[#616161] mb-4">From other operators</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {recommendations.other_operators.map((rec) => (
+                        <button
+                          key={rec.id}
+                          onClick={() => router.push(`/boat-details/${rec.id}`)}
+                          className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition"
+                        >
+                          <div className="relative h-36 sm:h-40">
+                            {rec.images?.[0] ? (
+                              <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" />
+                            ) : (
+                              <div className="w-full h-full bg-gray-100" />
+                            )}
+                          </div>
+                          <div className="p-3 sm:p-4">
+                            <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
+                              <div className="flex items-center gap-1">
+                                <Rating style={{ maxWidth: 70 }} value={rec.average_rating || 0} readOnly />
+                                <span className="text-xs text-gray-500">({rec.total_reviews})</span>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* Customer reviews */}
             <section>
               <div className="flex items-center justify-between mb-6">
@@ -801,78 +874,6 @@ export default function BoatDetailsPage() {
               )}
             </section>
 
-            {/* Recommendations */}
-            {(recommendations.same_operator.length > 0 || recommendations.other_operators.length > 0) && (
-              <section className="mt-8 sm:mt-12">
-                <h2 className="text-xl sm:text-2xl font-semibold mb-6 font-poppins">Similar Boats You May Like</h2>
-
-                {recommendations.same_operator.length > 0 && (
-                  <div className="mb-8">
-                    <h3 className="text-base sm:text-lg font-medium text-[#616161] mb-4">From the same operator</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {recommendations.same_operator.map((rec) => (
-                        <button
-                          key={rec.id}
-                          onClick={() => router.push(`/boat-details/${rec.id}`)}
-                          className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition"
-                        >
-                          <div className="relative h-36 sm:h-40">
-                            {rec.images?.[0] ? (
-                              <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" />
-                            ) : (
-                              <div className="w-full h-full bg-gray-100" />
-                            )}
-                          </div>
-                          <div className="p-3 sm:p-4">
-                            <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
-                            <div className="flex items-center justify-between mt-1">
-                              <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
-                              <div className="flex items-center gap-1">
-                                <Rating style={{ maxWidth: 70 }} value={rec.average_rating || 0} readOnly />
-                                <span className="text-xs text-gray-500">({rec.total_reviews})</span>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {recommendations.other_operators.length > 0 && (
-                  <div>
-                    <h3 className="text-base sm:text-lg font-medium text-[#616161] mb-4">From other operators</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {recommendations.other_operators.map((rec) => (
-                        <button
-                          key={rec.id}
-                          onClick={() => router.push(`/boat-details/${rec.id}`)}
-                          className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition"
-                        >
-                          <div className="relative h-36 sm:h-40">
-                            {rec.images?.[0] ? (
-                              <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" />
-                            ) : (
-                              <div className="w-full h-full bg-gray-100" />
-                            )}
-                          </div>
-                          <div className="p-3 sm:p-4">
-                            <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
-                            <div className="flex items-center justify-between mt-1">
-                              <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
-                              <div className="flex items-center gap-1">
-                                <Rating style={{ maxWidth: 70 }} value={rec.average_rating || 0} readOnly />
-                                <span className="text-xs text-gray-500">({rec.total_reviews})</span>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </section>
-            )}
           </div>
 
           {/* Right Sidebar - Booking (Fixed Position) */}
