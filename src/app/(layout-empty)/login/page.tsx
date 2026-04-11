@@ -104,7 +104,7 @@ export default function LoginPage() {
       <div className="auth-left-side">
         <Image
           className="auth-left-image"
-          src="/images/Rectangle 3463861.png"
+          src="/images/Rectangle 3463861.webp"
           alt="Sailboat"
           fill
           sizes="(max-width: 768px) 100vw, 43vw"

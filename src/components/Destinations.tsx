@@ -19,11 +19,11 @@ const Destinations = () => {
   };
 
   const destinations = [
-    { name: 'Philae Temple', img1: '/images/Rectangle 3463870.png', img2: '/images/philae2.png' },
-    { name: 'Nubian Village', img1: '/images/nubian-village1.jpg', img2: '/images/nubian-village2.jpg' },
-    { name: 'Botanical Garden', img1: '/images/Aswan-Botanical-Garden1.jpg', img2: '/images/Aswan-Botanical-Garden2.jpg' },
-    { name: 'Elephantine Island', img1: '/images/Elephantine Island1.jpg', img2: '/images/Elephantine Island2.webp' },
-    { name: 'Abu Simbel Temples', img1: '/images/abusimple1.jpg', img2: '/images/abusimple2.jpg' },
+    { name: 'Philae Temple', img1: '/images/Rectangle 3463870.webp', img2: '/images/philae2.webp' },
+    { name: 'Nubian Village', img1: '/images/nubian-village1.webp', img2: '/images/nubian-village2.webp' },
+    { name: 'Botanical Garden', img1: '/images/Aswan-Botanical-Garden1.webp', img2: '/images/Aswan-Botanical-Garden2.webp' },
+    { name: 'Elephantine Island', img1: '/images/Elephantine Island1.webp', img2: '/images/Elephantine Island2.webp' },
+    { name: 'Abu Simbel Temples', img1: '/images/abusimple1.webp', img2: '/images/abusimple2.webp' },
   ];
 
   const goToPrevious = () => {
@@ -39,7 +39,7 @@ const Destinations = () => {
       {/* Background Images - Hidden on mobile, shown on larger screens */}
       <div className="hidden lg:block absolute w-[1087px] h-[1023px] -left-[400px] -top-[100px]">
         <Image
-          src="/images/image 6.png"
+          src="/images/image 6.webp"
           alt="Background"
           fill
           className="object-contain"
@@ -48,7 +48,7 @@ const Destinations = () => {
       </div>
       <div className="hidden lg:block absolute w-[914px] h-[1017px] right-[-200px] -top-[80px]">
         <Image
-          src="/images/image 5.png"
+          src="/images/image 5.webp"
           alt="Background"
           fill
           className="object-contain"

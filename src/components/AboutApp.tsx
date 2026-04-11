@@ -58,7 +58,7 @@ const AboutApp = () => {
           {/* Right Side: Image */}
           <div className="flex justify-center lg:justify-end mt-6 lg:mt-0">
             <Image
-              src="/images/image 1.png"
+              src="/images/image 1.webp"
               alt="Boat Image"
               width={640}
               height={661}

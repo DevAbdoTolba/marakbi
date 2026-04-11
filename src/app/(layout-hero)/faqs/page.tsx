@@ -89,7 +89,7 @@ export default function FAQsPage() {
                 lg:aspect-auto">
 
                 <Image
-                  src="/images/Layer 16yaght.png"
+                  src="/images/Layer 16yaght.webp"
                   alt="Luxury Yacht"
                   fill
                   className="object-contain scale-[2] lg:object-right"

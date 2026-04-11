@@ -49,37 +49,37 @@ const ServicesDropdown = ({ variant = 'transparent' }: ServicesDropdownProps) =>
     {
       id: 1,
       name: "Private Boats",
-      image: "/images/Frame 1321316435.png",
+      image: "/images/Frame 1321316435.webp",
       description: "Exclusive private boat rentals"
     },
     {
       id: 2,
       name: "Sharing Trips",
-      image: "/images/Frame 1321316436.png",
+      image: "/images/Frame 1321316436.webp",
       description: "Group boat trips and experiences"
     },
     {
       id: 3,
       name: "Travel Boats",
-      image: "/images/Frame 1321316437.png",
+      image: "/images/Frame 1321316437.webp",
       description: "Long-distance travel boats"
     },
     {
       id: 4,
       name: "Fishing Boats",
-      image: "/images/Frame 1321316438.png",
+      image: "/images/Frame 1321316438.webp",
       description: "Fishing expeditions and trips"
     },
     {
       id: 5,
       name: "Water Activities",
-      image: "/images/Frame 1321316439.png",
+      image: "/images/Frame 1321316439.webp",
       description: "Water sports and activities"
     },
     {
       id: 6,
       name: "Occasion",
-      image: "/images/Frame 1321316440.png",
+      image: "/images/Frame 1321316440.webp",
       description: "Special events and celebrations"
     }
   ];

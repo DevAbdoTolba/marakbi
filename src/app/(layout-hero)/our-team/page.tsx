@@ -14,9 +14,9 @@ export default function OurTeamPage() {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const slides = [
-    { id: 1, image: "/images/carousel1.png" },
-    { id: 2, image: "/images/carousel2.png" },
-    { id: 3, image: "/images/carousel3.png" },
+    { id: 1, image: "/images/carousel1.webp" },
+    { id: 2, image: "/images/carousel2.webp" },
+    { id: 3, image: "/images/carousel3.webp" },
   ];
 
   useEffect(() => {
@@ -183,7 +183,7 @@ export default function OurTeamPage() {
         {/* Full Width Image */}
         <div className="w-full relative h-[400px]">
           <Image
-            src="/images/PLAY SLIDE.png"
+            src="/images/PLAY SLIDE.webp"
             alt="Marakbi App Interface"
             fill
             className="object-contain"
@@ -392,7 +392,7 @@ export default function OurTeamPage() {
             <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
                 <Image
-                  src="/images/founder-nesma.png"
+                  src="/images/founder-nesma.webp"
                   alt="Nesma Ghazaly"
                   fill
                   className="object-contain scale-110"
@@ -428,7 +428,7 @@ export default function OurTeamPage() {
             <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
                 <Image
-                  src="/images/founder 2.png"
+                  src="/images/founder 2.webp"
                   alt="Ahmed Bastawi"
                   fill
                   className="object-contain"

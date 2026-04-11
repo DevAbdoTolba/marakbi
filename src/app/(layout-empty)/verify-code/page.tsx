@@ -83,7 +83,7 @@ export default function VerifyCodePage() {
       <div className="auth-left-side">
         <Image
           className="auth-left-image"
-          src="/images/Rectangle 3463875.png"
+          src="/images/Rectangle 3463875.webp"
           alt="Verification background"
           fill
           sizes="(max-width: 768px) 100vw, 43vw"

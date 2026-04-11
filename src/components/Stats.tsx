@@ -74,7 +74,7 @@ const Stats = () => {
       {/* Background Image - Hidden on Mobile */}
       <div className="absolute inset-0 hidden md:block">
         <Image
-          src="/images/wmap.png"
+          src="/images/wmap.webp"
           alt="World Map Background"
           width={1600}
           height={300}

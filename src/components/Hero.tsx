@@ -17,9 +17,9 @@ const Hero = () => {
 
   // Background images that correspond to the featured activities
   const backgroundImages = [
-    "/images/Rectangle 3463841.png", // Felucca background
-    "/images/Rectangle 3463845.png", // Fishing background  
-    "/images/Rectangle 3463846.png"  // Kayak background
+    "/images/Rectangle 3463841.webp", // Felucca background
+    "/images/Rectangle 3463845.webp", // Fishing background  
+    "/images/Rectangle 3463846.webp"  // Kayak background
   ];
 
   // Load cities on mount (no auth required)
@@ -223,7 +223,7 @@ const Hero = () => {
                 onClick={() => handleImageClick(0)}
               >
                 <Image
-                  src="/images/f1.png"
+                  src="/images/f1.webp"
                   alt="Felucca"
                   width={176}
                   height={160}
@@ -244,7 +244,7 @@ const Hero = () => {
                 onClick={() => handleImageClick(1)}
               >
                 <Image
-                  src="/images/f2.png"
+                  src="/images/f2.webp"
                   alt="Fishing"
                   width={176}
                   height={160}
@@ -265,7 +265,7 @@ const Hero = () => {
                 onClick={() => handleImageClick(2)}
               >
                 <Image
-                  src="/images/f3.png"
+                  src="/images/f3.webp"
                   alt="Kayak"
                   width={176}
                   height={160}
