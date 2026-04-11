@@ -55,7 +55,7 @@ const AboutApp = () => {
 
             <div className="mt-6 sm:mt-8">
               <Image
-                src="/images/image 2.png"
+                src="/images/image 2.webp"
                 alt="App Store"
                 width={208}
                 height={44}
@@ -72,7 +72,7 @@ const AboutApp = () => {
           {/* Right Side: Image */}
           <div className="flex justify-center lg:justify-end mt-6 lg:mt-0">
             <Image
-              src="/images/image 1.png"
+              src="/images/image 1.webp"
               alt="Boat Image"
               width={640}
               height={661}

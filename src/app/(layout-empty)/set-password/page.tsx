@@ -68,7 +68,7 @@ export default function SetPasswordPage() {
       <div className="auth-left-side">
         <Image 
           className="auth-left-image"
-          src="/images/Rectangle 3463876.png" 
+          src="/images/Rectangle 3463876.webp" 
           alt="Set password background"
           width={500}
           height={700}

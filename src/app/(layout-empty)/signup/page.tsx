@@ -75,7 +75,7 @@ export default function SignUpPage() {
       <div className="auth-left-side">
         <Image
           className="auth-left-image"
-          src="/images/Rectangle 3463873.png"
+          src="/images/Rectangle 3463873.webp"
           alt="Yacht background"
           width={500}
           height={700}

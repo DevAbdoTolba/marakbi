@@ -15,7 +15,7 @@ export function normalizeImageUrl(
 ): string {
   // Return placeholder if no image
   if (!imageUrl) {
-    return '/images/carousel1.png'; // Default placeholder
+    return '/images/carousel1.webp'; // Default placeholder
   }
 
   // Already a full Cloudinary URL
@@ -49,7 +49,7 @@ export function normalizeImageUrls(
   baseUrl?: string
 ): string[] {
   if (!images || !Array.isArray(images)) {
-    return ['/images/carousel1.png']; // Return default placeholder
+    return ['/images/carousel1.webp']; // Return default placeholder
   }
 
   const normalized = images
@@ -57,7 +57,7 @@ export function normalizeImageUrls(
     .map(img => normalizeImageUrl(img, baseUrl));
 
   // If no valid images, return placeholder
-  return normalized.length > 0 ? normalized : ['/images/carousel1.png'];
+  return normalized.length > 0 ? normalized : ['/images/carousel1.webp'];
 }
 
 /**

@@ -240,7 +240,7 @@ export default function ProfilePage() {
         {/* Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center opacity-60"
-          style={{ backgroundImage: "url('/images/Rectangle 3463878.jpg')" }}
+          style={{ backgroundImage: "url('/images/Rectangle 3463878.webp')" }}
         >
           
         </div>
