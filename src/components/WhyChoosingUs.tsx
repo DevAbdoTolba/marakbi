@@ -11,22 +11,22 @@ const WhyChoosingUs = () => {
   const columns = [
     {
       title: "Unmatched Local Expertise",
-      image: "/images/Rectangle 3463855.png",
+      image: "/images/Rectangle 3463855.webp",
       caption: "We Aren&apos;t Just A Rental Service; We Are A Network Of Local Professionals Who Live And Breathe Egypt&apos;s Waters. Our Captains Know The Hidden Gems And Secret Spots That Will Make Your Trip Unforgettable."
     },
     {
       title: "Your Safety, Our Priority", 
-      image: "/images/Rectangle 3463856.png",
+      image: "/images/Rectangle 3463856.webp",
       caption: "Every Single Boat, Captain, And Owner In Our Network Is Thoroughly Vetted. We Are Committed To The Highest Standards Of Safety And Professionalism So You Can Relax And Enjoy The Ride."
     },
     {
       title: "The Full Scope Of Egypt&apos;s Waters",
-      image: "/images/Rectangle 3463857.png",
+      image: "/images/Rectangle 3463857.webp",
       caption: "Whether Your Adventure Is On The Ancient Nile River, The Vibrant Red Sea, Or The Tranquil Mediterranean, Marakbi Is Your Single Point Of Access To The Best Boats And Experiences In All Of Egypt."
     },
     {
       title: "Effortless & Transparent Booking",
-      image: "/images/Rectangle 3463858.png",
+      image: "/images/Rectangle 3463858.webp",
       caption: "Forget The Hassle Of Searching. Our Platform Provides Clear, Transparent Pricing And A Seamless Booking Process, Putting You On The Water With Just A Few Clicks."
     }
   ];

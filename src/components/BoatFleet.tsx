@@ -37,7 +37,7 @@ const BoatFleet = () => {
       {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat h-110"
-        style={{ backgroundImage: "url('/images/Frame 1321316346.png')" }}
+        style={{ backgroundImage: "url('/images/Frame 1321316346.webp')" }}
       ></div>
 
 
@@ -104,7 +104,7 @@ const BoatFleet = () => {
                 <BoatCard
                   key={boat.id || index}
                   boatId={boat.id}
-                  imageUrl={boat.images?.[0] || '/images/Rectangle 3463853.png'}
+                  imageUrl={boat.images?.[0] || '/images/Rectangle 3463853.webp'}
                   name={boat.name || 'Boat'}
                   price={`${displayPrice}`}
                   location={boat.cities?.[0] || 'Aswan - Egypt'}

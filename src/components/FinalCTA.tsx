@@ -23,7 +23,7 @@ const FinalCTA = () => {
       <div className="relative w-full min-h-[600px] flex items-center">
         {/* Background Image - Flipped Horizontally */}
         <Image
-          src="/images/finalcta.png"
+          src="/images/finalcta.webp"
           alt="Boat Background"
           fill
           className="object-cover"

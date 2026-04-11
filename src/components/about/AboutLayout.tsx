@@ -17,7 +17,7 @@ export default function AboutLayout() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-4 relative h-64">
               <Image
-                src="/images/f1.png"
+                src="/images/f1.webp"
                 alt="Sunset boat"
                 fill
                 className="object-cover rounded-lg shadow-lg"
@@ -25,7 +25,7 @@ export default function AboutLayout() {
             </div>
             <div className="space-y-4 pt-12 relative h-64">
               <Image
-                src="/images/f2.png"
+                src="/images/f2.webp"
                 alt="Sunset boat close"
                 fill
                 className="object-cover rounded-lg shadow-lg"
@@ -33,7 +33,7 @@ export default function AboutLayout() {
             </div>
             <div className="col-span-2 relative h-72">
               <Image
-                src="/images/f3.png"
+                src="/images/f3.webp"
                 alt="Sailboat on Nile"
                 fill
                 className="object-cover rounded-lg shadow-lg"
@@ -204,7 +204,7 @@ export default function AboutLayout() {
             <div className="space-y-4">
               <div className="relative h-48">
                 <Image
-                  src="/images/Rectangle 3463860.png"
+                  src="/images/Rectangle 3463860.webp"
                   alt="Nile cruise"
                   fill
                   className="object-cover rounded-lg shadow-lg"
@@ -212,7 +212,7 @@ export default function AboutLayout() {
               </div>
               <div className="relative h-32">
                 <Image
-                  src="/images/Rectangle 3463861.png"
+                  src="/images/Rectangle 3463861.webp"
                   alt="Boat adventure"
                   fill
                   className="object-cover rounded-lg shadow-lg"
@@ -222,7 +222,7 @@ export default function AboutLayout() {
             <div className="space-y-4 pt-8">
               <div className="relative h-32">
                 <Image
-                  src="/images/Rectangle 3463862.png"
+                  src="/images/Rectangle 3463862.webp"
                   alt="Sunset sailing"
                   fill
                   className="object-cover rounded-lg shadow-lg"
@@ -230,7 +230,7 @@ export default function AboutLayout() {
               </div>
               <div className="relative h-48">
                 <Image
-                  src="/images/Rectangle 3463863.png"
+                  src="/images/Rectangle 3463863.webp"
                   alt="Family trip"
                   fill
                   className="object-cover rounded-lg shadow-lg"

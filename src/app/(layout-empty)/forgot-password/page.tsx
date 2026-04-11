@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
       <div className="auth-left-side">
         <Image
           className="auth-left-image"
-          src="/images/Rectangle 3463879.png"
+          src="/images/Rectangle 3463879.webp"
           alt="Boat background"
           width={500}
           height={700}

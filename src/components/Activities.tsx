@@ -2,12 +2,12 @@ import Image from 'next/image';
 
 const Activities = () => {
   const activities = [
-    { src: '/images/Rectangle 3463860.png', title: 'Water Sports', height: 'h-150' },
-    { src: '/images/Rectangle 3463863.png', title: 'Family Activities', height: 'h-150' },
-    { src: '/images/Rectangle 3463861.png', title: 'Boat Rides', height: 'h-200' },
-    { src: '/images/Rectangle 3463865.png', title: 'Cruises', height: 'h-100' },
-    { src: '/images/Rectangle 3463862.png', title: 'Fishing Trips', height: 'h-150' },
-    { src: '/images/Rectangle 3463864.png', title: 'Snorkelling & Diving', height: 'h-150' },
+    { src: '/images/Rectangle 3463860.webp', title: 'Water Sports', height: 'h-150' },
+    { src: '/images/Rectangle 3463863.webp', title: 'Family Activities', height: 'h-150' },
+    { src: '/images/Rectangle 3463861.webp', title: 'Boat Rides', height: 'h-200' },
+    { src: '/images/Rectangle 3463865.webp', title: 'Cruises', height: 'h-100' },
+    { src: '/images/Rectangle 3463862.webp', title: 'Fishing Trips', height: 'h-150' },
+    { src: '/images/Rectangle 3463864.webp', title: 'Snorkelling & Diving', height: 'h-150' },
   ];
 
   return (
