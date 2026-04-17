@@ -1,0 +1,485 @@
+@import "tailwindcss";
+
+html,
+body,
+:root {
+  height: 100%;
+}
+
+/* Poppins Font - Local Files */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins/Poppins-Thin.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* SignPainter - Local */
+@font-face {
+  font-family: "SignPainter";
+  src: url("/fonts/signpainter/SignPainterHouseScript.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins/Poppins-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins/Poppins-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins/Poppins-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins/Poppins-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins/Poppins-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins/Poppins-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins/Poppins-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins/Poppins-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-family-primary: var(--font-poppins), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --color-brand-blue-dark: #0d2440;
+  --color-brand-blue-medium: #0f3b7f;
+  --color-brand-blue-light: #3b5998;
+  --color-brand-gold: #c9a96e;
+  --color-brand-gold-light: #e0c99f;
+  --color-brand-gray: #f8f9fa;
+  --color-brand-gray-text: #5f5f5f;
+
+  /* Auth Colors */
+  --color-auth-primary: #093b77;
+  --color-auth-primary-hover: #0a4a94;
+  --color-auth-secondary: #106bd8;
+  --color-auth-text-gray: #7d7d7d;
+  --color-auth-text-dark: #616161;
+  --color-auth-bg-light: #f7f7f7;
+  --color-auth-border: #e5e7eb;
+  --color-auth-error-bg: #fee2e2;
+  --color-auth-error-border: #fecaca;
+  --color-auth-error-text: #dc2626;
+  --color-auth-success-bg: #dcfce7;
+  --color-auth-success-border: #bbf7d0;
+  --color-auth-success-text: #16a34a;
+
+  --font-family-sans: "Poppins", sans-serif;
+  --font-family-serif: "Playfair Display", serif;
+
+  --bg-hero-pattern: url("/images/hero-bg.png");
+  --bg-why-us-pattern: url("/images/why-us-yacht.jpg");
+  --bg-cta-pattern: url("/images/cta-yacht.jpg");
+}
+
+/* Auth Page Layout Styles */
+body {
+  font-family: var(--font-family-primary);
+}
+
+.auth-page-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  font-family: var(--font-family-primary);
+  overflow: hidden;
+}
+
+.auth-left-side {
+  flex: 0 0 43%;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-left-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-logo-container {
+  position: absolute;
+  top: 27px;
+  left: 37px;
+}
+
+.auth-circle-bg {
+  width: 174px;
+  height: 174px;
+}
+
+.auth-logo {
+  position: absolute;
+  top: 49%;
+  left: 52%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-logo img {
+  height: 110px;
+}
+
+.auth-form-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  padding: 40px 20px;
+}
+
+.auth-form-content {
+  width: 100%;
+  max-width: 650px;
+  padding: 0 20px;
+}
+
+.auth-input {
+  width: 100%;
+  height: 60px;
+  padding: 0 16px;
+  background: var(--color-auth-bg-light);
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-family: var(--font-family-primary);
+  color: var(--color-auth-text-gray);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.auth-input-with-icon {
+  padding-right: 45px;
+}
+
+.auth-eye-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--color-auth-text-gray);
+}
+
+.auth-submit-button {
+  width: 70%;
+  height: 52px;
+  background: var(--color-auth-primary);
+  border-radius: 8px;
+  border: none;
+  color: white;
+  font-size: 16px;
+  font-family: var(--font-family-primary);
+  font-weight: 500;
+  cursor: pointer;
+  margin: 0 auto 30px auto;
+  display: block;
+  transition: background 0.3s;
+}
+
+.auth-submit-button:hover:not(:disabled) {
+  background: var(--color-auth-primary-hover);
+}
+
+.auth-submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-error-message {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--color-auth-error-bg);
+  border: 1px solid var(--color-auth-error-border);
+  border-radius: 8px;
+  color: var(--color-auth-error-text);
+  font-size: 14px;
+}
+
+.auth-link-button {
+  color: var(--color-auth-secondary);
+  font-size: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.auth-back-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--font-family-primary);
+  color: black;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .auth-page-container {
+    flex-direction: column;
+  }
+
+  .auth-left-side {
+    flex: 0 0 40%;
+  }
+
+  .auth-form-container {
+    padding: 20px;
+  }
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-serif {
+  /* font-family: var(--font-family-serif); */
+}
+
+/* Fix for clickable elements */
+button,
+a,
+[role="button"] {
+  cursor: pointer;
+  pointer-events: auto !important;
+  z-index: 9999;
+  /* position: relative; */
+}
+
+/* Fix for Admin Dashboard buttons overlapping fixed header (z-50) */
+.admin-dashboard-layout button,
+.admin-dashboard-layout a,
+.admin-dashboard-layout [role="button"] {
+  z-index: 10;
+}
+
+.admin-dashboard-layout h3,
+.admin-dashboard-layout h2 {
+  font-family: var(--font-family-sans);
+}
+
+/* Ensure buttons are interactive */
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+/* Fix for auth buttons */
+.auth-link-button,
+.auth-submit-button,
+.auth-back-button {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 10;
+  position: relative;
+}
+
+/* Ensure no overlay is blocking clicks */
+* {
+  pointer-events: auto;
+}
+
+/* Fix potential overlay issues */
+body>* {
+  pointer-events: auto;
+}
+
+/* Debug click fix */
+.clickable {
+  cursor: pointer;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 999;
+}
+
+/* Poppins Font Utilities */
+.font-poppins {
+  font-family: var(--font-family-primary);
+}
+
+.text-poppins {
+  font-family: var(--font-family-primary);
+}
+
+/* SignPainter Utilities */
+.font-signpainter {
+  font-family: "SignPainter", cursive;
+}
+
+/* Gradient Text */
+.gradiant-text {
+  background: linear-gradient(135deg, #106bd8 0%, #083872 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.signpainter-title {
+  color: #927c4e;
+  font-size: 38px;
+  font-family: "SignPainter", cursive;
+  font-weight: 400;
+  text-transform: capitalize;
+  word-wrap: break-word;
+}
+
+/* Privacy Policy Custom Styles */
+.privacy-main-heading {
+  width: 100%;
+  color: #232536;
+  font-size: 36px;
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  line-height: 54px;
+  word-wrap: break-word;
+}
+
+.privacy-page-title {
+  color: black;
+  font-size: 46px;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  text-transform: capitalize;
+  word-wrap: break-word;
+}
+
+.privacy-last-updated {
+  color: #232536;
+  font-size: 16px;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  line-height: 24px;
+  word-wrap: break-word;
+}
+
+.privacy-section-heading {
+  color: #0b4c99;
+  font-size: 24px;
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+  text-transform: capitalize;
+  word-wrap: break-word;
+}
+
+.privacy-section-text {
+  color: #232536;
+  font-size: 16px;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  line-height: 24px;
+  word-wrap: break-word;
+}
+
+/* Mobile Menu Animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Notification Slide Animation */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 0.3s ease-in forwards;
+}
