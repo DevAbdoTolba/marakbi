@@ -1445,11 +1445,11 @@ export default function AdminBoatListingLayout() {
                         />
                       </div>
 
-                      {/* Sale Price (Boat Market) */}
+                      {/* Sale Price (Buy/Sell) */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Sale Price (EGP)
-                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional - shows in Boat Market)</span>
+                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional - shows in Buy/Sell)</span>
                         </label>
                         <input
                           type="number"

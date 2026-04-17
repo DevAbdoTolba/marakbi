@@ -38,7 +38,7 @@ export default function BoatMarketPage() {
             Buy & Sell
           </p>
           <h2 className="text-5xl lg:text-6xl font-bold text-black font-poppins mb-4">
-            Boat Market
+            Buy/Sell
           </h2>
           <p className="text-lg text-gray-600 font-poppins max-w-2xl mx-auto">
             Browse boats available for purchase or list your own boat for sale

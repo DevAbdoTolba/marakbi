@@ -396,7 +396,7 @@ const Header = ({ variant = 'transparent' }: HeaderProps) => {
             <Link href="/our-team" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>Our Team</Link>
             {/* Our Services Dropdown */}
             <ServicesDropdown variant={variant} />
-            <Link href="/boat-market" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>Boat Market</Link>
+            <Link href="/boat-market" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>Buy/Sell</Link>
             <Link href="/contact" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>Contact</Link>
             {user && (
               <Link href="/my-bookings" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>My Bookings</Link>
@@ -551,7 +551,7 @@ const Header = ({ variant = 'transparent' }: HeaderProps) => {
                 <Link href="/services/water-activities" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 rounded-lg text-gray-700 text-sm font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">WATER ACTIVITIES</Link>
                 <Link href="/services/occasions" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 rounded-lg text-gray-700 text-sm font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">OCCASIONS</Link>
               </div>
-              <Link href="/boat-market" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Boat Market</Link>
+              <Link href="/boat-market" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Buy/Sell</Link>
               <Link href="/contact" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Contact</Link>
               {user && (
                 <Link href="/my-bookings" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">My Trips</Link>
