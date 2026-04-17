@@ -8,14 +8,14 @@ export default function AboutLayout() {
       {/* What We Aim Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-black font-poppins">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black font-poppins">
             What We Aim
           </h2>
         </div>
 
-          <div className="grid grid-cols-2 gap-12 items-center mt-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mt-16">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-4 relative h-64">
+            <div className="space-y-4 relative h-40 sm:h-48 md:h-64">
               <Image
                 src="/images/f1.webp"
                 alt="Sunset boat"
@@ -23,7 +23,7 @@ export default function AboutLayout() {
                 className="object-cover rounded-lg shadow-lg"
               />
             </div>
-            <div className="space-y-4 pt-12 relative h-64">
+            <div className="space-y-4 pt-4 sm:pt-8 md:pt-12 relative h-40 sm:h-48 md:h-64">
               <Image
                 src="/images/f2.webp"
                 alt="Sunset boat close"
@@ -72,7 +72,7 @@ export default function AboutLayout() {
       <div className="bg-gray-50 py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-5xl font-bold text-black mb-4 font-poppins">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black mb-4 font-poppins">
               Our Mission
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins">
@@ -82,7 +82,7 @@ export default function AboutLayout() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-8 mt-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
             <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition-shadow">
               <div className="w-16 h-16 bg-[#0C4A8C] rounded-full flex items-center justify-center mb-6">
                 <svg
@@ -164,7 +164,7 @@ export default function AboutLayout() {
       {/* Our Story Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-black mb-4 font-poppins">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black mb-4 font-poppins">
             Our Story
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins">
@@ -245,7 +245,7 @@ export default function AboutLayout() {
       <div className="bg-[#0C4A8C] py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-5xl font-bold text-white mb-4 font-poppins">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 font-poppins">
               Our Values
             </h2>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto font-poppins">
@@ -359,7 +359,7 @@ export default function AboutLayout() {
       {/* Team Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-black mb-4 font-poppins">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black mb-4 font-poppins">
             Meet Our Team
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins">
@@ -368,7 +368,7 @@ export default function AboutLayout() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-12">
           <div className="text-center">
             <div className="w-48 h-48 bg-gray-200 rounded-full mx-auto mb-6 flex items-center justify-center">
               <span className="text-4xl font-bold text-gray-500 font-poppins">
@@ -429,7 +429,7 @@ export default function AboutLayout() {
       {/* Call to Action Section */}
       <div className="bg-gradient-to-r from-[#0C4A8C] to-blue-600 py-20">
         <div className="max-w-4xl mx-auto text-center px-6">
-          <h2 className="text-5xl font-bold text-white mb-6 font-poppins">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 font-poppins">
             Ready to Start Your Adventure?
           </h2>
           <p className="text-xl text-blue-100 mb-8 leading-relaxed font-poppins">

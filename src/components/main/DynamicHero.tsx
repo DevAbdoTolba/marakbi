@@ -10,7 +10,7 @@ export default function DynamicHero() {
   const isContactPage = pathname === "/contact";
 
   return (
-    <section className="relative z-10 w-full h-[380px] flex items-center justify-center overflow-hidden">
+    <section className="relative z-10 w-full h-56 sm:h-72 md:h-80 lg:h-[380px] flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <Image
         src={background}
@@ -24,7 +24,7 @@ export default function DynamicHero() {
       <div className={`absolute inset-0 ${isContactPage ? 'bg-black/54' : 'bg-black/50'}`} />
 
       {/* Content */}
-      <div className={`relative z-10 w-full ${isContactPage ? 'max-w-7xl' : 'max-w-6xl'} mx-auto ${isContactPage ? 'px-16 lg:px-20' : 'px-6'} flex flex-col md:flex-row items-center ${isContactPage ? 'justify-center' : 'justify-between'} gap-8 text-white`}>
+      <div className={`relative z-10 w-full ${isContactPage ? 'max-w-7xl' : 'max-w-6xl'} mx-auto ${isContactPage ? 'px-4 sm:px-8 md:px-16 lg:px-20' : 'px-4 sm:px-6'} flex flex-col md:flex-row items-center ${isContactPage ? 'justify-center' : 'justify-between'} gap-8 text-white`}>
         {/* Left Side - Title */}
         <div className={`${isContactPage ? 'text-left' : 'text-center md:text-left'} flex-1`}>
           <p className={`${isContactPage ? 'text-3xl sm:text-4xl lg:text-[36px]' : 'text-3xl sm:text-4xl lg:text-5xl'} font-poppins font-bold capitalize leading-tight whitespace-pre-line`}>

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { customerApi, Order } from "@/lib/api";
 import { normalizeImageUrl } from "@/lib/imageUtils";
-import { FiClock, FiCalendar, FiMapPin, FiAnchor, FiChevronLeft, FiChevronRight, FiPackage } from "react-icons/fi";
+import { FiClock, FiCalendar, FiMapPin, FiAnchor, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 interface BookingCardProps {
   order: Order;
@@ -104,20 +104,12 @@ function BookingCard({ order }: BookingCardProps) {
           </div>
           <div className="flex items-center gap-2">
             <FiAnchor className="text-gray-400" />
-            <span>{durationText}</span>          </div>
+            <span>{durationText}</span>
+          </div>
           <div className="flex items-center gap-2">
             <FiMapPin className="text-gray-400" />
             <span className="truncate">{order.trip?.city_name || order.boat.cities?.[0] || 'Marina'}</span>
           </div>
-          {order.selected_services && order.selected_services.length > 0 && (
-            <div className="flex items-center gap-2 col-span-2">
-              <FiPackage className="text-gray-400" />
-              <span className="truncate text-gray-500">
-                {order.selected_services.length} add-on{order.selected_services.length > 1 ? 's' : ''}
-                {order.services_total ? ` · ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EGP', minimumFractionDigits: 0 }).format(order.services_total)}` : ''}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Footer Actions */}

@@ -10,11 +10,18 @@ import { MdOutlineGroups2 } from "react-icons/md";
 import { FaRegClock, FaAnchor } from "react-icons/fa";
 import { HiLockOpen } from "react-icons/hi";
 import { FiChevronLeft } from "react-icons/fi";
-import useBookingStore from "@/hooks/useBookingStore";
 
 export default function TripDetails() {
-  const bookingData = useBookingStore((s) => s.bookingData);
+  const [bookingData, setBookingData] = useState<Record<string, unknown> | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const savedBooking = localStorage.getItem('booking_data');
+    if (savedBooking) {
+      setBookingData(JSON.parse(savedBooking));
+    }
+  }, []);
+
   // Auto-advance slider for trip images
   useEffect(() => {
     const images = bookingData?.trip_images as string[] | undefined;

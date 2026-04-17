@@ -79,7 +79,7 @@ export default function HomePage() {
         <Hero />
         <OurServices />
         <AboutApp />
-        <BoatFleet />
+        <BoatFleet homeData={homeData} />
         <WhyChoosingUs />
         <Stats />
         <Activities />

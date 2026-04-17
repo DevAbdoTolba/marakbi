@@ -3,7 +3,6 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 // import type { Metadata } from "next";
-import Link from "next/link";
 import Logo from "@/components/Logo";
 
 // export const metadata: Metadata = {
@@ -22,9 +21,7 @@ function SuccessContent() {
     <div className="min-h-screen bg-gradient-to-b from-[#0C4A8C] via-[#0C4A8C]/90 to-[#021526] flex flex-col items-center justify-center px-4">
       {/* Logo */}
       <div className="absolute top-6 left-6 hidden sm:block">
-        <Link href="/">
-          <Logo width={40} height={100} />
-        </Link>
+        <Logo width={40} height={100} />
       </div>
 
       {/* Card */}

@@ -1,17 +1,26 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import TripDetails from "./tripDetails/TripDetails";
 import useFormStep from "@/hooks/useFormStep";
-import useBookingStore from "@/hooks/useBookingStore";
 import Image from "next/image";
-import { IoArrowBack } from "react-icons/io5";
 
 export default function StepOneBookingInfo() {
   const router = useRouter();
-  const { setStep, completeStep } = useFormStep();
-  const bookingData = useBookingStore((s) => s.bookingData);
+  const { setStep } = useFormStep();
+  const [bookingData, setBookingData] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    // Load booking data from localStorage
+    const savedBooking = localStorage.getItem('booking_data');
+    if (savedBooking) {
+      setBookingData(JSON.parse(savedBooking));
+    } else {
+      // If no booking data, redirect to home
+      router.push('/');
+    }
+  }, [router]);
 
   if (!bookingData) {
     return (
@@ -20,15 +29,6 @@ export default function StepOneBookingInfo() {
       </div>
     );
   }
-  const handleBack = () => {
-    // Navigate explicitly to boat details page instead of router.back(),
-    // because history may point to /login in the login-redirect flow.
-    let url = `/boat-details/${bookingData.boat_id}`;
-    if (bookingData.trip_id) {
-      url += `?trip_id=${bookingData.trip_id}`;
-    }
-    router.push(url);
-  };
 
   return (
     <div
@@ -42,16 +42,7 @@ export default function StepOneBookingInfo() {
     >
       {/* Left side: Booking details */}
       <div className="w-full lg:w-[60%]">
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={handleBack}
-            className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-600 hover:text-sky-900"
-            aria-label="Go back"
-          >
-            <IoArrowBack size={22} />
-          </button>
-          <h2 className="text-2xl font-bold font-poppins">Booking Information</h2>
-        </div>
+        <h2 className="text-2xl font-bold mb-6 font-poppins">Booking Information</h2>
 
         {/* Booking Details */}
         <div className="bg-gray-50 p-6 rounded-lg mb-6">
@@ -94,6 +85,7 @@ export default function StepOneBookingInfo() {
             </div>
           </div>
         </div>
+
         {/* Pricing */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <h3 className="font-semibold mb-4 font-poppins">Price Breakdown</h3>
@@ -103,27 +95,6 @@ export default function StepOneBookingInfo() {
                 <span className="text-gray-600">Base Price</span>
                 <span className="font-semibold">{bookingData.base_price.toFixed(0)} EGP</span>
               </div>
-            )}
-            {/* Selected Services Breakdown */}
-            {Array.isArray(bookingData.selected_services) && bookingData.selected_services.length > 0 && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Add-on Services</span>
-                  <span className="font-semibold">{typeof bookingData.services_total === 'number' ? bookingData.services_total.toFixed(0) : '0'} EGP</span>
-                </div>                {bookingData.selected_services.map((svc: { service_id: number; name: string; price: number; price_mode: string; calculated_price: number; person_count?: number }) => (
-                  <div key={svc.service_id} className="flex justify-between pl-4">
-                    <span className="text-gray-400 text-sm">
-                      {svc.name}
-                      {svc.price_mode !== 'per_trip' && svc.person_count && (
-                        <span className="text-gray-300 text-xs ml-1">
-                          ({svc.price} × {svc.person_count}{svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 ? ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))}h` : ''})
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-gray-500 text-sm">{svc.calculated_price.toFixed(0)} EGP</span>
-                  </div>
-                ))}
-              </>
             )}
             {typeof bookingData.service_fee === 'number' && (
               <div className="flex justify-between">
@@ -139,10 +110,13 @@ export default function StepOneBookingInfo() {
                 </span>
               </div>
             </div>
-          </div>        </div>        <button
-            onClick={() => { completeStep(1); setStep(2); }}
-            className="mt-6 w-full px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors"
-          >
+          </div>
+        </div>
+
+        <button
+          onClick={() => setStep(2)}
+          className="mt-6 w-full px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors"
+        >
           Continue
         </button>
       </div>

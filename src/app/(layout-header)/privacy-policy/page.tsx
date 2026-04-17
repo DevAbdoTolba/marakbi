@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
           </div>
 
           {/* Main Content - All in Gray Background */}
-          <div className="bg-gray-100 pt-16 px-24 pb-24 rounded-lg">
+          <div className="bg-gray-100 pt-16 px-4 sm:px-8 md:px-16 lg:px-24 pb-8 sm:pb-12 md:pb-24 rounded-lg">
             {/* Empty space under Privacy Policy */}
             <div className="mb-8"></div>
 
@@ -37,7 +37,7 @@ export default function PrivacyPolicyPage() {
                   <p className="privacy-section-text mb-4">
                     When you use Marakbi&apos;s platform, we may collect:
                   </p>
-                  <ul className="list-disc list-inside space-y-3 ml-6">
+                  <ul className="list-disc list-inside space-y-3 ml-3 sm:ml-6">
                     <li className="privacy-section-text">
                       Personal details such as your name, email, and phone
                       number.
@@ -65,7 +65,7 @@ export default function PrivacyPolicyPage() {
                   <p className="privacy-section-text mb-4">
                     We use your data to:
                   </p>
-                  <ul className="list-disc list-inside space-y-3 ml-6">
+                  <ul className="list-disc list-inside space-y-3 ml-3 sm:ml-6">
                     <li className="privacy-section-text">
                       Process and confirm your bookings.
                     </li>
@@ -87,7 +87,7 @@ export default function PrivacyPolicyPage() {
                   <h3 className="privacy-section-heading mb-4">
                     3. Data Sharing
                   </h3>
-                  <ul className="list-disc list-inside space-y-3 ml-6">
+                  <ul className="list-disc list-inside space-y-3 ml-3 sm:ml-6">
                     <li className="privacy-section-text">
                       We do not sell or trade your personal information.
                     </li>
@@ -122,7 +122,7 @@ export default function PrivacyPolicyPage() {
                   <p className="privacy-section-text mb-4">
                     You have the right to:
                   </p>
-                  <ul className="list-disc list-inside space-y-3 ml-6">
+                  <ul className="list-disc list-inside space-y-3 ml-3 sm:ml-6">
                     <li className="privacy-section-text">
                       Access, update, or delete your personal data.
                     </li>

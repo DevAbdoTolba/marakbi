@@ -1,24 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authApi, storage } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { authApi } from '@/lib/api';
 import Image from 'next/image';
-
 
 export default function SetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') || '';
+
+  useEffect(() => {
+    if (!token) {
+      router.push('/forgot-password');
+    }
+  }, [token, router]);
 
   const handleSetPassword = async () => {
     setError('');
     setLoading(true);
 
     try {
-      // Validation
       if (!password || !confirmPassword) {
         setError('Please fill in all password fields');
         setLoading(false);
@@ -37,25 +44,17 @@ export default function SetPasswordPage() {
         return;
       }
 
-      // Call API
-      const response = await authApi.resetPassword('', password);
+      const response = await authApi.resetPassword(token, password);
 
       if (response.success) {
-        // Get stored user to check role (in case they're completing password setup)
-        const user = storage.getUser();
-        if (user && (user.role === 'admin' || user.role === 'boat_owner')) {
-          // Admin and boat owners go to dashboard
-          router.push('/dashboard');
-        } else {
-          // Regular users go to home page
-          router.push('/');
-        }
+        setSuccess('Password reset successfully! Redirecting to login...');
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
       } else {
         setError(response.error || 'Failed to set password. Please try again.');
       }
-      
-    } catch (err) {
-      console.error('Set password error:', err);
+    } catch {
       setError('Failed to set password. Please try again.');
     } finally {
       setLoading(false);
@@ -66,70 +65,65 @@ export default function SetPasswordPage() {
     <div className="auth-page-container">
       {/* Left Side - Image */}
       <div className="auth-left-side">
-        <Image 
+        <Image
           className="auth-left-image"
-          src="/images/Rectangle 3463876.webp" 
+          src="/images/Rectangle 3463876.webp"
           alt="Set password background"
-          width={500}
-          height={700}
+          fill
+          sizes="(max-width: 768px) 100vw, 43vw"
+          priority
         />
-        
-        {/* Circle Background */}
         <div className="auth-logo-container">
-          <Image 
-            src="/icons/Ellipse 46.svg" 
-            alt="Circle Background"
-            width={200}
-            height={200}
+          <Image
+            src="/icons/Ellipse 46.svg"
+            alt=""
+            width={174}
+            height={174}
             className="auth-circle-bg"
           />
-          
-          {/* Logo */}
           <div className="auth-logo">
-            <Image 
-              src="/logo.png" 
-              alt="Marakbi Logo"
-              width={200}
-              height={110}
-            />
+            <Image src="/logo.png" alt="Marakbi Logo" width={200} height={110} />
           </div>
         </div>
-
       </div>
 
       {/* Right Side - Form */}
       <div className="auth-form-container">
         <div className="auth-form-content">
           {/* Navigation */}
-          <div className="flex items-center mb-16">
+          <div className="flex items-center mb-10 md:mb-16">
             <button
               type="button"
-              onClick={() => router.push('/verify-code')}
+              onClick={() => router.back()}
               className="auth-back-button"
             >
               <i className="fas fa-angle-left text-lg"></i>
-              Back to verify code
+              Back
             </button>
           </div>
 
           {/* Header */}
-          <div className="mb-10">
-            <h1 className="text-4xl font-bold text-black mb-3 text-left font-poppins">
+          <div className="mb-8 md:mb-10">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-3 text-left font-poppins">
               Set a password
             </h1>
-            <p className="text-base text-gray-500 mb-10 text-left leading-relaxed font-poppins">
-              Your previous password has been reseted. Please set a new password for your account.
+            <p className="text-sm sm:text-base text-gray-500 mb-6 md:mb-10 text-left leading-relaxed font-poppins">
+              Your previous password has been reset. Please set a new password for your account.
             </p>
           </div>
 
           {/* Password Form */}
-          <form noValidate>
+          <form
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSetPassword();
+            }}
+          >
             {/* Create Password Field */}
             <div className="mb-6">
-              <label className="block text-black text-base mb-2">
-                Create Password
-              </label>
-              <input 
+              <label className="block text-black text-base mb-2">Create Password</label>
+              <input
                 type="password"
                 placeholder="**************"
                 value={password}
@@ -141,10 +135,8 @@ export default function SetPasswordPage() {
 
             {/* Re-Enter Password Field */}
             <div className="mb-6">
-              <label className="block text-black text-base mb-2">
-                Re-Enter Password
-              </label>
-              <input 
+              <label className="block text-black text-base mb-2">Re-Enter Password</label>
+              <input
                 type="password"
                 placeholder="**************"
                 value={confirmPassword}
@@ -155,20 +147,16 @@ export default function SetPasswordPage() {
             </div>
 
             {/* Error Message */}
-            {error && (
-              <div className="auth-error-message text-center">
-                {error}
-              </div>
-            )}
+            {error && <div className="auth-error-message">{error}</div>}
+
+            {/* Success Message */}
+            {success && <div className="auth-success-message">{success}</div>}
 
             {/* Set Password Button */}
-            <button 
-              type="button"
-              onClick={handleSetPassword}
+            <button
+              type="submit"
               disabled={loading || !password || !confirmPassword}
-              className={`w-[70%] h-12 rounded-lg border-none text-white text-base font-medium cursor-pointer transition-colors ${
-                loading || !password || !confirmPassword ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-800 hover:bg-blue-900'
-              } ${loading ? 'opacity-50' : ''}`}
+              className="auth-submit-button"
             >
               {loading ? 'Setting Password...' : 'Set Password'}
             </button>

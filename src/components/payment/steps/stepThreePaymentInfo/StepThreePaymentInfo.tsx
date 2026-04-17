@@ -1,20 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { customerApi, clientApi, type TripBookingRequest } from "@/lib/api";
 import useFormStep from "@/hooks/useFormStep";
-import useBookingStore from "@/hooks/useBookingStore";
 import toast from "react-hot-toast";
-import { IoArrowBack } from "react-icons/io5";
 
 export default function StepThreePaymentInfo() {
   const router = useRouter();
   const { setStep } = useFormStep();
-  const bookingData = useBookingStore((s) => s.bookingData);
-  const clearBookingData = useBookingStore((s) => s.clearBookingData);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
-  const [processing, setProcessing] = useState(false);  const [error, setError] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState("");
+  const [bookingData, setBookingData] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    // تحميل بيانات الحجز من localStorage
+    // Check for pending booking data first (from login redirect)
+    let savedBooking = localStorage.getItem('pending_booking_data');
+    if (savedBooking) {
+      // Move pending booking to active booking
+      localStorage.setItem('booking_data', savedBooking);
+      localStorage.removeItem('pending_booking_data');
+    } else {
+      savedBooking = localStorage.getItem('booking_data');
+    }
+
+    if (savedBooking) {
+      setBookingData(JSON.parse(savedBooking));
+    } else {
+      // لو مفيش بيانات حجز، رجع للصفحة الأولى
+      setStep(1);
+    }
+  }, [setStep]);
 
   const handleConfirmPayment = async () => {
     if (!bookingData) return;
@@ -87,8 +105,6 @@ export default function StepThreePaymentInfo() {
           voyage_type: 'Private' as const,
           trip_id: bookingData.trip_id as number | undefined,
           total_price: (bookingData.total_price as number) || (bookingData.base_price as number),
-          // Selected services
-          selected_services: bookingData.selected_services as { service_id: number; name: string; price: number; price_mode: string; calculated_price: number; person_count?: number }[] | undefined,
           // Contact info
           booking_for: bookingData.booking_for as string,
           contact_first_name: bookingData.contact_first_name as string,
@@ -108,7 +124,8 @@ export default function StepThreePaymentInfo() {
 
         if (paymentMethod === 'card' && paymentUrl) {
           window.location.href = paymentUrl;
-        } else {          clearBookingData();
+        } else {
+          localStorage.removeItem('booking_data');
           toast.success('Booking created successfully! Payment will be collected in cash.');
           router.push('/my-bookings');
         }
@@ -131,17 +148,9 @@ export default function StepThreePaymentInfo() {
     );
   }
 
-  return (    <div className="max-w-2xl mx-auto p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => setStep(2)}
-          className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-600 hover:text-sky-900"
-          aria-label="Go back"
-        >
-          <IoArrowBack size={22} />
-        </button>
-        <h2 className="text-2xl font-bold font-poppins">Payment Method</h2>
-      </div>
+  return (
+    <div className="max-w-2xl mx-auto p-6">
+      <h2 className="text-2xl font-bold mb-6 font-poppins">Payment Method</h2>
 
       {/* Booking Summary */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6">
@@ -172,33 +181,13 @@ export default function StepThreePaymentInfo() {
             Duration: {String(bookingData.days)} day{Number(bookingData.days) > 1 ? 's' : ''}
           </p>
         )}
+
         <div className="mt-3 pt-3 border-t border-gray-300 space-y-1">
           {typeof bookingData.base_price === 'number' && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Base Price:</span>
               <span className="font-medium">{bookingData.base_price.toFixed(0)} EGP</span>
             </div>
-          )}
-          {/* Selected Services */}
-          {Array.isArray(bookingData.selected_services) && bookingData.selected_services.length > 0 && (
-            <>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Add-on Services:</span>
-                <span className="font-medium">{typeof bookingData.services_total === 'number' ? (bookingData.services_total as number).toFixed(0) : '0'} EGP</span>
-              </div>              {(bookingData.selected_services as { service_id: number; name: string; price: number; price_mode: string; calculated_price: number; person_count?: number }[]).map((svc) => (
-                <div key={svc.service_id} className="flex justify-between text-xs pl-3">
-                  <span className="text-gray-400">
-                    {svc.name}
-                    {svc.price_mode !== 'per_trip' && svc.person_count && (
-                      <span className="text-gray-300 ml-1">
-                        ({svc.price} × {svc.person_count}{svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 ? ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))}h` : ''})
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-gray-500">{svc.calculated_price.toFixed(0)} EGP</span>
-                </div>
-              ))}
-            </>
           )}
           {typeof bookingData.service_fee === 'number' && (
             <div className="flex justify-between text-sm">
@@ -256,11 +245,19 @@ export default function StepThreePaymentInfo() {
         <div className="mb-4 bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
-      )}      <div>
+      )}
+
+      <div className="flex gap-4">
+        <button
+          onClick={() => setStep(2)}
+          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Back
+        </button>
         <button
           onClick={handleConfirmPayment}
           disabled={processing}
-          className="w-full px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors disabled:opacity-50"
+          className="flex-1 px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors disabled:opacity-50"
         >
           {processing ? "Processing..." : `Confirm & ${paymentMethod === 'card' ? 'Pay' : 'Book'}`}
         </button>

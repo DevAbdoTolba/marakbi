@@ -3,13 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { customerApi } from "@/lib/api";
 import useFormStep from "@/hooks/useFormStep";
-import useBookingStore from "@/hooks/useBookingStore";
-import { IoArrowBack } from "react-icons/io5";
-import { validateEgyptianPhone, VALIDATION_MESSAGES } from "@/lib/validation";
 
 export default function StepTwoPersonalInfo() {
-  const { setStep, completeStep } = useFormStep();
-  const updateBookingData = useBookingStore((s) => s.updateBookingData);
+  const { setStep } = useFormStep();
   const [loading, setLoading] = useState(true);
   const [bookingFor, setBookingFor] = useState<'self' | 'other'>('self');
 
@@ -25,36 +21,14 @@ export default function StepTwoPersonalInfo() {
   const [notes, setNotes] = useState("");
 
   const [error, setError] = useState("");
-  const [phoneError, setPhoneError] = useState("");
 
   useEffect(() => {
-    // Check if there's already saved contact info in the store (user already visited step 2)
-    const data = useBookingStore.getState().bookingData;
-    const hasSavedContact = data && data.contact_phone;
-
-    if (hasSavedContact) {
-      // Restore previously saved data — don't call the API again
-      if (data.booking_for) {
-        setBookingFor(data.booking_for as 'self' | 'other');
-      }
-      if (data.booking_for === 'self') {
-        setSelfPhone(data.contact_phone as string);
-      } else {
-        setOtherPhone(data.contact_phone as string);
-      }
-      if (data.contact_first_name) setFirstName(data.contact_first_name as string);
-      if (data.contact_last_name) setLastName(data.contact_last_name as string);
-      if (data.booking_notes) setNotes(data.booking_notes as string);
-      setLoading(false);
-      return;
-    }
-
-    // First visit: fetch profile to pre-fill phone
     const loadProfile = async () => {
       try {
         setLoading(true);
         const response = await customerApi.getProfile();
         if (response.success && response.data) {
+          // Pre-fill phone from profile
           setSelfPhone(response.data.phone || "");
         }
       } catch {
@@ -64,15 +38,32 @@ export default function StepTwoPersonalInfo() {
       }
     };
 
+    // Check if there's already saved contact info
+    const savedBooking = localStorage.getItem('booking_data');
+    if (savedBooking) {
+      const data = JSON.parse(savedBooking);
+      if (data.booking_for) {
+        setBookingFor(data.booking_for);
+      }
+      if (data.contact_phone) {
+        if (data.booking_for === 'self') {
+          setSelfPhone(data.contact_phone);
+        } else {
+          setOtherPhone(data.contact_phone);
+        }
+      }
+      if (data.contact_first_name) setFirstName(data.contact_first_name);
+      if (data.contact_last_name) setLastName(data.contact_last_name);
+      if (data.booking_notes) setNotes(data.booking_notes);
+    }
+
     loadProfile();
   }, []);
 
   const handleContinue = async () => {
     setError("");
-    setPhoneError("");
 
     // Validation
-    const phone = bookingFor === 'self' ? selfPhone : otherPhone;
     if (bookingFor === 'self') {
       if (!selfPhone) {
         setError("Phone number is required");
@@ -85,20 +76,17 @@ export default function StepTwoPersonalInfo() {
       }
     }
 
-    // Egyptian phone format validation
-    if (!validateEgyptianPhone(phone)) {
-      setPhoneError(VALIDATION_MESSAGES.INVALID_PHONE);
-      return;
-    }    // Save contact info to Zustand store for step 3
-    updateBookingData({
-      booking_for: bookingFor,
-      contact_first_name: bookingFor === 'other' ? firstName : null,
-      contact_last_name: bookingFor === 'other' ? lastName : null,
-      contact_phone: bookingFor === 'self' ? selfPhone : otherPhone,
-      booking_notes: notes || null,
-    });
+    // Save contact info to localStorage for step 3
+    const savedBooking = localStorage.getItem('booking_data');
+    const bookingData = savedBooking ? JSON.parse(savedBooking) : {};
 
-    completeStep(2);
+    bookingData.booking_for = bookingFor;
+    bookingData.contact_first_name = bookingFor === 'other' ? firstName : null;
+    bookingData.contact_last_name = bookingFor === 'other' ? lastName : null;
+    bookingData.contact_phone = bookingFor === 'self' ? selfPhone : otherPhone;
+    bookingData.booking_notes = notes || null;
+
+    localStorage.setItem('booking_data', JSON.stringify(bookingData));
     setStep(3);
   };
 
@@ -110,146 +98,140 @@ export default function StepTwoPersonalInfo() {
     );
   }
 
-  return (<div className="max-w-2xl mx-auto p-6">
-    <div className="flex items-center gap-3 mb-6">
-      <button
-        onClick={() => setStep(1)}
-        className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-600 hover:text-sky-900"
-        aria-label="Go back"
-      >
-        <IoArrowBack size={22} />
-      </button>
-      <h2 className="text-2xl font-bold font-poppins">Contact Information</h2>
-    </div>
+  return (
+    <div className="max-w-2xl mx-auto p-4 sm:p-6">
+      <h2 className="text-2xl font-bold mb-6 font-poppins">Contact Information</h2>
 
-    {/* Booking For Toggle */}
-    <div className="mb-6">
-      <label className="block text-sm font-medium text-gray-700 mb-3">
-        Who is this booking for?
-      </label>
-      <div className="flex gap-4">
-        <button
-          type="button"
-          onClick={() => setBookingFor('self')}
-          className={`flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all ${bookingFor === 'self'
-            ? 'border-sky-900 bg-sky-50 text-sky-900'
-            : 'border-gray-200 text-gray-600 hover:border-gray-300'
-            }`}
-        >
-          For Me
-        </button>
-        <button
-          type="button"
-          onClick={() => setBookingFor('other')}
-          className={`flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all ${bookingFor === 'other'
-            ? 'border-sky-900 bg-sky-50 text-sky-900'
-            : 'border-gray-200 text-gray-600 hover:border-gray-300'
-            }`}
-        >
-          For Someone Else
-        </button>
-      </div>
-    </div>
-
-    <div className="space-y-4">
-      {bookingFor === 'self' ? (
-        /* Fields for self booking */
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number *
-          </label>
-          <input
-            type="tel"
-            value={selfPhone}
-            onChange={(e) => { setSelfPhone(e.target.value); setPhoneError(""); }}
-            placeholder="Your phone number (e.g. 01012345678)"
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent ${phoneError && bookingFor === 'self' ? 'border-red-500' : 'border-gray-300'}`}
-            required
-          />
-          {phoneError && bookingFor === 'self' && (
-            <p className="mt-1 text-sm text-red-600">{phoneError}</p>
-          )}
-          <p className="mt-1 text-xs text-gray-500">
-            This phone number will be shared with the boat owner
-          </p>
+      {/* Booking For Toggle */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Who is this booking for?
+        </label>
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={() => setBookingFor('self')}
+            className={`flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all ${bookingFor === 'self'
+                ? 'border-sky-900 bg-sky-50 text-sky-900'
+                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+              }`}
+          >
+            For Me
+          </button>
+          <button
+            type="button"
+            onClick={() => setBookingFor('other')}
+            className={`flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-all ${bookingFor === 'other'
+                ? 'border-sky-900 bg-sky-50 text-sky-900'
+                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+              }`}
+          >
+            For Someone Else
+          </button>
         </div>
-      ) : (
-        /* Fields for booking for someone else */
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                First Name *
-              </label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="First name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name *
-              </label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Last name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent"
-                required
-              />
-            </div>
-          </div>
+      </div>
+
+      <div className="space-y-4">
+        {bookingFor === 'self' ? (
+          /* Fields for self booking */
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Phone Number *
             </label>
             <input
               type="tel"
-              value={otherPhone}
-              onChange={(e) => { setOtherPhone(e.target.value); setPhoneError(""); }}
-              placeholder="Their phone number (e.g. 01012345678)"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent ${phoneError && bookingFor === 'other' ? 'border-red-500' : 'border-gray-300'}`}
+              value={selfPhone}
+              onChange={(e) => setSelfPhone(e.target.value)}
+              placeholder="Your phone number"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent"
               required
             />
-            {phoneError && bookingFor === 'other' && (
-              <p className="mt-1 text-sm text-red-600">{phoneError}</p>
-            )}
+            <p className="mt-1 text-xs text-gray-500">
+              This phone number will be shared with the boat owner
+            </p>
           </div>
-        </>
+        ) : (
+          /* Fields for booking for someone else */
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                value={otherPhone}
+                onChange={(e) => setOtherPhone(e.target.value)}
+                placeholder="Their phone number"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent"
+                required
+              />
+            </div>
+          </>
+        )}
+
+        {/* Notes field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Notes (Optional)
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Any special requests or notes for the boat owner"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent"
+            rows={3}
+          />
+        </div>
+      </div>
+
+      {error && (
+        <div className="mt-4 bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
       )}
 
-      {/* Notes field */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Notes (Optional)
-        </label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Any special requests or notes for the boat owner"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-900 focus:border-transparent"
-          rows={3}
-        />
+      <div className="mt-6 flex gap-4">
+        <button
+          onClick={() => setStep(1)}
+          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Back
+        </button>
+        <button
+          onClick={handleContinue}
+          className="flex-1 px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors"
+        >
+          Continue to Payment
+        </button>
       </div>
     </div>
-
-    {error && (
-      <div className="mt-4 bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
-        {error}
-      </div>
-    )}      <div className="mt-6">
-      <button
-        onClick={handleContinue}
-        className="w-full px-6 py-3 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition-colors"
-      >
-        Continue to Payment
-      </button>
-    </div>
-  </div>
   );
 }
