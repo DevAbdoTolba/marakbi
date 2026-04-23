@@ -5,13 +5,13 @@ const AboutApp = () => {
     <section className="py-8 sm:py-20">
       <div className="text-center mb-8 sm:mb-16">
           <p className="text-4xl sm:text-4xl lg:text-5xl font-signpainter text-[#927C4E] mb-2 sm:mb-4">
-          What is Marakbi
+          What is DAFFA
           </p>
           <h2 className="text-5xl sm:text-5xl lg:text-6xl font-bold text-black font-poppins mb-4 sm:mb-6">
           About us
           </h2>
           <p className="text-base sm:text-xl text-gray-400 font-poppins max-w-4xl mx-auto leading-relaxed">
-          Discover the soul of Egypt&apos;s waters with Marakbi. We connect you with authentic local captains and unforgettable journeys across the country&apos;s seas and rivers.
+          Discover the soul of Egypt&apos;s waters with DAFFA. We connect you with authentic local captains and unforgettable journeys across the country&apos;s seas and rivers.
           </p>
         </div>
 
@@ -24,7 +24,7 @@ const AboutApp = () => {
             </h2>
 
             <p className="text-[#093B77] text-base sm:text-lg font-normal font-poppins leading-7 sm:leading-9 mb-6 sm:mb-8">
-              Born in Aswan, Marakbi offers authentic experiences across Egypt&apos;s prime waters.
+              Born in Aswan, DAFFA offers authentic experiences across Egypt&apos;s prime waters.
               We connect you to a network of vetted, professional boat owners and captains on the
               Nile River, the Red Sea, and the Mediterranean Sea. You&apos;re not just renting a boat;
               you&apos;re gaining access to expert local knowledge for a safe and unforgettable journey.
@@ -64,7 +64,7 @@ const AboutApp = () => {
             </div>
             <div className="pl-3 sm:pl-4 mb-6 sm:mb-8">
               <p className="text-black text-xs sm:text-sm font-normal font-poppins leading-6 sm:leading-9">
-                Founder, Marakbi App
+                Founder, DAFFA App
               </p>
             </div>
           </div>

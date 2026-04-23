@@ -1,17 +1,19 @@
 // ===== IMAGE UTILITIES =====
 // Helper functions for handling images from different sources
 
+import { BASE_URL } from './api';
+
 /**
  * Normalizes image URL to work with Next.js Image component
  * Handles both Cloudinary URLs and legacy Heroku paths
  * 
  * @param imageUrl - The image URL from API (could be relative or absolute)
- * @param baseUrl - Optional base URL for relative paths (defaults to Heroku backend)
+ * @param baseUrl - Optional base URL for relative paths (defaults to API BASE_URL)
  * @returns Normalized absolute URL
  */
 export function normalizeImageUrl(
   imageUrl: string | undefined | null,
-  baseUrl: string = 'https://marakbi-e0870d98592a.herokuapp.com'
+  baseUrl: string = BASE_URL
 ): string {
   // Return placeholder if no image
   if (!imageUrl) {
@@ -86,13 +88,13 @@ export function isCloudinaryUrl(url: string): boolean {
 }
 
 /**
- * Check if URL is from Heroku backend
+ * Check if URL is from backend
  * 
  * @param url - Image URL to check
- * @returns true if URL is from Heroku
+ * @returns true if URL is from backend
  */
 export function isHerokuUrl(url: string): boolean {
-  return url.includes('marakbi-e0870d98592a.herokuapp.com') || url.startsWith('/static/');
+  return url.includes('daffa-e0870d98592a.herokuapp.com') || url.includes('127.0.0.1:5000') || url.startsWith('/static/');
 }
 
 /**

@@ -346,8 +346,8 @@ const Header = ({ variant = 'transparent' }: HeaderProps) => {
             <div className="w-6 h-6 flex items-center justify-center">
               <Image src="/icons/mail.svg" alt="Email" width={18} height={18} />
             </div>
-            <Link href="mailto:info@marakbi.tours" className="text-white text-xs sm:text-sm md:text-base font-normal font-poppins hover:text-orange-300 transition-colors">
-              Email: info@marakbi.tours
+            <Link href="mailto:info@daffa.tours" className="text-white text-xs sm:text-sm md:text-base font-normal font-poppins hover:text-orange-300 transition-colors">
+              Email: info@daffa.tours
             </Link>
           </div>
         </div>
@@ -362,15 +362,15 @@ const Header = ({ variant = 'transparent' }: HeaderProps) => {
               <Image src="/icons/Facebook.svg" alt="Facebook" width={24} height={24} className="w-full h-full" />
             </Link>
             {/* LinkedIn */}
-            <Link href="https://www.linkedin.com/company/marakbi" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
+            <Link href="https://www.linkedin.com/company/daffa" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
               <Image src="/icons/Linkedin.svg" alt="LinkedIn" width={24} height={24} className="w-full h-full" />
             </Link>
             {/* Instagram */}
-            <Link href="https://www.instagram.com/marakbi_app/" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
+            <Link href="https://www.instagram.com/daffa_app/" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
               <Image src="/icons/instgram.svg" alt="Instagram" width={24} height={24} className="w-full h-full" />
             </Link>
             {/* YouTube */}
-            <Link href="https://www.youtube.com/@marakbi" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
+            <Link href="https://www.youtube.com/@daffa" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
               <Image src="/icons/youtube.svg" alt="YouTube" width={24} height={24} className="w-full h-full" />
             </Link>
           </div>

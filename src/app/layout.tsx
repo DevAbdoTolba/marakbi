@@ -11,8 +11,8 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: {
-    default: "Marakbi | Explore Egypt’s Hidden Gems",
-    template: "%s | Marakbi",
+    default: "DAFFA | Explore Egypt’s Hidden Gems",
+    template: "%s | DAFFA",
   },
   description: "Discover the best locations, trips, and adventures in Egypt.",
 };

@@ -98,7 +98,7 @@ const Hero = () => {
           {/* Left Side: Text Content */}
           <div className="flex flex-col text-left w-full lg:w-auto">
             <div className="text-orange-300 text-3xl sm:text-3xl lg:text-4xl font-normal font-['SignPainter'] capitalize leading-tight">
-              With Marakbi
+              With DAFFA
             </div>
             <div className="text-white text-2xl sm:text-2xl lg:text-3xl font-medium font-poppins capitalize mb-4 sm:mb-6">
               Your Dream Boats

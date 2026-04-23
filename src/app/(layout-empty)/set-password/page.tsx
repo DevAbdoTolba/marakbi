@@ -82,7 +82,7 @@ export default function SetPasswordPage() {
             className="auth-circle-bg"
           />
           <div className="auth-logo">
-            <Image src="/logo.png" alt="Marakbi Logo" width={200} height={110} />
+            <Image src="/images/logo.png" alt="DAFFA Logo" width={200} height={110} />
           </div>
         </div>
       </div>

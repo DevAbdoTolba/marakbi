@@ -45,7 +45,7 @@ const FinalCTA = () => {
 
             {/* Description */}
             <div className="text-sky-100 text-base font-medium font-poppins mb-8 max-w-sm sm:max-w-md">
-              Every journey with Marakbi is tailored to perfection. From private charters to bespoke itineraries, our boats and expert captains ensure a seamless, unforgettable experience.
+              Every journey with DAFFA is tailored to perfection. From private charters to bespoke itineraries, our boats and expert captains ensure a seamless, unforgettable experience.
             </div>
 
             {/* CTA Button */}

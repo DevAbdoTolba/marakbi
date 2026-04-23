@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
               {/* Main Heading */}
               <div className="mb-16">
                 <h2 className="privacy-main-heading">
-                  Sail Your Journey with Marakbi — Egypt&apos;s Leading Boat
+                  Sail Your Journey with DAFFA — Egypt&apos;s Leading Boat
                   Booking Platform
                 </h2>
               </div>
@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
                     1. Information We Collect
                   </h3>
                   <p className="privacy-section-text mb-4">
-                    When you use Marakbi&apos;s platform, we may collect:
+                    When you use DAFFA&apos;s platform, we may collect:
                   </p>
                   <ul className="list-disc list-inside space-y-3 ml-3 sm:ml-6">
                     <li className="privacy-section-text">

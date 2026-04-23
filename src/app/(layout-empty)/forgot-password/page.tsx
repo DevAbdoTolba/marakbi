@@ -84,8 +84,8 @@ export default function ForgotPasswordPage() {
           {/* Logo */}
           <div className="auth-logo">
             <Image
-              src="/logo.png"
-              alt="Marakbi Logo"
+              src="/images/logo.png"
+              alt="DAFFA Logo"
               width={200}
               height={110}
             />

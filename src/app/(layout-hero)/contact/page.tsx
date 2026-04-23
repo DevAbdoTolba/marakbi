@@ -48,8 +48,9 @@ export default function ContactPage() {
 
     try {
       // إرسال البيانات للـ API
+      const { BASE_URL } = await import('@/lib/api');
       const response = await fetch(
-        "https://marakbi-e0870d98592a.herokuapp.com/contact/submit",
+        `${BASE_URL}/contact/submit`,
         {
           method: "POST",
           headers: {
@@ -214,7 +215,7 @@ export default function ContactPage() {
               <p className="text-base sm:text-lg lg:text-[22px] font-poppins font-normal capitalize text-[#616161] mb-8 max-w-[636px] leading-[normal]">
                 Ready to reserve your unforgettable water adventure?
                 <br />
-                Fill out the details below and secure your perfect Marakbi
+                Fill out the details below and secure your perfect DAFFA
                 experience in just a few clicks
               </p>
 
@@ -368,7 +369,7 @@ export default function ContactPage() {
                         Email
                       </p>
                       <p className="text-base font-poppins font-medium text-neutral-950 mb-1 leading-[24px]">
-                        info@marakbi.tours
+                        info@daffa.tours
                       </p>
                       <p className="text-xs font-poppins font-normal text-[#717182] leading-[16px]">
                         We&apos;ll respond within 24hrs
@@ -451,7 +452,7 @@ export default function ContactPage() {
                     />
                   </Link>
                   <Link
-                    href="https://www.instagram.com/marakbi_app/"
+                    href="https://www.instagram.com/daffa_app/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 bg-white border border-[rgba(0,0,0,0.1)] rounded-lg flex items-center justify-center hover:opacity-80 transition-opacity"
@@ -465,7 +466,7 @@ export default function ContactPage() {
                   </Link>
                   
                   <Link
-                    href="https://www.x.com/marakbi"
+                    href="https://www.x.com/daffa"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 bg-white border border-[rgba(0,0,0,0.1)] rounded-lg flex items-center justify-center hover:opacity-80 transition-opacity"
@@ -478,7 +479,7 @@ export default function ContactPage() {
                     />
                   </Link>
                   <Link
-                    href="https://www.linkedin.com/company/marakbi"
+                    href="https://www.linkedin.com/company/daffa"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 bg-white border border-[rgba(0,0,0,0.1)] rounded-lg flex items-center justify-center hover:opacity-80 transition-opacity"

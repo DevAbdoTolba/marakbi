@@ -140,8 +140,8 @@ export default function LoginPage() {
           <div className="auth-logo">
             <Link href="/">
               <Image
-                src="/logo.png"
-                alt="Marakbi Logo"
+                src="/images/logo.png"
+                alt="DAFFA Logo"
                 width={200}
                 height={110}
               />

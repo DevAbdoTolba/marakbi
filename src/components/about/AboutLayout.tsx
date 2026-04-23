@@ -45,7 +45,7 @@ export default function AboutLayout() {
             <div>
               <p className="text-lg leading-relaxed text-gray-700 font-poppins">
                 <span className="font-bold text-black">
-                  Marakbi is dedicated to making boat trips easy for everyone.
+                  DAFFA is dedicated to making boat trips easy for everyone.
                 </span>{" "}
                 We believe that every person—whether you are booking your first
                 boat or you&apos;re an experienced sailor—should have no trouble
@@ -180,7 +180,7 @@ export default function AboutLayout() {
                 Founded in 2024
               </h3>
               <p className="text-gray-600 leading-relaxed font-poppins">
-                Marakbi was born from a simple idea: making Egypt&apos;s
+                DAFFA was born from a simple idea: making Egypt&apos;s
                 beautiful waterways accessible to everyone. Our founders,
                 experienced sailors and travel enthusiasts, noticed that booking
                 a boat trip was unnecessarily complicated and expensive.
@@ -249,7 +249,7 @@ export default function AboutLayout() {
               Our Values
             </h2>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto font-poppins">
-              The principles that guide everything we do at Marakbi.
+              The principles that guide everything we do at DAFFA.
             </p>
           </div>
 
@@ -363,7 +363,7 @@ export default function AboutLayout() {
             Meet Our Team
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins">
-            The passionate people behind Marakbi, dedicated to making your water
+            The passionate people behind DAFFA, dedicated to making your water
             adventures unforgettable.
           </p>
         </div>
@@ -434,7 +434,7 @@ export default function AboutLayout() {
           </h2>
           <p className="text-xl text-blue-100 mb-8 leading-relaxed font-poppins">
             Join thousands of travelers who have discovered Egypt&apos;s
-            waterways with Marakbi. Your perfect boat trip is just a click away.
+            waterways with DAFFA. Your perfect boat trip is just a click away.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button className="bg-white text-[#0C4A8C] px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors font-poppins">

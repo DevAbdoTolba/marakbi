@@ -69,7 +69,7 @@ export default function OurTeamPage() {
       <div className="py-12 lg:py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-4xl lg:text-5xl font-signpainter text-[#927C4E] mb-3">
-            Welcome To Marakbi
+            Welcome To DAFFA
           </p>
           <h2 className="text-5xl lg:text-6xl font-bold text-black font-poppins">
             Know Us More
@@ -77,7 +77,7 @@ export default function OurTeamPage() {
         </div>
       </div>
 
-      {/* About Marakbi Section */}
+      {/* About DAFFA Section */}
       <div className="bg-[#093B77] py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-2">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
@@ -88,7 +88,7 @@ export default function OurTeamPage() {
                 href="/about-us"
                 className="inline-block border border-white text-white rounded-full px-6 py-2 mb-6 hover:bg-white hover:text-[#1A365D] transition-colors cursor-pointer"
               >
-                <span className="font-medium">About Marakbi</span>
+                <span className="font-medium">About DAFFA</span>
               </Link>
 
               {/* Main Title */}
@@ -98,7 +98,7 @@ export default function OurTeamPage() {
 
               {/* Description */}
               <p className="text-[#FAF7F1] text-xl font-poppins font-normal leading-9 mb-6 break-words">
-                Marakbi is powered by a small, dedicated team of maritime
+                DAFFA is powered by a small, dedicated team of maritime
                 professionals, travel experts and hospitality specialists. We
                 combine local knowledge with modern booking tools to deliver
                 seamless boat experiences — from private charters to group trips
@@ -143,7 +143,7 @@ export default function OurTeamPage() {
                     <div key={slide.id} className="w-full flex-shrink-0 relative h-96">
                       <Image
                         src={slide.image}
-                        alt="Marakbi Team"
+                        alt="DAFFA Team"
                         fill
                         className="object-cover rounded-lg select-none"
                         draggable={false}
@@ -161,10 +161,10 @@ export default function OurTeamPage() {
       <div className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-4xl lg:text-5xl font-signpainter text-[#927C4E] mb-4">
-            Marakbi&apos;s Main Goal
+            DAFFA&apos;s Main Goal
           </p>
           <h2 className="text-5xl lg:text-6xl font-bold text-black font-poppins break-words">
-            Marakbi is dedicated to making{" "}
+            DAFFA is dedicated to making{" "}
             <span className="block">boat trips easy for everyone.</span>
           </h2>
           <p className="text-2xl font-normal text-black font-poppins max-w-4xl mx-auto mt-10 leading-8 break-words">
@@ -178,13 +178,13 @@ export default function OurTeamPage() {
         </div>
       </div>
 
-      {/* Why Choose Marakbi Section */}
+      {/* Why Choose DAFFA Section */}
       <div className="bg-white">
         {/* Full Width Image */}
         <div className="w-full relative h-[400px]">
           <Image
             src="/images/PLAY SLIDE.webp"
-            alt="Marakbi App Interface"
+            alt="DAFFA App Interface"
             fill
             className="object-contain"
           />
@@ -199,7 +199,7 @@ export default function OurTeamPage() {
                 Know the Reason
               </p>
               <h2 className="text-5xl lg:text-6xl font-bold text-black font-poppins">
-                Why Choose Marakbi?
+                Why Choose DAFFA?
               </h2>
             </div>
 
@@ -239,7 +239,7 @@ export default function OurTeamPage() {
                 <div className="mb-4">
                   <LogoShape className="w-60 h-60 mx-auto" />
                   <h3 className="text-5xl font-bold bg-gradient-to-br from-[#106BD8] to-[#083872] bg-clip-text text-transparent font-poppins">
-                    Marakbi
+                    DAFFA
                   </h3>
                   <h4 className="text-[60px] font-bold text-black font-poppins mt-6 leading-[62px] break-words">
                     Core Values
@@ -382,7 +382,7 @@ export default function OurTeamPage() {
               Meet the Founder
             </h2>
             <p className="text-[27px] font-normal text-black font-poppins max-w-4xl mx-auto leading-[62px] break-words">
-              Meet the passionate minds and dedicated hands behind Marakbi
+              Meet the passionate minds and dedicated hands behind DAFFA
             </p>
           </div>
 
