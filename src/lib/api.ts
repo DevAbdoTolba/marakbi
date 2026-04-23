@@ -5,7 +5,7 @@
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
 // export const BASE_URL = 'https://daffa-e0870d98592a.herokuapp.com';
-export const BASE_URL = 'http://127.0.0.1:5000';
+export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com/';
 // export const BASE_URL = 'http://127.0.0.1:8787';
 
 

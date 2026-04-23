@@ -55,7 +55,7 @@ for file_path in files_theirs:
         # replace any BASE_URL to localhost
         content = re.sub(
             r'export const BASE_URL = \'https://[^\']+\';',
-            r"// export const BASE_URL = 'https://daffa-e0870d98592a.herokuapp.com';\nexport const BASE_URL = 'http://127.0.0.1:5000';",
+            r"// export const BASE_URL = 'https://daffa-e0870d98592a.herokuapp.com';\nexport const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com/';",
             content
         )
     
