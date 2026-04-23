@@ -45,7 +45,7 @@ const Footer = () => {
               </Link>
             </div>
             <p className="text-gray-300 text-sm md:text-base leading-6 md:leading-7 font-poppins">
-              <span>Marakbi is your premier digital gateway to</span><br />
+              <span>Daffa is your premier digital gateway to</span><br />
               <span>effortless boat rentals across Egypt&apos;s</span><br />
               <span>majestic Nile and vibrant Red Sea. We</span><br />
               <span>connect you with a diverse fleet, from</span><br />
@@ -58,7 +58,7 @@ const Footer = () => {
 
           {/* Column 2: Services */}
           <div>
-            <h4 className="text-lg md:text-xl text-amber-300 font-semibold mb-4 md:mb-6 font-poppins">Marakbi Services</h4>
+            <h4 className="text-lg md:text-xl text-amber-300 font-semibold mb-4 md:mb-6 font-poppins">Daffa Services</h4>
             <ul className="space-y-2 md:space-y-3 text-sm md:text-base list-disc list-inside">
               <li>
                 {serviceCategoryMap["Boat Rentals"] !== undefined ? (
@@ -220,7 +220,7 @@ const Footer = () => {
               <h5 className="text-base md:text-lg text-amber-300 font-semibold mb-3 md:mb-4 font-poppins">Download App</h5>
               <div className="flex gap-1 md:gap-2">
                 <Link
-                  href="https://play.google.com/store/apps/details?id=com.marakbi.app"
+                  href="https://play.google.com/store/apps/details?id=com.daffa.app"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-start hover:scale-105 transition-all duration-200"
@@ -230,7 +230,7 @@ const Footer = () => {
                 </Link>
 
                 <Link
-                  href="https://apps.apple.com/app/marakbi/id123456789"
+                  href="https://apps.apple.com/app/daffa/id123456789"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-start hover:scale-105 transition-all duration-200"
@@ -258,8 +258,8 @@ const Footer = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Image src="/icons/mail-1.svg" alt="Email" width={20} height={20} className="w-4 h-4 md:w-5 md:h-5" />
-                <Link href="mailto:info@marakbi.tours" className="text-sm md:text-base text-gray-300 font-poppins hover:text-orange-300 transition-colors">
-                  info@marakbi.tours
+                <Link href="mailto:info@daffa.tours" className="text-sm md:text-base text-gray-300 font-poppins hover:text-orange-300 transition-colors">
+                  info@daffa.tours
                 </Link>
               </div>
               <div className="flex items-center gap-2">
@@ -273,13 +273,13 @@ const Footer = () => {
               <Link href="https://www.facebook.com/profile.php?id=61578325940602" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
                 <Image src="/icons/Facebook.svg" alt="Facebook" width={24} height={24} className="w-full h-full" />
               </Link>
-              <Link href="https://www.linkedin.com/company/marakbi" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
+              <Link href="https://www.linkedin.com/company/daffa" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
                 <Image src="/icons/Linkedin.svg" alt="LinkedIn" width={24} height={24} className="w-full h-full" />
               </Link>
               <Link href="https://www.instagram.com/marakbi_app/" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
                 <Image src="/icons/instgram.svg" alt="Instagram" width={24} height={24} className="w-full h-full" />
               </Link>
-              <Link href="https://www.youtube.com/@marakbi" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
+              <Link href="https://www.youtube.com/@daffa" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
                 <Image src="/icons/youtube.svg" alt="YouTube" width={24} height={24} className="w-full h-full" />
               </Link>
             </div>
@@ -292,7 +292,7 @@ const Footer = () => {
         <div className="container mx-auto px-4 sm:px-6 md:px-8 py-4">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
             <p className="text-gray-400 text-xs md:text-sm font-poppins text-center md:text-left">
-              © 2025 Marakbi- Boat rentals. All rights reserved
+              © 2025 Daffa- Boat rentals. All rights reserved
             </p>
             <div className="flex items-center gap-4 md:gap-6 text-xs md:text-sm">
               <Link href="/privacy-policy" className="text-gray-400 hover:text-orange-300 transition-colors font-poppins">

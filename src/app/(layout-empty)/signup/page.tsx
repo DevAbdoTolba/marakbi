@@ -96,7 +96,7 @@ export default function SignUpPage() {
             <Link href="/">
               <Image
                 src="/logo.png"
-                alt="Marakbi Logo"
+                alt="Daffa Logo"
                 width={200}
                 height={110}
               />

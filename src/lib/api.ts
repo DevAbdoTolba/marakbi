@@ -1,10 +1,11 @@
-// ===== MARAKBI API SERVICE =====
-// Comprehensive API integration for Marakbi boat rental platform
+// ===== DAFFA API SERVICE =====
+// Comprehensive API integration for Daffa boat rental platform
 // Base URL: https://yasershaban.pythonanywhere.com
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
+// export const BASE_URL = 'https://daffa-e0870d98592a.herokuapp.com';
+export const BASE_URL = 'http://127.0.0.1:5000';
 // export const BASE_URL = 'http://127.0.0.1:8787';
 
 
@@ -1226,7 +1227,7 @@ export const adminApi = {
     let profilePictureUrl: string | undefined;
     if (profilePicture) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      profilePictureUrl = await uploadToCloudinary(profilePicture, 'marakbi/profiles');
+      profilePictureUrl = await uploadToCloudinary(profilePicture, 'daffa/profiles');
     }
 
     const formData = new FormData();
@@ -1254,7 +1255,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (boatData.boat_images && boatData.boat_images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'daffa/boats');
       imageUrls.push(...urls);
     }
 
@@ -1294,7 +1295,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (boatData.boat_images && boatData.boat_images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'daffa/boats');
       imageUrls.push(...urls);
     }
 
@@ -1340,7 +1341,7 @@ export const adminApi = {
     let imageUrl: string | undefined;
     if (image) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      imageUrl = await uploadToCloudinary(image, 'marakbi/categories');
+      imageUrl = await uploadToCloudinary(image, 'daffa/categories');
     }
 
     const formData = new FormData();
@@ -1353,7 +1354,7 @@ export const adminApi = {
     let imageUrl: string | undefined;
     if (image) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      imageUrl = await uploadToCloudinary(image, 'marakbi/categories');
+      imageUrl = await uploadToCloudinary(image, 'daffa/categories');
     }
 
     const formData = new FormData();
@@ -1382,7 +1383,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (images && images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(images, 'marakbi/trips');
+      const urls = await uploadMultipleToCloudinary(images, 'daffa/trips');
       imageUrls.push(...urls);
     }
 
@@ -1397,7 +1398,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (images && images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(images, 'marakbi/trips');
+      const urls = await uploadMultipleToCloudinary(images, 'daffa/trips');
       imageUrls.push(...urls);
     }
 
@@ -1445,7 +1446,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (boatData.boat_images && boatData.boat_images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'daffa/boats');
       imageUrls.push(...urls);
     }
 
@@ -1466,7 +1467,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (boatData.boat_images && boatData.boat_images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'daffa/boats');
       imageUrls.push(...urls);
     }
 
@@ -1491,7 +1492,7 @@ export const adminApi = {
     let iconUrl = serviceData.icon_url;
     if (iconFile) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      iconUrl = await uploadToCloudinary(iconFile, 'marakbi/services');
+      iconUrl = await uploadToCloudinary(iconFile, 'daffa/services');
     }
     const formData = new FormData();
     formData.append('name', serviceData.name);
@@ -1505,7 +1506,7 @@ export const adminApi = {
     let iconUrl = serviceData.icon_url;
     if (iconFile) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      iconUrl = await uploadToCloudinary(iconFile, 'marakbi/services');
+      iconUrl = await uploadToCloudinary(iconFile, 'daffa/services');
     }
     const formData = new FormData();
     if (serviceData.name) formData.append('name', serviceData.name);
@@ -1524,7 +1525,7 @@ export const adminApi = {
     let imageUrl = data.image_url;
     if (imageFile) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      imageUrl = await uploadToCloudinary(imageFile, 'marakbi/facilities');
+      imageUrl = await uploadToCloudinary(imageFile, 'daffa/facilities');
     }
     const formData = new FormData();
     formData.append('name', data.name);
@@ -1536,7 +1537,7 @@ export const adminApi = {
     let imageUrl = data.image_url;
     if (imageFile) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      imageUrl = await uploadToCloudinary(imageFile, 'marakbi/facilities');
+      imageUrl = await uploadToCloudinary(imageFile, 'daffa/facilities');
     }
     const formData = new FormData();
     if (data.name) formData.append('name', data.name);

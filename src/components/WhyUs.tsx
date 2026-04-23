@@ -31,10 +31,10 @@ const WhyUs = () => {
       <div className="relative container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-white text-3xl md:text-5xl font-bold font-poppins capitalize mb-4">
+          <h2 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-poppins capitalize mb-4">
             Why Choosing US
           </h2>
-          <p className="text-white text-xl md:text-3xl font-normal font-poppins capitalize mb-8">
+          <p className="text-white text-base sm:text-xl md:text-2xl lg:text-3xl font-normal font-poppins capitalize mb-8">
             We Do Our Best For Your Convenience
           </p>
           <button className="w-full sm:w-56 h-12 px-6 py-2.5 bg-orange-300 rounded-lg text-sky-900 text-base font-normal font-poppins capitalize hover:bg-orange-400 transition-colors">

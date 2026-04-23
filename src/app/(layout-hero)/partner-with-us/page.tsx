@@ -20,7 +20,7 @@ export default function ListYourBoatPage() {
                 {/* Header Section */}
                 <div className="text-center mb-12">
                     <h1 className="text-4xl md:text-5xl font-bold text-[#093B77] mb-6 font-poppins">
-                        Partner with Marakbi
+                        Partner with DAFFA
                     </h1>
                     <p className="text-lg text-gray-600 max-w-2xl mx-auto font-light">
                         Join the leading boat rental platform in Egypt. Listings are verified to ensure quality and trust.

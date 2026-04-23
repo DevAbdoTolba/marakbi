@@ -88,7 +88,7 @@ export default function SetPasswordPage() {
           <div className="auth-logo">
             <Image 
               src="/logo.png" 
-              alt="Marakbi Logo"
+              alt="Daffa Logo"
               width={200}
               height={110}
             />

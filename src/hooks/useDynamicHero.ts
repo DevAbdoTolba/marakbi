@@ -38,14 +38,14 @@ export default function useDynamicHero() {
       route: "/faqs",
       title: "FAQS",
       description:
-        "Set sail with Marakbi and explore Egypt from a new angle — smooth waters, local stories, and moments you&apos;ll remember long after the trip ends.",
+        "Set sail with Daffa and explore Egypt from a new angle — smooth waters, local stories, and moments you&apos;ll remember long after the trip ends.",
       background: "/images/Rectangle 5654.webp",
     },
     {
       route: "/our-team",
       title: "Our\nTeam",
       description:
-        "Marakbi is powered by a dedicated team of maritimeprofessionals, travel experts, and hospitality specialists. Ourteam combines deep local knowledge with modern booking tools to deliver seamless boat experiences.",
+        "Daffa is powered by a dedicated team of maritimeprofessionals, travel experts, and hospitality specialists. Ourteam combines deep local knowledge with modern booking tools to deliver seamless boat experiences.",
       background: "/images/Rectangle 56548.webp",
     },
     {

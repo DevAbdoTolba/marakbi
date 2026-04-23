@@ -35,7 +35,7 @@ const Destinations = () => {
   };
 
   return (
-    <section className="relative w-full min-h-[573px] bg-white md:bg-sky-100 overflow-hidden py-8 md:py-16">
+    <section className="relative w-full min-h-[400px] md:min-h-[573px] bg-white md:bg-sky-100 overflow-hidden py-8 md:py-16">
       {/* Background Images - Hidden on mobile, shown on larger screens */}
       <div className="hidden lg:block absolute w-[1087px] h-[1023px] -left-[400px] -top-[100px]">
         <Image
@@ -68,7 +68,7 @@ const Destinations = () => {
         {/* Mobile View - Card-based Carousel */}
         <div className="block md:hidden max-w-md mx-auto">
           <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
-            <div className="relative h-80 group">
+            <div className="relative h-60 sm:h-72 md:h-80 group">
               <Image
                 src={destinations[currentIndex].img1}
                 alt={destinations[currentIndex].name}

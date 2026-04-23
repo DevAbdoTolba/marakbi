@@ -22,7 +22,7 @@ const WhyChoosingUs = () => {
     {
       title: "The Full Scope Of Egypt&apos;s Waters",
       image: "/images/Rectangle 3463857.webp",
-      caption: "Whether Your Adventure Is On The Ancient Nile River, The Vibrant Red Sea, Or The Tranquil Mediterranean, Marakbi Is Your Single Point Of Access To The Best Boats And Experiences In All Of Egypt."
+      caption: "Whether Your Adventure Is On The Ancient Nile River, The Vibrant Red Sea, Or The Tranquil Mediterranean, Daffa Is Your Single Point Of Access To The Best Boats And Experiences In All Of Egypt."
     },
     {
       title: "Effortless & Transparent Booking",
