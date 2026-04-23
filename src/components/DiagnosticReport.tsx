@@ -62,8 +62,8 @@ export default function DiagnosticReport() {
     const recommendations = [];
 
     if (result.error?.includes('Failed to fetch')) {
-      recommendations.push('🔧 Check if backend server is running on http://127.0.0.1:5000');
-      recommendations.push('🔧 Verify the backend is accessible by visiting http://127.0.0.1:5000/client/home in browser');
+      recommendations.push('🔧 Check if backend server is running on https://marakbi-e0870d98592a.herokuapp.com/');
+      recommendations.push('🔧 Verify the backend is accessible by visiting https://marakbi-e0870d98592a.herokuapp.com//client/home in browser');
     }
 
     if (result.error?.includes('CORS')) {
