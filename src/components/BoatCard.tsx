@@ -1,6 +1,20 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+interface BadgeService {
+  service_id: number;
+  service: {
+    id: number;
+    name: string;
+    description: string | null;
+    icon_url: string | null;
+    price_mode: string;
+  } | null;
+  price: number | null;
+  is_badge: boolean;
+  badge_display_name: string | null;
+}
+
 interface BoatCardProps {
   boatId?: number;
   imageUrl: string;
@@ -13,15 +27,16 @@ interface BoatCardProps {
   rating?: number;
   reviewsCount?: number;
   guestCount?: number;
-  priceMode?: string; // New prop
+  priceMode?: string;
+  badgeServices?: BadgeService[];
+  showGuestsBadge?: boolean;
+  maxGuests?: number;
 }
 
-const BoatCard = ({ boatId, imageUrl, name, price, location, guests, status, rooms, rating = 0, reviewsCount = 0, guestCount, priceMode = 'per_time' }: BoatCardProps) => {
+const BoatCard = ({ boatId, imageUrl, name, price, location, guests, status, rooms, rating = 0, reviewsCount = 0, guestCount, priceMode = 'per_time', badgeServices, showGuestsBadge = false, maxGuests }: BoatCardProps) => {
   // Determine label based on priceMode
   let priceUnit = ' /Hour';
-  if (priceMode === 'per_trip') {
-    priceUnit = ' /Trip';
-  } else if (priceMode === 'per_person') {
+  if (priceMode === 'per_person') {
     priceUnit = ' /Person';
   } else if (priceMode === 'per_person_per_time') {
     priceUnit = ' /Person/Hr';
@@ -29,6 +44,18 @@ const BoatCard = ({ boatId, imageUrl, name, price, location, guests, status, roo
     // Handling per_day explicit mode if it exists, or fallback
     priceUnit = ' /Day';
   }
+
+  // Build effective badges list: prepend guests badge if enabled, then service badges
+  const effectiveBadges: Array<{ type: 'guests' | 'service'; badge?: BadgeService }> = [];
+  if (showGuestsBadge) {
+    effectiveBadges.push({ type: 'guests' });
+  }
+  if (badgeServices) {
+    badgeServices.forEach(badge => {
+      effectiveBadges.push({ type: 'service', badge });
+    });
+  }
+  const hasBadges = effectiveBadges.length > 0;
 
   const cardContent = (
     <div className="relative z-0 w-96 h-[465px] bg-white rounded-2xl shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-hidden hover:shadow-xl transition-shadow" style={{ fontFamily: 'Poppins, sans-serif' }}>
@@ -117,53 +144,61 @@ const BoatCard = ({ boatId, imageUrl, name, price, location, guests, status, roo
           </div>
         </div>
 
-        {/* Separator Line */}
-        <div className="w-full h-px bg-stone-300 mb-4"></div>
-
-        {/* Amenities Row */}
-        <div className="flex justify-between items-center">
-          {/* Guests */}
-          <div className="flex items-center gap-1">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center">
-              <Image
-                src="/icons/groups_2.svg"
-                alt="Guests"
-                width={20}
-                height={20}
-                className="w-7 h-6"
-              />
+        {/* Separator Line + Amenities / Badge Row - only show if there are badges */}
+        {hasBadges && (
+          <>
+            <div className="w-full h-px bg-stone-300 mb-4"></div>
+            {/* Amenities / Badge Row */}
+            <div className="flex justify-between items-center">
+              {effectiveBadges.slice(0, 3).map((item) => {
+                if (item.type === 'guests') {
+                  return (
+                    <div key="guests-badge" className="flex items-center gap-1">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center">
+                        <Image
+                          src="/icons/groups_2.svg"
+                          alt="Guests"
+                          width={20}
+                          height={20}
+                          className="w-7 h-6"
+                        />
+                      </div>
+                      <span className="text-black text-sm font-normal" style={{ fontFamily: 'Poppins, sans-serif' }}>{maxGuests ?? guests} Guests</span>
+                    </div>
+                  );
+                }
+                const badge = item.badge!;
+                return (
+                  <div key={badge.service_id} className="flex items-center gap-1 group/tip relative">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden relative">
+                      {badge.service?.icon_url ? (
+                        <Image
+                          src={badge.service.icon_url}
+                          alt={badge.badge_display_name || badge.service?.name || ''}
+                          width={20}
+                          height={20}
+                          className="w-7 h-6 object-contain"
+                        />
+                      ) : (
+                        <span className="text-gray-400 text-xs">●</span>
+                      )}
+                    </div>
+                    <span className="text-black text-sm font-normal" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                      {badge.badge_display_name || badge.service?.name || 'Service'}
+                    </span>
+                    {/* Tooltip */}
+                    {badge.service?.description && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50 max-w-[200px] text-center">
+                        {badge.service.description}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <span className="text-black text-sm font-normal" style={{ fontFamily: 'Poppins, sans-serif' }}>{guests} Guest</span>
-          </div>
-
-          {/* Status */}
-          <div className="flex items-center gap-1">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center">
-              <Image
-                src="/icons/award_meal.svg"
-                alt="Available"
-                width={20}
-                height={20}
-                className="w-7 h-6"
-              />
-            </div>
-            <span className="text-black text-sm font-normal" style={{ fontFamily: 'Poppins, sans-serif' }}>{status}</span>
-          </div>
-
-          {/* Rooms */}
-          <div className="flex items-center gap-1">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center">
-              <Image
-                src="/icons/bed.svg"
-                alt="Rooms"
-                width={20}
-                height={20}
-                className="w-7 h-6"
-              />
-            </div>
-            <span className="text-black text-sm font-normal" style={{ fontFamily: 'Poppins, sans-serif' }}>{rooms} Rooms</span>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

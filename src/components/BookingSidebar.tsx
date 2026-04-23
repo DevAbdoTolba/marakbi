@@ -1009,47 +1009,77 @@ export default function BookingSidebar({
                     <label className="block text-zinc-500 text-xs font-normal font-poppins mb-1.5">
                         Start Time {loadingSlots && <span className="text-gray-400">(loading...)</span>}
                     </label>
-                    <select
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        className="w-full h-9 pl-3 pr-10 bg-white rounded border border-neutral-200 text-stone-900 text-sm font-normal font-poppins focus:outline-none focus:border-[#0F3875] appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%222%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[position:right_12px_center] bg-no-repeat"
-                        id="startTimeSelect"
-                        disabled={loadingSlots}
-                    >
-                        <option value="">Select</option>
-                        {timeOptions.map((time) => {
-                            const booked = isTimeBooked(time, false);
-                            return (
-                                <option
-                                    key={time}
-                                    value={time}
-                                    disabled={booked}
-                                    className={booked ? "text-gray-400" : ""}
-                                >
-                                    {time}{booked ? " (Booked)" : ""}
-                                </option>
-                            );
-                        })}
-                    </select>
+                    <div className="relative">
+                        <select
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className="w-full h-9 px-3 bg-white rounded border border-neutral-200 text-stone-900 text-sm font-normal font-poppins focus:outline-none focus:border-[#0F3875] appearance-none cursor-pointer"
+                            id="startTimeSelect"
+                            disabled={loadingSlots}
+                        >
+                            <option value="">Select</option>
+                            {timeOptions.map((time) => {
+                                const booked = isTimeBooked(time, false);
+                                return (
+                                    <option
+                                        key={time}
+                                        value={time}
+                                        disabled={booked}
+                                        className={booked ? "text-gray-400" : ""}
+                                    >
+                                        {time}{booked ? " (Booked)" : ""}
+                                    </option>
+                                );
+                            })}
+                        </select>
+                        <div
+                            className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
+                            onClick={() => {
+                                const select = document.querySelector('#startTimeSelect') as HTMLSelectElement;
+                                if (select && typeof select.showPicker === 'function') {
+                                    select.showPicker();
+                                }
+                            }}
+                        >
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
                 {rentalType === "hour" && (
                     <div>
                         <label className="block text-zinc-500 text-xs font-normal font-poppins mb-1.5">
                             End Time
                         </label>
-                        <select
-                            value={endTime}
-                            onChange={(e) => setEndTime(e.target.value)}
-                            className="w-full h-9 pl-3 pr-10 bg-white rounded border border-neutral-200 text-stone-900 text-sm font-normal font-poppins focus:outline-none focus:border-[#0F3875] appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%222%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[position:right_12px_center] bg-no-repeat"
-                            id="endTimeSelect"
-                        >
-                            <option value="">Select</option>
-                            {getEndTimeOptions().map((time) => (
-                                <option key={time} value={time}>
-                                    {time}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                            <select
+                                value={endTime}
+                                onChange={(e) => setEndTime(e.target.value)}
+                                className="w-full h-9 px-3 bg-white rounded border border-neutral-200 text-stone-900 text-sm font-normal font-poppins focus:outline-none focus:border-[#0F3875] appearance-none cursor-pointer"
+                                id="endTimeSelect"
+                            >
+                                <option value="">Select</option>
+                                {getEndTimeOptions().map((time) => (
+                                    <option key={time} value={time}>
+                                        {time}
+                                    </option>
+                                ))}
+                            </select>
+                            <div
+                                className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
+                                onClick={() => {
+                                    const select = document.querySelector('#endTimeSelect') as HTMLSelectElement;
+                                    if (select && typeof select.showPicker === 'function') {
+                                        select.showPicker();
+                                    }
+                                }}
+                            >
+                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                 )}
                 {/* For Trip Type, we hide end time selection as it's calculated */}

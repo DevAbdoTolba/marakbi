@@ -1,11 +1,12 @@
 // ===== DAFFA API SERVICE =====
-// Comprehensive API integration for DAFFA boat rental platform
+// Comprehensive API integration for Daffa boat rental platform
 // Base URL: https://yasershaban.pythonanywhere.com
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
 // export const BASE_URL = 'https://daffa-e0870d98592a.herokuapp.com';
 export const BASE_URL = 'http://127.0.0.1:5000';
+// export const BASE_URL = 'http://127.0.0.1:8787';
 
 
 // Toggle for verbose API logging in the console
@@ -38,7 +39,6 @@ export interface AuthResponse {
   refresh_token: string;
   user_id: number;
   username: string;
-  role: string;
 }
 
 export interface AuthUser {
@@ -99,7 +99,6 @@ export interface Boat {
   services?: BoatServiceAssignment[];
   badge_services?: BoatServiceAssignment[];
   show_guests_badge?: boolean;
-  sale_price?: number | null;
   facilities?: BoatFacilityDef[];
   trips?: Array<{
     id: number;
@@ -120,7 +119,6 @@ export interface AddBoatData {
   name: string;
   price_per_hour: number | null;
   price_per_day?: number | null;
-  sale_price?: number | null;
   max_seats?: number;
   max_seats_stay?: number;
   description: string;
@@ -141,7 +139,6 @@ export interface EditBoatData {
   name?: string;
   price_per_hour?: number | null;
   price_per_day?: number | null;
-  sale_price?: number | null;
   max_seats?: number;
   max_seats_stay?: number;
   description?: string;
@@ -957,8 +954,6 @@ export interface AdminStats {
 export interface AdminUser {
   id: number;
   username: string;
-  first_name?: string;
-  last_name?: string;
   email: string;
   role: string;
   created_at: string | null;
@@ -1092,7 +1087,6 @@ export interface AdminBoat {
   badge_services?: BoatServiceAssignment[];
   services_full?: BoatServiceAssignment[];
   show_guests_badge?: boolean;
-  sale_price?: number | null;
   facilities?: BoatFacilityDef[];
 }
 
@@ -1225,10 +1219,10 @@ export const adminApi = {
     return apiRequest(`/admin/users?${params.toString()}`);
   },
   getUser: async (userId: number): Promise<ApiResponse<AdminUserDetails>> => apiRequest(`/admin/users/${userId}`),
-  createUser: async (userData: { username: string; first_name?: string; last_name?: string; email: string; password: string; role?: string; bio?: string; phone?: string; address?: string }): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
+  createUser: async (userData: { username: string; email: string; password: string; role?: string; bio?: string; phone?: string; address?: string }): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
     return apiRequest('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
   },
-  updateUser: async (userId: number, userData: { username?: string; first_name?: string; last_name?: string; email?: string; password?: string; role?: string; bio?: string; phone?: string; address?: string }, profilePicture?: File): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
+  updateUser: async (userId: number, userData: { username?: string; email?: string; password?: string; role?: string; bio?: string; phone?: string; address?: string }, profilePicture?: File): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
     // Upload profile picture to Cloudinary first if provided
     let profilePictureUrl: string | undefined;
     if (profilePicture) {
@@ -1280,7 +1274,6 @@ export const adminApi = {
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
-    if (boatData.sale_price !== undefined) formData.append('sale_price', boatData.sale_price === null ? 'null' : boatData.sale_price.toString());
 
     if (boatData.services) {
       formData.append('services', JSON.stringify(boatData.services));
@@ -1320,7 +1313,6 @@ export const adminApi = {
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
-    if (boatData.sale_price !== undefined) formData.append('sale_price', boatData.sale_price === null ? 'null' : boatData.sale_price.toString());
 
     if (boatData.services !== undefined) {
       formData.append('services', JSON.stringify(boatData.services));

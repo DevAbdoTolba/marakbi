@@ -36,20 +36,29 @@ const Footer = () => {
     <footer className="text-white bg-gradient-to-t from-[#083872] via-[#0A4489] to-[#106BD8]">
       {/* Main Footer Grid */}
       <div className="container mx-auto px-4 sm:px-6 md:px-8 pt-12 md:pt-16 pb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-10 gap-8 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-6">
           {/* Column 1: Logo and Description */}
-          <div className="space-y-4 md:col-span-3 md:pr-4 lg:pr-6">
+          <div className="space-y-4 md:col-span-2 md:pr-4 lg:pr-6">
             <div className="flex items-center space-x-3">
-              <Logo variant="white" width={64} height={80} />
+              <Link href="/">
+                <Logo variant="white" width={64} height={80} />
+              </Link>
             </div>
             <p className="text-gray-300 text-sm md:text-base leading-6 md:leading-7 font-poppins">
-              DAFFA is your premier digital gateway to effortless boat rentals across Egypt&apos;s majestic Nile and vibrant Red Sea. We connect you with a diverse fleet, from authentic feluccas to luxury yachts, blending local expertise with cutting-edge technology for your unforgettable aquatic adventure.
+              <span>Daffa is your premier digital gateway to</span><br />
+              <span>effortless boat rentals across Egypt&apos;s</span><br />
+              <span>majestic Nile and vibrant Red Sea. We</span><br />
+              <span>connect you with a diverse fleet, from</span><br />
+              <span>authentic feluccas to luxury yachts,</span><br />
+              <span>blending local expertise with cutting-edge</span><br />
+              <span>technology for your unforgettable aquatic</span><br />
+              <span>adventure.</span>
             </p>
           </div>
 
           {/* Column 2: Services */}
-          <div className="md:col-span-2">
-            <h4 className="text-lg md:text-xl text-amber-300 font-semibold mb-4 md:mb-6 font-poppins">DAFFA Services</h4>
+          <div>
+            <h4 className="text-lg md:text-xl text-amber-300 font-semibold mb-4 md:mb-6 font-poppins">Daffa Services</h4>
             <ul className="space-y-2 md:space-y-3 text-sm md:text-base list-disc list-inside">
               <li>
                 {serviceCategoryMap["Boat Rentals"] !== undefined ? (
@@ -151,7 +160,7 @@ const Footer = () => {
           </div>
 
           {/* Column 3: Useful Links */}
-          <div className="md:col-span-2">
+          <div>
             <h4 className="text-lg md:text-xl text-amber-300 font-semibold mb-4 md:mb-6 font-poppins">Useful Links</h4>
             <ul className="space-y-2 md:space-y-3 text-sm md:text-base list-disc list-inside">
               <li>
@@ -183,12 +192,12 @@ const Footer = () => {
           </div>
 
           {/* Column 4: Subscribe */}
-          <div className="md:col-span-3">
+          <div>
             <h4 className="text-lg md:text-xl text-amber-300 font-semibold mb-4 md:mb-6 font-poppins">Subscribe</h4>
             <p className="text-gray-300 text-sm md:text-base font-poppins mb-6">If you want to stay updated and receive regular information subscribing is a great option.</p>
             <p className="text-gray-300 mb-3 text-sm md:text-base font-poppins">Email Newsletter</p>
             <div className="flex items-stretch w-full rounded-lg md:rounded-xl overflow-hidden shadow-sm">
-              <div className="relative bg-white/90 flex-[2]">
+              <div className="relative bg-white/90 flex-[3]">
                 <input
                   type="email"
                   placeholder="Your Email"
@@ -267,7 +276,7 @@ const Footer = () => {
               <Link href="https://www.linkedin.com/company/daffa" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
                 <Image src="/icons/Linkedin.svg" alt="LinkedIn" width={24} height={24} className="w-full h-full" />
               </Link>
-              <Link href="https://www.instagram.com/daffa_app/" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
+              <Link href="https://www.instagram.com/marakbi_app/" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
                 <Image src="/icons/instgram.svg" alt="Instagram" width={24} height={24} className="w-full h-full" />
               </Link>
               <Link href="https://www.youtube.com/@daffa" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
@@ -283,7 +292,7 @@ const Footer = () => {
         <div className="container mx-auto px-4 sm:px-6 md:px-8 py-4">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
             <p className="text-gray-400 text-xs md:text-sm font-poppins text-center md:text-left">
-              © 2025 DAFFA- Boat rentals. All rights reserved
+              © 2025 Daffa- Boat rentals. All rights reserved
             </p>
             <div className="flex items-center gap-4 md:gap-6 text-xs md:text-sm">
               <Link href="/privacy-policy" className="text-gray-400 hover:text-orange-300 transition-colors font-poppins">

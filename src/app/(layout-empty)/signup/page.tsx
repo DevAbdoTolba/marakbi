@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { authApi } from '@/lib/api';
@@ -17,8 +17,6 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect');
 
   const handleSignUp = async () => {
     setError('');
@@ -55,9 +53,9 @@ export default function SignUpPage() {
       if (response.success) {
         setSuccess('Account created successfully! Redirecting to login...');
 
-        // Navigate to login page after successful registration, preserving redirect
+        // Navigate to login page after successful registration
         setTimeout(() => {
-          router.push(redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login');
+          router.push('/login');
         }, 2000);
       } else {
         setError(response.error || 'Sign up failed. Please try again.');
@@ -97,8 +95,8 @@ export default function SignUpPage() {
           <div className="auth-logo">
             <Link href="/">
               <Image
-                src="/images/logo.png"
-                alt="DAFFA Logo"
+                src="/logo.png"
+                alt="Daffa Logo"
                 width={200}
                 height={110}
               />
@@ -254,7 +252,7 @@ export default function SignUpPage() {
               You Have An Account?{' '}
               <button
                 type="button"
-                onClick={() => router.push(redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login')}
+                onClick={() => router.push('/login')}
                 className="auth-link-button"
               >
                 Sign In

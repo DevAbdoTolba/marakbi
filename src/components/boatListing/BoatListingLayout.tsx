@@ -667,7 +667,7 @@ export default function BoatListingLayout() {
         </p>
 
         {/* Boat Cards Grid */}
-        <div className="relative z-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-10 pb-24 max-w-6xl lg:max-w-7xl mx-auto place-items-center sm:place-items-stretch">
+        <div className="relative z-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 xl:gap-10 pb-24 max-w-6xl lg:max-w-7xl mx-auto place-items-center sm:place-items-stretch">
           {loading ? (
             <div className="col-span-full text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-900 mx-auto"></div>
@@ -702,6 +702,9 @@ export default function BoatListingLayout() {
                   reviewsCount={boat.total_reviews || 0}
                   guestCount={minPassengers ? parseInt(minPassengers) : undefined}
                   priceMode={displayMode}
+                  badgeServices={boat.badge_services}
+                  showGuestsBadge={boat.show_guests_badge}
+                  maxGuests={boat.max_seats}
                 />
               );
             })

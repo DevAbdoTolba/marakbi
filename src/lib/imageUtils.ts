@@ -8,7 +8,7 @@ import { BASE_URL } from './api';
  * Handles both Cloudinary URLs and legacy Heroku paths
  * 
  * @param imageUrl - The image URL from API (could be relative or absolute)
- * @param baseUrl - Optional base URL for relative paths (defaults to API BASE_URL)
+ * @param baseUrl - Optional base URL for relative paths (defaults to Heroku backend)
  * @returns Normalized absolute URL
  */
 export function normalizeImageUrl(
@@ -88,10 +88,10 @@ export function isCloudinaryUrl(url: string): boolean {
 }
 
 /**
- * Check if URL is from backend
+ * Check if URL is from Heroku backend
  * 
  * @param url - Image URL to check
- * @returns true if URL is from backend
+ * @returns true if URL is from Heroku
  */
 export function isHerokuUrl(url: string): boolean {
   return url.includes('daffa-e0870d98592a.herokuapp.com') || url.includes('127.0.0.1:5000') || url.startsWith('/static/');

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { authApi, storage } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,8 +13,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect');
 
   // Load saved credentials on mount
   useEffect(() => {
@@ -72,7 +70,7 @@ export default function LoginPage() {
         storage.setUser({
           id: response.data.user_id,
           username: response.data.username,
-          role: response.data.role || 'user'
+          role: 'user'
         });
 
         // Save credentials if remember me is checked
@@ -89,14 +87,13 @@ export default function LoginPage() {
         // Also set cookie for middleware
         document.cookie = `access_token=${response.data.access_token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
 
-        // Redirect to the page user was on before auth, or intended URL (booking flow), or home
+        // Check if there's an intended URL to redirect to (for booking flow)
         const intendedUrl = localStorage.getItem('intended_url');
         if (intendedUrl) {
-          localStorage.removeItem('intended_url');
+          localStorage.removeItem('intended_url'); // Clean up
           router.push(intendedUrl);
-        } else if (redirectTo) {
-          router.push(redirectTo);
         } else {
+          // Redirect to home page
           router.push('/');
         }
       } else {
@@ -140,8 +137,8 @@ export default function LoginPage() {
           <div className="auth-logo">
             <Link href="/">
               <Image
-                src="/images/logo.png"
-                alt="DAFFA Logo"
+                src="/logo.png"
+                alt="Daffa Logo"
                 width={200}
                 height={110}
               />
@@ -261,7 +258,7 @@ export default function LoginPage() {
               You Don&apos;t Have An Account?{' '}
               <button
                 type="button"
-                onClick={() => router.push(redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : '/signup')}
+                onClick={() => router.push('/signup')}
                 className="auth-link-button"
               >
                 Sign Up
