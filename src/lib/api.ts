@@ -99,6 +99,7 @@ export interface Boat {
   services?: BoatServiceAssignment[];
   badge_services?: BoatServiceAssignment[];
   show_guests_badge?: boolean;
+  sale_price?: number | null;
   facilities?: BoatFacilityDef[];
   trips?: Array<{
     id: number;
@@ -182,6 +183,7 @@ export interface BoatDetails {
   owner: BoatOwner;
   reviews: BoatReview[];
   service_fee_rate: number; // Service fee rate from backend
+  user_review?: BoatReview | null; // The current user's review if they have one
   reviews_summary: {
     average_rating: number;
     total_reviews: number;
@@ -857,6 +859,13 @@ export const clientApi = {
     });
   },
 
+  updateBoatReview: async (boatId: number, reviewId: number, reviewData: ReviewData): Promise<ApiResponse<ReviewResponse>> => {
+    return apiRequest<ReviewResponse>(`/client/boats/${boatId}/reviews/${reviewId}`, {
+      method: 'PUT',
+      body: JSON.stringify(reviewData)
+    });
+  },
+
   bookTrip: async (tripId: number, bookingData: TripBookingRequest): Promise<ApiResponse<TripBookingResponse>> => {
     return apiRequest<TripBookingResponse>(`/client/trips/${tripId}/book`, {
       method: 'POST',
@@ -956,6 +965,8 @@ export interface AdminUser {
   username: string;
   email: string;
   role: string;
+  first_name?: string | null;
+  last_name?: string | null;
   created_at: string | null;
   boats_count: number;
   bookings_count: number;
@@ -965,6 +976,8 @@ export interface AdminUser {
 }
 
 export interface AdminUserDetails extends AdminUser {
+  first_name?: string | null;
+  last_name?: string | null;
   updated_at: string | null;
   profile: {
     bio: string | null;
@@ -1072,6 +1085,7 @@ export interface AdminBoat {
   name: string;
   price_per_hour: number;
   price_per_day: number | null;
+  sale_price?: number | null;
   description: string;
   categories: string[];
   categories_id?: number[];
@@ -1082,6 +1096,8 @@ export interface AdminBoat {
   max_seats: number;
   max_seats_stay: number;
   location_url?: string;
+  address?: string;
+  price_mode?: string;
   owner_username: string | null; created_at: string;
   services?: BoatServiceAssignment[];
   badge_services?: BoatServiceAssignment[];
