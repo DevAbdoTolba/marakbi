@@ -346,8 +346,8 @@ const Header = ({ variant = 'transparent' }: HeaderProps) => {
             <div className="w-6 h-6 flex items-center justify-center">
               <Image src="/icons/mail.svg" alt="Email" width={18} height={18} />
             </div>
-            <Link href="mailto:info@daffa.tours" className="text-white text-xs sm:text-sm md:text-base font-normal font-poppins hover:text-orange-300 transition-colors">
-              Email: info@daffa.tours
+            <Link href="mailto:info@daffa.pro" className="text-white text-xs sm:text-sm md:text-base font-normal font-poppins hover:text-orange-300 transition-colors">
+              Email: info@daffa.pro
             </Link>
           </div>
         </div>

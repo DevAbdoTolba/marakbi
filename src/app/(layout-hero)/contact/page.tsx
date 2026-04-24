@@ -387,7 +387,7 @@ export default function ContactPage() {
                         Email
                       </p>
                       <p className="text-base font-poppins font-medium text-neutral-950 mb-1 leading-[24px]">
-                        info@daffa.tours
+                        info@daffa.pro
                       </p>
                       <p className="text-xs font-poppins font-normal text-[#717182] leading-[16px]">
                         We&apos;ll respond within 24hrs
