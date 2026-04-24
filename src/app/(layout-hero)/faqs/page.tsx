@@ -53,7 +53,7 @@ export default function FAQsPage() {
       id: 8,
       question: "How can I contact support?",
       answer:
-        "You can reach our support team via email at info@daffa.tours, phone at +2010 31 41 6 900, or through our contact form. We're here to help with any questions or concerns.",
+        "You can reach our support team via email at info@daffa.pro, phone at +2010 31 41 6 900, or through our contact form. We're here to help with any questions or concerns.",
     },
   ];
 

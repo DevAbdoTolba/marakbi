@@ -258,8 +258,8 @@ const Footer = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Image src="/icons/mail-1.svg" alt="Email" width={20} height={20} className="w-4 h-4 md:w-5 md:h-5" />
-                <Link href="mailto:info@daffa.tours" className="text-sm md:text-base text-gray-300 font-poppins hover:text-orange-300 transition-colors">
-                  info@daffa.tours
+                <Link href="mailto:info@daffa.pro" className="text-sm md:text-base text-gray-300 font-poppins hover:text-orange-300 transition-colors">
+                  info@daffa.pro
                 </Link>
               </div>
               <div className="flex items-center gap-2">

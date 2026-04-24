@@ -48,7 +48,7 @@ export default function AdminLoginLayout() {
           <AdminInput
             id="email"
             label="Email Address"
-            placeholder="admin@DAFFA.tours"
+            placeholder="admin@daffa.pro"
             icon={FaRegEnvelope}
             registration={register("email", {
               required: "Email is required",
@@ -90,7 +90,7 @@ export default function AdminLoginLayout() {
 
         <p className="text-[#717182] mt-6 text-xs sm:text-sm md:text-base font-medium text-center max-w-md">
           Need help? Contact support at{" "}
-          <span className="text-black font-semibold">support@DAFFA.tours</span>
+          <span className="text-black font-semibold">support@daffa.pro</span>
         </p>
       </div>
     </div>
