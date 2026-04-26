@@ -1410,6 +1410,7 @@ export default function AdminBoatListingLayout() {
                           <option value="per_time">Per Hour/Day (Standard)</option>
                           <option value="per_person">Per Person (Fixed)</option>
                           <option value="per_person_per_time">Per Person Per Hour</option>
+                          <option value="per_trip">Per Trip (Fixed)</option>
                         </select>
                       </div>
 
@@ -1418,7 +1419,8 @@ export default function AdminBoatListingLayout() {
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           {formData.price_mode === 'per_person' ? 'Price per Person (EGP)' :
                             formData.price_mode === 'per_person_per_time' ? 'Price per Person/Hour (EGP)' :
-                              'Price per Hour (EGP)'}
+                              formData.price_mode === 'per_trip' ? 'Price per Trip (EGP)' :
+                                'Price per Hour (EGP)'}
                           <span className="text-gray-400 font-normal text-xs ml-1">(Optional if day price set)</span>
                         </label>
                         <input

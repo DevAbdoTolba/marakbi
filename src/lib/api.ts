@@ -3,10 +3,10 @@
 // Base URL: https://yasershaban.pythonanywhere.com
 
 // ===== BASE CONFIGURATION =====
-// Updated to the new Heroku backend
-// export const BASE_URL = 'https://daffa-e0870d98592a.herokuapp.com';
-// export const BASE_URL = 'http://127.0.0.1:5000';
-export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com/';
+// Configure via NEXT_PUBLIC_API_URL in .env.local (or any .env*).
+// Falls back to the production Heroku backend when no env var is set.
+export const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'https://marakbi-e0870d98592a.herokuapp.com/';
 
 
 // Toggle for verbose API logging in the console
