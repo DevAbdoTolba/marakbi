@@ -16,6 +16,13 @@ function LoginPageInner() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
 
+  // Lock login page if already logged in
+  useEffect(() => {
+    if (storage.getToken()) {
+      router.replace(redirectTo || '/');
+    }
+  }, [router, redirectTo]);
+
   // Load saved credentials on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -158,7 +165,7 @@ function LoginPageInner() {
             <h1 className="text-5xl font-bold text-black mb-2 text-center font-poppins">
               Welcome Back
             </h1>
-            <p className="text-xl font-medium text-gray-500 mb-24 text-center capitalize">
+            <p className="text-xl font-medium text-gray-500 mb-8 sm:mb-24 text-center capitalize">
               log in to continue your adventure
             </p>
           </div>

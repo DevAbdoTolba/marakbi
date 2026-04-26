@@ -4,9 +4,6 @@ const AboutApp = () => {
   return (
     <section className="py-8 sm:py-20">
       <div className="text-center mb-8 sm:mb-16">
-          <p className="text-4xl sm:text-4xl lg:text-5xl font-signpainter text-[#927C4E] mb-2 sm:mb-4">
-          What is DAFFA
-          </p>
           <h2 className="text-5xl sm:text-5xl lg:text-6xl font-bold text-black font-poppins mb-4 sm:mb-6">
           About us
           </h2>
@@ -53,7 +50,7 @@ const AboutApp = () => {
               </li>
             </ul>
 
-            <div className="mt-6 sm:mt-8">
+            <div className="mt-6 sm:mt-8 mb-6 sm:mb-8">
               <Image
                 src="/images/image 2.webp"
                 alt="App Store"
@@ -61,11 +58,6 @@ const AboutApp = () => {
                 height={44}
                 className="w-40 h-9 sm:w-52 sm:h-11"
               />
-            </div>
-            <div className="pl-3 sm:pl-4 mb-6 sm:mb-8">
-              <p className="text-black text-xs sm:text-sm font-normal font-poppins leading-6 sm:leading-9">
-                Founder, DAFFA App
-              </p>
             </div>
           </div>
 
