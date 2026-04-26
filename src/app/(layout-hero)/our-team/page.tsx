@@ -66,10 +66,10 @@ export default function OurTeamPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Welcome Section */}
-      <div className="py-20 bg-white">
+      <div className="py-12 lg:py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-4xl lg:text-5xl font-signpainter text-[#927C4E] mb-4">
-            Welcome To Daffa
+          <p className="text-4xl lg:text-5xl font-signpainter text-[#927C4E] mb-3">
+            Welcome To DAFFA
           </p>
           <h2 className="text-5xl lg:text-6xl font-bold text-black font-poppins">
             Know Us More
@@ -77,7 +77,7 @@ export default function OurTeamPage() {
         </div>
       </div>
 
-      {/* About Daffa Section */}
+      {/* About DAFFA Section */}
       <div className="bg-[#093B77] py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-2">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
@@ -88,7 +88,7 @@ export default function OurTeamPage() {
                 href="/about-us"
                 className="inline-block border border-white text-white rounded-full px-6 py-2 mb-6 hover:bg-white hover:text-[#1A365D] transition-colors cursor-pointer"
               >
-                <span className="font-medium">About Daffa</span>
+                <span className="font-medium">About DAFFA</span>
               </Link>
 
               {/* Main Title */}
@@ -98,7 +98,7 @@ export default function OurTeamPage() {
 
               {/* Description */}
               <p className="text-[#FAF7F1] text-xl font-poppins font-normal leading-9 mb-6 break-words">
-                Daffa is powered by a small, dedicated team of maritime
+                DAFFA is powered by a small, dedicated team of maritime
                 professionals, travel experts and hospitality specialists. We
                 combine local knowledge with modern booking tools to deliver
                 seamless boat experiences — from private charters to group trips
@@ -143,7 +143,7 @@ export default function OurTeamPage() {
                     <div key={slide.id} className="w-full flex-shrink-0 relative h-96">
                       <Image
                         src={slide.image}
-                        alt="Daffa Team"
+                        alt="DAFFA Team"
                         fill
                         className="object-cover rounded-lg select-none"
                         draggable={false}
@@ -161,10 +161,10 @@ export default function OurTeamPage() {
       <div className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-4xl lg:text-5xl font-signpainter text-[#927C4E] mb-4">
-            Daffa&apos;s Main Goal
+            DAFFA&apos;s Main Goal
           </p>
           <h2 className="text-5xl lg:text-6xl font-bold text-black font-poppins break-words">
-            Daffa is dedicated to making{" "}
+            DAFFA is dedicated to making{" "}
             <span className="block">boat trips easy for everyone.</span>
           </h2>
           <p className="text-2xl font-normal text-black font-poppins max-w-4xl mx-auto mt-10 leading-8 break-words">
@@ -178,13 +178,13 @@ export default function OurTeamPage() {
         </div>
       </div>
 
-      {/* Why Choose Daffa Section */}
+      {/* Why Choose DAFFA Section */}
       <div className="bg-white">
         {/* Full Width Image */}
         <div className="w-full relative h-[400px]">
           <Image
             src="/images/PLAY SLIDE.webp"
-            alt="Daffa App Interface"
+            alt="DAFFA App Interface"
             fill
             className="object-contain"
           />
@@ -199,7 +199,7 @@ export default function OurTeamPage() {
                 Know the Reason
               </p>
               <h2 className="text-5xl lg:text-6xl font-bold text-black font-poppins">
-                Why Choose Daffa?
+                Why Choose DAFFA?
               </h2>
             </div>
 
@@ -239,7 +239,7 @@ export default function OurTeamPage() {
                 <div className="mb-4">
                   <LogoShape className="w-60 h-60 mx-auto" />
                   <h3 className="text-5xl font-bold bg-gradient-to-br from-[#106BD8] to-[#083872] bg-clip-text text-transparent font-poppins">
-                    Daffa
+                    DAFFA
                   </h3>
                   <h4 className="text-[60px] font-bold text-black font-poppins mt-6 leading-[62px] break-words">
                     Core Values
@@ -382,14 +382,14 @@ export default function OurTeamPage() {
               Meet the Founder
             </h2>
             <p className="text-[27px] font-normal text-black font-poppins max-w-4xl mx-auto leading-[62px] break-words">
-              Meet the passionate minds and dedicated hands behind Daffa
+              Meet the passionate minds and dedicated hands behind DAFFA
             </p>
           </div>
 
-          {/* Team Members Carousel */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Founder Card */}
+          <div className="flex justify-center max-w-4xl mx-auto">
             {/* Ahmed Bastawi */}
-            <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            <div className="h-[450px] w-full max-w-md rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
                 <Image
                   src="/images/founder 2.webp"
@@ -404,43 +404,7 @@ export default function OurTeamPage() {
                   <h3 className="text-2xl font-bold text-[#106BD8] font-poppins mb-2">
                     Ahmed Bastawi
                   </h3>
-                  <p className="text-gray-600 font-poppins">CTO & Founder</p>
-                </div>
-                <div className="w-10 h-10 border border-[#106BD8] rounded-full flex items-center justify-center hover:bg-[#106BD8] transition-all duration-200 cursor-pointer group">
-                  <svg
-                    className="w-5 h-5 text-[#106BD8] group-hover:text-white transition-colors duration-200"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Nesma Ghazaly */}
-            <div className="h-[450px] rounded-xl shadow-lg overflow-hidden border border-gray-200">
-              <div className="relative bg-[#EFEFEF] h-80 overflow-hidden">
-                <Image
-                  src="/images/founder-nesma.webp"
-                  alt="Nesma Ghazaly"
-                  fill
-                  className="object-contain scale-110"
-                />
-                <div className="absolute top-4 right-4"></div>
-              </div>
-              <div className="p-6 flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-[#106BD8] font-poppins mb-2">
-                    Nesma Ghazaly
-                  </h3>
-                  <p className="text-gray-600 font-poppins">PR-Co-Founder</p>
+                  <p className="text-gray-600 font-poppins">Founder</p>
                 </div>
                 <div className="w-10 h-10 border border-[#106BD8] rounded-full flex items-center justify-center hover:bg-[#106BD8] transition-all duration-200 cursor-pointer group">
                   <svg

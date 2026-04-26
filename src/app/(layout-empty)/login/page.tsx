@@ -1,18 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi, storage } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function LoginPage() {
+function LoginPageInner() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
 
   // Load saved credentials on mount
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function LoginPage() {
         storage.setUser({
           id: response.data.user_id,
           username: response.data.username,
-          role: 'user'
+          role: response.data.role || 'user'
         });
 
         // Save credentials if remember me is checked
@@ -87,13 +89,14 @@ export default function LoginPage() {
         // Also set cookie for middleware
         document.cookie = `access_token=${response.data.access_token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
 
-        // Check if there's an intended URL to redirect to (for booking flow)
+        // Redirect to the page user was on before auth, or intended URL (booking flow), or home
         const intendedUrl = localStorage.getItem('intended_url');
         if (intendedUrl) {
-          localStorage.removeItem('intended_url'); // Clean up
+          localStorage.removeItem('intended_url');
           router.push(intendedUrl);
+        } else if (redirectTo) {
+          router.push(redirectTo);
         } else {
-          // Redirect to home page
           router.push('/');
         }
       } else {
@@ -137,8 +140,8 @@ export default function LoginPage() {
           <div className="auth-logo">
             <Link href="/">
               <Image
-                src="/logo.png"
-                alt="Daffa Logo"
+                src="/images/logo.png"
+                alt="DAFFA Logo"
                 width={200}
                 height={110}
               />
@@ -258,7 +261,7 @@ export default function LoginPage() {
               You Don&apos;t Have An Account?{' '}
               <button
                 type="button"
-                onClick={() => router.push('/signup')}
+                onClick={() => router.push(redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : '/signup')}
                 className="auth-link-button"
               >
                 Sign Up
@@ -268,5 +271,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
   );
 }

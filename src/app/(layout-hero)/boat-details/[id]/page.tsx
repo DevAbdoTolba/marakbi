@@ -2,12 +2,12 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL } from "@/lib/api";
+import React, { useState, useEffect, useCallback } from "react";
+import { clientApi, BoatDetails as ApiBoatDetails, Boat, Trip, BASE_URL, BoatServiceAssignment, storage } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
-import useBookingStore from "@/hooks/useBookingStore";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
 import { FiClock, FiMapPin } from "react-icons/fi";
+import { Rating } from "@smastrom/react-rating";
 
 export default function BoatDetailsPage() {
   const params = useParams();
@@ -15,11 +15,27 @@ export default function BoatDetailsPage() {
   const searchParams = useSearchParams();
   const [boatData, setBoatData] = useState<ApiBoatDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAllReviews, setShowAllReviews] = useState(false);
-  const [showAllFacilities, setShowAllFacilities] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewTotalPages, setReviewTotalPages] = useState(1);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [paginatedReviews, setPaginatedReviews] = useState<import('@/lib/api').BoatReview[]>([]);
+  const reviewCacheRef = React.useRef<Map<number, import('@/lib/api').BoatReview[]>>(new Map());
+  const [deletingReview, setDeletingReview] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mobileImageIndex, setMobileImageIndex] = useState(0);
+  // Same operator recommendations
+  const [sameRecPage, setSameRecPage] = useState(1);
+  const [sameRecHasMore, setSameRecHasMore] = useState(false);
+  const [sameRecLoading, setSameRecLoading] = useState(false);
+  const [sameRecs, setSameRecs] = useState<Boat[]>([]);
+  const sameRecCache = React.useRef<Map<number, { boats: Boat[]; hasMore: boolean }>>(new Map());
+  // Other operator recommendations
+  const [otherRecPage, setOtherRecPage] = useState(1);
+  const [otherRecHasMore, setOtherRecHasMore] = useState(false);
+  const [otherRecLoading, setOtherRecLoading] = useState(false);
+  const [otherRecs, setOtherRecs] = useState<Boat[]>([]);
+  const otherRecCache = React.useRef<Map<number, { boats: Boat[]; hasMore: boolean }>>(new Map());
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
 
@@ -79,6 +95,67 @@ export default function BoatDetailsPage() {
     }
   }, [params.id, tripId]);
 
+  // Fetch same operator recommendations
+  const fetchSameRecs = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+    const cached = sameRecCache.current.get(page);
+    if (cached) { setSameRecs(cached.boats); setSameRecHasMore(cached.hasMore); setSameRecPage(page); return; }
+    setSameRecLoading(true);
+    const res = await clientApi.getBoatRecommendations(boatId, 'same', page, 3);
+    if (res.success && res.data) {
+      sameRecCache.current.set(page, { boats: res.data.boats, hasMore: res.data.has_more });
+      setSameRecs(res.data.boats); setSameRecHasMore(res.data.has_more); setSameRecPage(page);
+    }
+    setSameRecLoading(false);
+  }, [params.id]);
+
+  // Fetch other operator recommendations
+  const fetchOtherRecs = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+    const cached = otherRecCache.current.get(page);
+    if (cached) { setOtherRecs(cached.boats); setOtherRecHasMore(cached.hasMore); setOtherRecPage(page); return; }
+    setOtherRecLoading(true);
+    const res = await clientApi.getBoatRecommendations(boatId, 'other', page, 3);
+    if (res.success && res.data) {
+      otherRecCache.current.set(page, { boats: res.data.boats, hasMore: res.data.has_more });
+      setOtherRecs(res.data.boats); setOtherRecHasMore(res.data.has_more); setOtherRecPage(page);
+    }
+    setOtherRecLoading(false);
+  }, [params.id]);
+
+  useEffect(() => {
+    if (params.id) {
+      sameRecCache.current.clear(); fetchSameRecs(1);
+      otherRecCache.current.clear(); fetchOtherRecs(1);
+      reviewCacheRef.current.clear(); fetchReviews(1);
+    }
+  }, [params.id, fetchSameRecs, fetchOtherRecs]);
+
+  // Fetch reviews with caching
+  const fetchReviews = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+
+    const cached = reviewCacheRef.current.get(page);
+    if (cached) {
+      setPaginatedReviews(cached);
+      setReviewPage(page);
+      return;
+    }
+
+    setReviewsLoading(true);
+    const res = await clientApi.getBoatReviewsPaginated(boatId, page, 5);
+    if (res.success && res.data) {
+      reviewCacheRef.current.set(page, res.data.reviews);
+      setPaginatedReviews(res.data.reviews);
+      setReviewTotalPages(res.data.pagination.pages);
+      setReviewPage(page);
+    }
+    setReviewsLoading(false);
+  }, [params.id]);
+
   // Handle keyboard navigation for image modal
   useEffect(() => {
     if (!isModalOpen || !boatData) return;
@@ -124,23 +201,9 @@ export default function BoatDetailsPage() {
       is_trip_booking: !!selectedTrip,
       boat_rating: reviews_summary.average_rating,
       boat_total_reviews: reviews_summary.total_reviews,
-      // Services data (already included from BookingSidebar but ensure it's persisted)
-      selected_services: bookingData.selected_services || [],
-      services_total: bookingData.services_total || 0,
     };
 
-    // Check if user is authenticated
-    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-
-    if (!accessToken) {
-      // Save fully enriched data so payment page has everything it needs
-      localStorage.setItem('pending_booking_data', JSON.stringify(completeBookingData));
-      localStorage.setItem('intended_url', '/payment');
-      window.location.href = '/login';
-      return;
-    }
-
-    useBookingStore.getState().setBookingData(completeBookingData);
+    localStorage.setItem('booking_data', JSON.stringify(completeBookingData));
     router.push('/payment');
   };
 
@@ -508,33 +571,6 @@ export default function BoatDetailsPage() {
                 <span className="mx-2">•</span>
                 <span className="text-gray-700">{boat.categories.join(', ')}</span>
               </div>
-              {/* Address and View Location */}
-              {(boat.address || boat.location_url) && (
-                <div className="flex items-center gap-3 mt-3 text-gray-600">
-                  {boat.address && (
-                    <div className="flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span className="text-sm">{boat.address}</span>
-                    </div>
-                  )}
-                  {boat.location_url && (
-                    <a
-                      href={boat.location_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-[#0F3875] hover:text-[#0F3875]/80 font-medium transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      View Location
-                    </a>
-                  )}
-                </div>
-              )}
             </div>
             {/* Overview */}
             <section>
@@ -572,113 +608,70 @@ export default function BoatDetailsPage() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-gray-200">
                   <span className="font-medium text-gray-700 mb-1 sm:mb-0">Owner</span>
-                  <span className="text-gray-600 sm:text-right">{owner.username}</span>                </div>
+                  <span className="text-gray-600 sm:text-right">{owner.username}</span>
+                </div>
               </div>
             </section>
 
-            {/* Boat Services */}
+
+            {/* Available Services */}
             {boat.services && boat.services.length > 0 && (
               <section>
                 <h2 className="text-2xl font-semibold mb-4 font-poppins">Available Services</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {boat.services.map((svc: { service_id: number; service: { id: number; name: string; description: string | null; icon_url: string | null; price_mode: string } | null; price: number | null; is_badge: boolean; badge_display_name: string | null }) => (
-                    <div key={svc.service_id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 group/svc relative">
-                      {/* Icon */}
-                      <div className="w-10 h-10 bg-white rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-gray-200">
-                        {svc.service?.icon_url ? (
-                          <Image
-                            src={svc.service.icon_url}
-                            alt={svc.service?.name || ''}
-                            width={32}
-                            height={32}
-                            className="object-contain"
-                          />
-                        ) : (
-                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                        )}
-                      </div>
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-sm mb-1">{svc.badge_display_name || svc.service?.name || 'Service'}</h3>
-                        {svc.service?.description && (
-                          <p className="text-xs text-gray-500 leading-relaxed">{svc.service.description}</p>
-                        )}
-                        <div className="flex items-center gap-2 mt-2">
-                          {(svc.price || svc.price === 0) && (
-                            <span className="text-xs font-medium text-[#0F3875]">{svc.price} EGP</span>
+                  {boat.services.map((assoc: BoatServiceAssignment) => {
+                    const service = assoc.service;
+                    if (!service) return null;
+                    const price = assoc.price ?? service.default_price;
+                    const priceModeLabel =
+                      service.price_mode === 'per_person'
+                        ? 'Per Person'
+                        : service.price_mode === 'per_person_per_time'
+                          ? 'Per Person/Time'
+                          : 'Per Trip';
+
+                    return (
+                      <div
+                        key={assoc.service_id}
+                        className="flex items-start gap-4 bg-gray-50 border border-gray-100 rounded-xl p-4"
+                      >
+                        <div className="flex-shrink-0 w-10 h-10 rounded-lg border border-gray-200 bg-white flex items-center justify-center overflow-hidden">
+                          {service.icon_url ? (
+                            <Image
+                              src={normalizeImageUrl(service.icon_url)}
+                              alt={service.name}
+                              width={32}
+                              height={32}
+                              className="object-contain"
+                            />
+                          ) : (
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
                           )}
-                          <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
-                            {svc.service?.price_mode === 'per_trip' ? 'Per Trip' : svc.service?.price_mode === 'per_person' ? 'Per Person' : 'Per Person/Hour'}
-                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-semibold text-gray-900 font-poppins">{service.name}</h3>
+                          {service.description && (
+                            <p className="text-xs text-gray-500 mt-0.5">{service.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            {price != null && (
+                              <span className="text-xs font-medium text-[#0f3875]">{Number(price).toFixed(2)} EGP</span>
+                            )}
+                            <span className="text-[10px] text-gray-500 bg-gray-200 rounded px-1.5 py-0.5">
+                              {priceModeLabel}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
 
-            {/* Boat Facilities */}
-            {boat.facilities && boat.facilities.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-semibold mb-4 font-poppins">Boat Facilities</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {(showAllFacilities ? boat.facilities : boat.facilities.slice(0, 6)).map((facility: { id: number; name: string; description?: string | null; image_url?: string | null }) => (
-                    <div
-                      key={facility.id}
-                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 hover:border-gray-200 transition-all cursor-default group/fac relative"
-                    >
-                      {/* Icon */}
-                      <div className="w-8 h-8 bg-white rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-gray-200">
-                        {facility.image_url ? (
-                          <Image
-                            src={facility.image_url}
-                            alt={facility.name}
-                            width={24}
-                            height={24}
-                            className="object-contain"
-                          />
-                        ) : (
-                          <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      {/* Name */}
-                      <span className="text-sm font-medium text-gray-800 truncate">{facility.name}</span>
-
-                      {/* Tooltip */}
-                      {facility.description && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/fac:opacity-100 transition-opacity pointer-events-none whitespace-normal max-w-[220px] text-center z-50 shadow-lg">
-                          {facility.description}
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {boat.facilities.length > 6 && (
-                  <button
-                    onClick={() => setShowAllFacilities(!showAllFacilities)}
-                    className="mt-4 text-sm font-medium text-[#0F3875] hover:text-[#0F3875]/80 transition-colors flex items-center gap-1"
-                  >
-                    {showAllFacilities ? (
-                      <>
-                        Show less
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
-                      </>
-                    ) : (
-                      <>
-                        Show {boat.facilities.length - 6} more
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                      </>
-                    )}
-                  </button>
-                )}
-              </section>
-            )}
+            {/* Meet Your Captain */}
             <section>
               <h2 className="text-2xl font-semibold mb-4 font-poppins">Meet Your Captain</h2>
               <div className="bg-gray-50 rounded-lg p-6">
@@ -713,17 +706,6 @@ export default function BoatDetailsPage() {
                 </div>
                 <p className="text-gray-700 mb-4">{owner.bio || 'No bio available.'}</p>
                 <div className="space-y-2 mb-4">
-                  {owner.phone && (
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src="/icons/phone_in_talk_y.svg"
-                        alt="Phone"
-                        width={20}
-                        height={20}
-                      />
-                      <span className="text-sm">Phone: {owner.phone}</span>
-                    </div>
-                  )}
                   {owner.address && (
                     <div className="flex items-center gap-2">
                       <Image
@@ -761,24 +743,103 @@ export default function BoatDetailsPage() {
               </div>
             </section>
 
+            {/* Recommendations - Same Operator */}
+            {(sameRecs.length > 0 || sameRecPage > 1) && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold font-poppins text-[#0a0a0a]">From the same operator</h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => fetchSameRecs(sameRecPage - 1)} disabled={sameRecPage <= 1 || sameRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <button onClick={() => fetchSameRecs(sameRecPage + 1)} disabled={!sameRecHasMore || sameRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${sameRecLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                  {sameRecs.map((rec) => (
+                    <button key={rec.id} onClick={() => router.push(`/boat-details/${rec.id}`)}
+                      className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition">
+                      <div className="relative h-36 sm:h-40">
+                        {rec.images?.[0] ? <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" /> : <div className="w-full h-full bg-gray-100" />}
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
+                          <div className="flex items-center gap-1">
+                            <Rating style={{ maxWidth: 70 }} value={rec.average_rating || 0} readOnly />
+                            <span className="text-xs text-gray-500">({rec.total_reviews})</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Recommendations - Other Operators */}
+            {(otherRecs.length > 0 || otherRecPage > 1) && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold font-poppins text-[#0a0a0a]">From other operators</h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => fetchOtherRecs(otherRecPage - 1)} disabled={otherRecPage <= 1 || otherRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <button onClick={() => fetchOtherRecs(otherRecPage + 1)} disabled={!otherRecHasMore || otherRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${otherRecLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                  {otherRecs.map((rec) => (
+                    <button key={rec.id} onClick={() => router.push(`/boat-details/${rec.id}`)}
+                      className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition">
+                      <div className="relative h-36 sm:h-40">
+                        {rec.images?.[0] ? <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" /> : <div className="w-full h-full bg-gray-100" />}
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
+                          <div className="flex items-center gap-1">
+                            <Rating style={{ maxWidth: 70 }} value={rec.average_rating || 0} readOnly />
+                            <span className="text-xs text-gray-500">({rec.total_reviews})</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Customer reviews */}
             <section>
-              <h2 className="text-2xl font-semibold mb-6 font-poppins">Customer Reviews</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold font-poppins">Customer Reviews</h2>
+                {storage.getUser() && !boatData.user_review && (
+                  <button
+                    onClick={() => router.push(`/write-review/${boat.id}`)}
+                    className="px-4 sm:px-6 py-2 bg-[#093b77] text-white text-sm font-medium rounded-lg hover:bg-[#0a4a94] transition"
+                  >
+                    Write a Review
+                  </button>
+                )}
+              </div>
               <div className="flex flex-col md:flex-row gap-8 mb-8">
                 {/* Rating Summary */}
                 <div className="text-center">
-                  <div className="text-6xl font-bold mb-2">{reviews_summary.average_rating.toFixed(1)}</div>
+                  <div className="text-5xl sm:text-6xl font-bold mb-2">{reviews_summary.average_rating.toFixed(1)}</div>
                   <div className="flex justify-center mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Image
-                        key={i}
-                        src="/icons/Star Icon.svg"
-                        alt="Star"
-                        width={32}
-                        height={32}
-                        className={`${i < Math.floor(reviews_summary.average_rating) ? "opacity-100" : "opacity-30"}`}
-                      />
-                    ))}
+                    <Rating style={{ maxWidth: 160 }} value={reviews_summary.average_rating} readOnly />
                   </div>
                   <p className="text-gray-600">
                     Based on {totalRating} Reviews
@@ -809,69 +870,117 @@ export default function BoatDetailsPage() {
                 </div>
               </div>
 
+              {/* User's own review (if exists) */}
+              {boatData.user_review && (
+                <div className="border border-[#093b77]/20 bg-blue-50/30 rounded-lg p-4 sm:p-6 mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-[#093b77]">Your Review</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => router.push(`/write-review/${boat.id}?edit=${boatData.user_review!.id}`)}
+                        className="text-xs px-3 py-1 border border-[#093b77] text-[#093b77] rounded hover:bg-[#093b77] hover:text-white transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Are you sure you want to delete your review?')) return;
+                          setDeletingReview(true);
+                          const res = await clientApi.deleteOwnBoatReview(boat.id, boatData.user_review!.id);
+                          if (res.success) {
+                            const refreshed = await clientApi.getBoatById(boat.id);
+                            if (refreshed.success && refreshed.data) setBoatData(refreshed.data);
+                          }
+                          setDeletingReview(false);
+                        }}
+                        disabled={deletingReview}
+                        className="text-xs px-3 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition disabled:opacity-50"
+                      >
+                        {deletingReview ? '...' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Rating style={{ maxWidth: 90 }} value={boatData.user_review.rating} readOnly />
+                    <span className="text-sm text-gray-500">
+                      {new Date(boatData.user_review.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-gray-700">{boatData.user_review.comment}</p>
+                </div>
+              )}
+
               {/* Reviews List */}
-              <div className="space-y-6">
-                {reviews.length === 0 ? (
+              <div className={`space-y-6 ${reviewsLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                {paginatedReviews.length === 0 && !boatData.user_review ? (
                   <p className="text-gray-500 text-center py-8">No reviews yet.</p>
                 ) : (
-                  (showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
-                    <div key={review.id} className="border-b border-gray-200 pb-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-semibold">
-                          {review.username.charAt(0).toUpperCase()}
+                  paginatedReviews.map((review) => {
+                    const currentUser = storage.getUser();
+                    if (currentUser && review.user_id === currentUser.id) return null;
+                    return (
+                      <div key={review.id} className="border-b border-gray-200 pb-6">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-semibold">
+                            {review.username.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold">{review.username}</p>
+                            <p className="text-sm text-gray-600">{new Date(review.created_at).toLocaleDateString()}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold">{review.username}</p>
-                          <p className="text-sm text-gray-600">{new Date(review.created_at).toLocaleDateString()}</p>
+                        <div className="mb-2">
+                          <Rating style={{ maxWidth: 90 }} value={review.rating} readOnly />
                         </div>
+                        <p className="text-gray-700 mb-3">{review.comment}</p>
                       </div>
-                      <div className="flex items-center mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Image
-                            key={i}
-                            src="/icons/Star Icon.svg"
-                            alt="Star"
-                            width={16}
-                            height={16}
-                            className={`${i < review.rating ? "opacity-100" : "opacity-30"}`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-gray-700 mb-3">{review.comment}</p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
-              {reviews.length > 3 && (
-                <button
-                  onClick={() => setShowAllReviews(!showAllReviews)}
-                  className="mt-6 px-8 py-3 border-2 border-[#0C4A8C] text-[#0C4A8C] rounded-lg hover:bg-[#0C4A8C] hover:text-white transition-colors"
-                >
-                  {showAllReviews ? "Show Less" : "Show All Comments"}
-                </button>
+              {/* Review Pagination */}
+              {reviewTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-6">
+                  <button
+                    onClick={() => fetchReviews(reviewPage - 1)}
+                    disabled={reviewPage <= 1 || reviewsLoading}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <span className="text-sm text-gray-500">Page {reviewPage} of {reviewTotalPages}</span>
+                  <button
+                    onClick={() => fetchReviews(reviewPage + 1)}
+                    disabled={reviewPage >= reviewTotalPages || reviewsLoading}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </div>
               )}
             </section>
+
           </div>
 
           {/* Right Sidebar - Booking (Fixed Position) */}
           <div className="lg:col-span-1">
-            <div>              <BookingSidebar
-              boatId={boat.id}
-              boatName={boat.name}
-              pricePerHour={boat.price_per_hour}
-              pricePerDay={boat.price_per_day}
-              maxGuests={boat.max_seats}
-              serviceFeeRate={boatData.service_fee_rate}
-              onBookingRequest={handleRequestToBook}
-              isTripBooking={!!selectedTrip}
-              tripDuration={selectedTrip?.voyage_hours}
-              tripPrice={selectedTrip?.total_price}
-              initialGuestCount={searchParams.get("guest_count") ? parseInt(searchParams.get("guest_count")!) : (searchParams.get("min_passengers") ? parseInt(searchParams.get("min_passengers")!) : 2)}
-              locationUrl={boat.location_url}
-              priceMode={boat.price_mode as "per_time" | "per_person" | "per_person_per_time"}
-              boatServices={boat.services}
-            />
+            <div>
+              <BookingSidebar
+                boatId={boat.id}
+                boatName={boat.name}
+                pricePerHour={boat.price_per_hour}
+                pricePerDay={boat.price_per_day}
+                maxGuests={boat.max_seats}
+                serviceFeeRate={boatData.service_fee_rate}
+                onBookingRequest={handleRequestToBook}
+                isTripBooking={!!selectedTrip}
+                tripDuration={selectedTrip?.voyage_hours}
+                tripPrice={selectedTrip?.total_price}
+                initialGuestCount={searchParams.get("guest_count") ? parseInt(searchParams.get("guest_count")!) : (searchParams.get("min_passengers") ? parseInt(searchParams.get("min_passengers")!) : 2)}
+                locationUrl={boat.location_url}
+                priceMode={boat.price_mode as "per_time" | "per_person" | "per_person_per_time" | "per_trip"}
+              />
             </div>
           </div>
         </div>

@@ -1,12 +1,12 @@
 // ===== DAFFA API SERVICE =====
-// Comprehensive API integration for Daffa boat rental platform
+// Comprehensive API integration for DAFFA boat rental platform
 // Base URL: https://yasershaban.pythonanywhere.com
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
 // export const BASE_URL = 'https://daffa-e0870d98592a.herokuapp.com';
+// export const BASE_URL = 'http://127.0.0.1:5000';
 export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com/';
-// export const BASE_URL = 'http://127.0.0.1:8787';
 
 
 // Toggle for verbose API logging in the console
@@ -39,6 +39,7 @@ export interface AuthResponse {
   refresh_token: string;
   user_id: number;
   username: string;
+  role: string;
 }
 
 export interface AuthUser {
@@ -120,6 +121,7 @@ export interface AddBoatData {
   name: string;
   price_per_hour: number | null;
   price_per_day?: number | null;
+  sale_price?: number | null;
   max_seats?: number;
   max_seats_stay?: number;
   description: string;
@@ -140,6 +142,7 @@ export interface EditBoatData {
   name?: string;
   price_per_hour?: number | null;
   price_per_day?: number | null;
+  sale_price?: number | null;
   max_seats?: number;
   max_seats_stay?: number;
   description?: string;
@@ -756,16 +759,17 @@ export const authApi = {
     });
   },
 
-  verifyCode: async (code: string): Promise<ApiResponse<{ message: string }>> => {
-    return apiRequest<{ message: string }>('/auth/verify-code', {
+  verifyCode: async (email: string, code: string): Promise<ApiResponse<{ message: string; reset_token?: string }>> => {
+    return apiRequest<{ message: string; reset_token?: string }>('/auth/verify-code', {
       method: 'POST',
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ email, code })
     });
   },
 
-  resendCode: async (): Promise<ApiResponse<{ message: string }>> => {
+  resendCode: async (email: string): Promise<ApiResponse<{ message: string }>> => {
     return apiRequest<{ message: string }>('/auth/resend-code', {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify({ email })
     });
   }
 };
@@ -852,6 +856,10 @@ export const clientApi = {
 
 
 
+  getBoatReviewsPaginated: async (boatId: number, page = 1, perPage = 5): Promise<ApiResponse<{ boat_id: number; total_reviews: number; average_rating: number; reviews: BoatReview[]; pagination: { total: number; page: number; per_page: number; pages: number } }>> => {
+    return apiRequest(`/client/boats/${boatId}/reviews?page=${page}&per_page=${perPage}`);
+  },
+
   createBoatReview: async (boatId: number, reviewData: ReviewData): Promise<ApiResponse<ReviewResponse>> => {
     return apiRequest<ReviewResponse>(`/client/boats/${boatId}/reviews`, {
       method: 'POST',
@@ -864,6 +872,16 @@ export const clientApi = {
       method: 'PUT',
       body: JSON.stringify(reviewData)
     });
+  },
+
+  deleteOwnBoatReview: async (boatId: number, reviewId: number): Promise<ApiResponse<{ message: string }>> => {
+    return apiRequest<{ message: string }>(`/client/boats/${boatId}/reviews/${reviewId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  getBoatRecommendations: async (boatId: number, type: 'same' | 'other', page = 1, perPage = 3): Promise<ApiResponse<{ boat_id: number; type: string; page: number; per_page: number; total: number; has_more: boolean; boats: Boat[] }>> => {
+    return apiRequest<{ boat_id: number; type: string; page: number; per_page: number; total: number; has_more: boolean; boats: Boat[] }>(`/client/boats/${boatId}/recommendations?type=${type}&page=${page}&per_page=${perPage}`);
   },
 
   bookTrip: async (tripId: number, bookingData: TripBookingRequest): Promise<ApiResponse<TripBookingResponse>> => {
@@ -963,10 +981,10 @@ export interface AdminStats {
 export interface AdminUser {
   id: number;
   username: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
   role: string;
-  first_name?: string | null;
-  last_name?: string | null;
   created_at: string | null;
   boats_count: number;
   bookings_count: number;
@@ -976,8 +994,6 @@ export interface AdminUser {
 }
 
 export interface AdminUserDetails extends AdminUser {
-  first_name?: string | null;
-  last_name?: string | null;
   updated_at: string | null;
   profile: {
     bio: string | null;
@@ -1235,10 +1251,10 @@ export const adminApi = {
     return apiRequest(`/admin/users?${params.toString()}`);
   },
   getUser: async (userId: number): Promise<ApiResponse<AdminUserDetails>> => apiRequest(`/admin/users/${userId}`),
-  createUser: async (userData: { username: string; email: string; password: string; role?: string; bio?: string; phone?: string; address?: string }): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
+  createUser: async (userData: { username: string; first_name?: string; last_name?: string; email: string; password: string; role?: string; bio?: string; phone?: string; address?: string }): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
     return apiRequest('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
   },
-  updateUser: async (userId: number, userData: { username?: string; email?: string; password?: string; role?: string; bio?: string; phone?: string; address?: string }, profilePicture?: File): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
+  updateUser: async (userId: number, userData: { username?: string; first_name?: string; last_name?: string; email?: string; password?: string; role?: string; bio?: string; phone?: string; address?: string }, profilePicture?: File): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
     // Upload profile picture to Cloudinary first if provided
     let profilePictureUrl: string | undefined;
     if (profilePicture) {
@@ -1290,6 +1306,7 @@ export const adminApi = {
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
+    if (boatData.sale_price !== undefined) formData.append('sale_price', boatData.sale_price === null ? 'null' : boatData.sale_price.toString());
 
     if (boatData.services) {
       formData.append('services', JSON.stringify(boatData.services));
@@ -1329,6 +1346,7 @@ export const adminApi = {
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
+    if (boatData.sale_price !== undefined) formData.append('sale_price', boatData.sale_price === null ? 'null' : boatData.sale_price.toString());
 
     if (boatData.services !== undefined) {
       formData.append('services', JSON.stringify(boatData.services));

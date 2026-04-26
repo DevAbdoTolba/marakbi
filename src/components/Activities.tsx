@@ -2,12 +2,12 @@ import Image from 'next/image';
 
 const Activities = () => {
   const activities = [
-    { src: '/images/Rectangle 3463860.webp', title: 'Water Sports', height: 'h-150' },
-    { src: '/images/Rectangle 3463863.webp', title: 'Family Activities', height: 'h-150' },
-    { src: '/images/Rectangle 3463861.webp', title: 'Boat Rides', height: 'h-200' },
-    { src: '/images/Rectangle 3463865.webp', title: 'Cruises', height: 'h-100' },
-    { src: '/images/Rectangle 3463862.webp', title: 'Fishing Trips', height: 'h-150' },
-    { src: '/images/Rectangle 3463864.webp', title: 'Snorkelling & Diving', height: 'h-150' },
+    { src: '/images/Rectangle 3463860.webp', title: 'Water Sports', height: 'h-96 sm:h-[120px] md:h-150' },
+    { src: '/images/Rectangle 3463863.webp', title: 'Family Activities', height: 'h-96 sm:h-[120px] md:h-150' },
+    { src: '/images/Rectangle 3463861.webp', title: 'Boat Rides', height: 'h-[280px] sm:h-[160px] md:h-200' },
+    { src: '/images/Rectangle 3463865.webp', title: 'Cruises', height: 'h-64 sm:h-80 md:h-100' },
+    { src: '/images/Rectangle 3463862.webp', title: 'Fishing Trips', height: 'h-96 sm:h-[120px] md:h-150' },
+    { src: '/images/Rectangle 3463864.webp', title: 'Snorkelling & Diving', height: 'h-96 sm:h-[120px] md:h-150' },
   ];
 
   return (
@@ -45,7 +45,7 @@ const Activities = () => {
             <div
   className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center px-2"
 >
-  <span className="text-white text-2xl sm:text-xl font-medium font-poppins capitalize whitespace-nowrap">
+  <span className="text-white text-xl sm:text-2xl font-medium font-poppins capitalize whitespace-nowrap">
     {item.title}
   </span>
 </div>

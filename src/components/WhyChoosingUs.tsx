@@ -22,7 +22,7 @@ const WhyChoosingUs = () => {
     {
       title: "The Full Scope Of Egypt&apos;s Waters",
       image: "/images/Rectangle 3463857.webp",
-      caption: "Whether Your Adventure Is On The Ancient Nile River, The Vibrant Red Sea, Or The Tranquil Mediterranean, Daffa Is Your Single Point Of Access To The Best Boats And Experiences In All Of Egypt."
+      caption: "Whether Your Adventure Is On The Ancient Nile River, The Vibrant Red Sea, Or The Tranquil Mediterranean, DAFFA Is Your Single Point Of Access To The Best Boats And Experiences In All Of Egypt."
     },
     {
       title: "Effortless & Transparent Booking",
@@ -36,7 +36,7 @@ const WhyChoosingUs = () => {
       {/* Header Section */}
       <div className="bg-[#093B77] py-8 sm:py-16 text-center">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-white text-4xl sm:text-4xl lg:text-[46px] font-bold font-poppins mb-3 sm:mb-4 capitalize">
+          <h2 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-[46px] font-bold font-poppins mb-3 sm:mb-4 capitalize">
             Why Choosing US
           </h2>
           <p className="text-white text-xl sm:text-2xl lg:text-[30px] font-poppins font-normal mb-6 sm:mb-8 capitalize">
@@ -62,7 +62,7 @@ const WhyChoosingUs = () => {
                 </h3>
               </div>
               
-              <div className="relative h-64 w-full">
+              <div className="relative h-48 sm:h-56 md:h-64 w-full">
                 <Image 
                   src={column.image} 
                   alt={column.title} 
