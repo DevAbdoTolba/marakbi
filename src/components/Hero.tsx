@@ -79,7 +79,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative w-full h-auto sm:h-240 overflow-hidden">
+    <section className="relative w-full h-auto sm:h-240 overflow-hidden sm:overflow-visible">
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
@@ -98,7 +98,7 @@ const Hero = () => {
           {/* Left Side: Text Content */}
           <div className="flex flex-col text-left w-full lg:w-auto">
             <div className="text-orange-300 text-3xl sm:text-3xl lg:text-4xl font-normal font-['SignPainter'] capitalize leading-tight">
-              With Marakbi
+              With DAFFA
             </div>
             <div className="text-white text-2xl sm:text-2xl lg:text-3xl font-medium font-poppins capitalize mb-4 sm:mb-6">
               Your Dream Boats
@@ -123,7 +123,7 @@ const Hero = () => {
             <div className="w-full">
               <p className="text-white text-sm sm:text-base font-normal font-poppins mb-2">Choose Your City</p>
               <select
-                className="w-full h-11 sm:h-12 p-3 bg-white/30 backdrop-blur-sm rounded-lg text-gray-700 text-sm font-normal font-poppins capitalize border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="w-full h-11 sm:h-12 py-3 pl-3 pr-10 appearance-none bg-white/30 backdrop-blur-sm rounded-lg text-gray-700 text-sm font-normal font-poppins capitalize border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%23555%22%20stroke-width%3D%222%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[position:right_12px_center] bg-no-repeat"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 disabled={loadingCities}
@@ -141,7 +141,7 @@ const Hero = () => {
             <div className="w-full">
               <p className="text-white text-sm sm:text-base font-normal font-poppins mb-2">Voyage Type</p>
               <select
-                className="w-full h-11 sm:h-12 p-3 bg-white/30 backdrop-blur-sm rounded-lg text-gray-700 text-sm font-normal font-poppins capitalize border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="w-full h-11 sm:h-12 py-3 pl-3 pr-10 appearance-none bg-white/30 backdrop-blur-sm rounded-lg text-gray-700 text-sm font-normal font-poppins capitalize border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%23555%22%20stroke-width%3D%222%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[position:right_12px_center] bg-no-repeat"
                 value={voyageType}
                 onChange={(e) => setVoyageType(e.target.value)}
               >
@@ -192,9 +192,24 @@ const Hero = () => {
         </div>
       </div>
 
+      {/* Wave transition — blends hero bottom into the white section below */}
+      <div className="hidden sm:block absolute bottom-0 left-0 w-full z-10">
+        <svg
+          className="w-full block"
+          viewBox="0 0 1440 80"
+          preserveAspectRatio="none"
+          style={{ height: '80px' }}
+        >
+          <path
+            d="M0,80 L0,80 C200,80 380,80 500,40 C580,15 650,0 720,0 C790,0 860,15 940,40 C1060,80 1240,80 1440,80 L1440,80 Z"
+            fill="white"
+          />
+        </svg>
+      </div>
+
       {/* Featured Activities Section - Hidden on Mobile */}
-      <div className="hidden sm:block absolute bottom-0 left-1/2 transform -translate-x-1/2 max-w-5xl w-[600px] px-4">
-        <div className="bg-white rounded-tl-lg rounded-tr-lg shadow-lg">
+      <div className="hidden sm:block absolute -bottom-12 left-1/2 transform -translate-x-1/2 max-w-5xl w-[600px] px-4 z-20">
+        <div className="bg-white rounded-t-[28px]">
           <div className="p-4 min-h-[200px] overflow-hidden">
             <h2 className="text-blue-700 text-lg font-medium font-poppins capitalize mb-4">
               Featured Activities

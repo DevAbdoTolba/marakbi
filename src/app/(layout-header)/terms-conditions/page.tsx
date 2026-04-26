@@ -13,7 +13,7 @@ export default function TermsConditionsPage() {
           </div>
 
           {/* Main Content - All in Gray Background */}
-          <div className="bg-gray-100 pt-16 px-24 pb-24 rounded-lg">
+          <div className="bg-gray-100 pt-16 px-4 sm:px-8 md:px-16 lg:px-24 pb-8 sm:pb-12 md:pb-24 rounded-lg">
             {/* Empty space under Terms & Conditions */}
             <div className="mb-8"></div>
 
@@ -22,15 +22,15 @@ export default function TermsConditionsPage() {
               {/* Main Heading */}
               <div className="mb-16">
                 <h2
-                  className="text-4xl font-semibold text-gray-900 mb-6 font-poppins"
+                  className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 mb-6 font-poppins"
                   style={{ fontWeight: 600 }}
                 >
-                  Welcome to <span className="text-blue-600">Marakbi</span> –
+                  Welcome to <span className="text-blue-600">DAFFA</span> –
                   your trusted platform for authentic boating experiences across
                   Egypt.
                 </h2>
                 <p
-                  className="text-2xl text-gray-900 font-poppins"
+                  className="text-lg sm:text-xl md:text-2xl text-gray-900 font-poppins"
                   style={{ fontWeight: 600 }}
                 >
                   By using our services, you agree to our Terms and Conditions
@@ -46,7 +46,7 @@ export default function TermsConditionsPage() {
                     1. Introduction
                   </h3>
                   <p className="privacy-section-text">
-                    By accessing or using Marakbi&apos;s website or mobile services,
+                    By accessing or using DAFFA&apos;s website or mobile services,
                     you agree to these Terms and Conditions. Our goal is to
                     provide a safe, transparent, and enjoyable experience for
                     everyone using our platform - whether you&apos;re booking a trip,
@@ -58,7 +58,7 @@ export default function TermsConditionsPage() {
                 <div>
                   <h3 className="privacy-section-heading mb-4">2. Our Role</h3>
                   <p className="privacy-section-text">
-                    Marakbi acts as a connecting platform between users and
+                    DAFFA acts as a connecting platform between users and
                     verified boat owners or operators across Egypt. We
                     facilitate discovery and booking, but the responsibility for
                     trip details, safety, and service quality lies solely with
@@ -101,7 +101,7 @@ export default function TermsConditionsPage() {
                     5. Safety And Conduct
                   </h3>
                   <p className="privacy-section-text">
-                    While Marakbi promotes verified and trusted boating
+                    While DAFFA promotes verified and trusted boating
                     experiences, users are responsible for their own safety and
                     behavior during any trip. Please follow the safety
                     instructions provided by the boat operator and comply with
@@ -115,7 +115,7 @@ export default function TermsConditionsPage() {
                     6. Platform Modifications
                   </h3>
                   <p className="privacy-section-text">
-                    Marakbi reserves the right to modify, suspend, or update the
+                    DAFFA reserves the right to modify, suspend, or update the
                     platform, its content, or these Terms and Conditions at any
                     time without prior notice. Continued use of our services
                     after any updates implies your acceptance of the revised
@@ -129,7 +129,7 @@ export default function TermsConditionsPage() {
                     7. Limitation Of Liability
                   </h3>
                   <p className="privacy-section-text">
-                    Marakbi is not liable for any accidents, losses, or disputes
+                    DAFFA is not liable for any accidents, losses, or disputes
                     arising between users and boat operators. Our role is
                     limited to facilitating connections and bookings between
                     both parties.

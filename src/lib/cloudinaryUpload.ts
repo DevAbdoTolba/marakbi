@@ -55,13 +55,13 @@ async function getUploadSignature(folder: string): Promise<UploadSignature> {
  * Upload a single file directly to Cloudinary
  * 
  * @param file - The file to upload
- * @param folder - Cloudinary folder path (e.g., 'marakbi/boats')
+ * @param folder - Cloudinary folder path (e.g., 'daffa/boats')
  * @param onProgress - Optional callback for upload progress
  * @returns The secure URL of the uploaded image
  */
 export async function uploadToCloudinary(
     file: File,
-    folder: string = 'marakbi',
+    folder: string = 'daffa',
     onProgress?: ProgressCallback
 ): Promise<string> {
     // 1. Get signed upload parameters from backend
@@ -133,7 +133,7 @@ export async function uploadToCloudinary(
  */
 export async function uploadMultipleToCloudinary(
     files: File[],
-    folder: string = 'marakbi',
+    folder: string = 'daffa',
     onProgress?: (current: number, total: number) => void
 ): Promise<string[]> {
     const urls: string[] = [];

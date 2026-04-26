@@ -1,11 +1,12 @@
-// ===== MARAKBI API SERVICE =====
-// Comprehensive API integration for Marakbi boat rental platform
+// ===== DAFFA API SERVICE =====
+// Comprehensive API integration for DAFFA boat rental platform
 // Base URL: https://yasershaban.pythonanywhere.com
 
 // ===== BASE CONFIGURATION =====
-// Updated to the new Heroku backend
-export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
-// export const BASE_URL = 'http://127.0.0.1:8787';
+// Configure via NEXT_PUBLIC_API_URL in .env.local (or any .env*).
+// Falls back to the production Heroku backend when no env var is set.
+export const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'https://marakbi-e0870d98592a.herokuapp.com/';
 
 
 // Toggle for verbose API logging in the console
@@ -38,6 +39,7 @@ export interface AuthResponse {
   refresh_token: string;
   user_id: number;
   username: string;
+  role: string;
 }
 
 export interface AuthUser {
@@ -98,6 +100,7 @@ export interface Boat {
   services?: BoatServiceAssignment[];
   badge_services?: BoatServiceAssignment[];
   show_guests_badge?: boolean;
+  sale_price?: number | null;
   facilities?: BoatFacilityDef[];
   trips?: Array<{
     id: number;
@@ -118,6 +121,7 @@ export interface AddBoatData {
   name: string;
   price_per_hour: number | null;
   price_per_day?: number | null;
+  sale_price?: number | null;
   max_seats?: number;
   max_seats_stay?: number;
   description: string;
@@ -138,6 +142,7 @@ export interface EditBoatData {
   name?: string;
   price_per_hour?: number | null;
   price_per_day?: number | null;
+  sale_price?: number | null;
   max_seats?: number;
   max_seats_stay?: number;
   description?: string;
@@ -181,6 +186,7 @@ export interface BoatDetails {
   owner: BoatOwner;
   reviews: BoatReview[];
   service_fee_rate: number; // Service fee rate from backend
+  user_review?: BoatReview | null; // The current user's review if they have one
   reviews_summary: {
     average_rating: number;
     total_reviews: number;
@@ -753,16 +759,17 @@ export const authApi = {
     });
   },
 
-  verifyCode: async (code: string): Promise<ApiResponse<{ message: string }>> => {
-    return apiRequest<{ message: string }>('/auth/verify-code', {
+  verifyCode: async (email: string, code: string): Promise<ApiResponse<{ message: string; reset_token?: string }>> => {
+    return apiRequest<{ message: string; reset_token?: string }>('/auth/verify-code', {
       method: 'POST',
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ email, code })
     });
   },
 
-  resendCode: async (): Promise<ApiResponse<{ message: string }>> => {
+  resendCode: async (email: string): Promise<ApiResponse<{ message: string }>> => {
     return apiRequest<{ message: string }>('/auth/resend-code', {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify({ email })
     });
   }
 };
@@ -849,11 +856,32 @@ export const clientApi = {
 
 
 
+  getBoatReviewsPaginated: async (boatId: number, page = 1, perPage = 5): Promise<ApiResponse<{ boat_id: number; total_reviews: number; average_rating: number; reviews: BoatReview[]; pagination: { total: number; page: number; per_page: number; pages: number } }>> => {
+    return apiRequest(`/client/boats/${boatId}/reviews?page=${page}&per_page=${perPage}`);
+  },
+
   createBoatReview: async (boatId: number, reviewData: ReviewData): Promise<ApiResponse<ReviewResponse>> => {
     return apiRequest<ReviewResponse>(`/client/boats/${boatId}/reviews`, {
       method: 'POST',
       body: JSON.stringify(reviewData)
     });
+  },
+
+  updateBoatReview: async (boatId: number, reviewId: number, reviewData: ReviewData): Promise<ApiResponse<ReviewResponse>> => {
+    return apiRequest<ReviewResponse>(`/client/boats/${boatId}/reviews/${reviewId}`, {
+      method: 'PUT',
+      body: JSON.stringify(reviewData)
+    });
+  },
+
+  deleteOwnBoatReview: async (boatId: number, reviewId: number): Promise<ApiResponse<{ message: string }>> => {
+    return apiRequest<{ message: string }>(`/client/boats/${boatId}/reviews/${reviewId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  getBoatRecommendations: async (boatId: number, type: 'same' | 'other', page = 1, perPage = 3): Promise<ApiResponse<{ boat_id: number; type: string; page: number; per_page: number; total: number; has_more: boolean; boats: Boat[] }>> => {
+    return apiRequest<{ boat_id: number; type: string; page: number; per_page: number; total: number; has_more: boolean; boats: Boat[] }>(`/client/boats/${boatId}/recommendations?type=${type}&page=${page}&per_page=${perPage}`);
   },
 
   bookTrip: async (tripId: number, bookingData: TripBookingRequest): Promise<ApiResponse<TripBookingResponse>> => {
@@ -953,6 +981,8 @@ export interface AdminStats {
 export interface AdminUser {
   id: number;
   username: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
   role: string;
   created_at: string | null;
@@ -1071,6 +1101,7 @@ export interface AdminBoat {
   name: string;
   price_per_hour: number;
   price_per_day: number | null;
+  sale_price?: number | null;
   description: string;
   categories: string[];
   categories_id?: number[];
@@ -1081,6 +1112,8 @@ export interface AdminBoat {
   max_seats: number;
   max_seats_stay: number;
   location_url?: string;
+  address?: string;
+  price_mode?: string;
   owner_username: string | null; created_at: string;
   services?: BoatServiceAssignment[];
   badge_services?: BoatServiceAssignment[];
@@ -1218,15 +1251,15 @@ export const adminApi = {
     return apiRequest(`/admin/users?${params.toString()}`);
   },
   getUser: async (userId: number): Promise<ApiResponse<AdminUserDetails>> => apiRequest(`/admin/users/${userId}`),
-  createUser: async (userData: { username: string; email: string; password: string; role?: string; bio?: string; phone?: string; address?: string }): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
+  createUser: async (userData: { username: string; first_name?: string; last_name?: string; email: string; password: string; role?: string; bio?: string; phone?: string; address?: string }): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
     return apiRequest('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
   },
-  updateUser: async (userId: number, userData: { username?: string; email?: string; password?: string; role?: string; bio?: string; phone?: string; address?: string }, profilePicture?: File): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
+  updateUser: async (userId: number, userData: { username?: string; first_name?: string; last_name?: string; email?: string; password?: string; role?: string; bio?: string; phone?: string; address?: string }, profilePicture?: File): Promise<ApiResponse<{ message: string; user: AdminUser }>> => {
     // Upload profile picture to Cloudinary first if provided
     let profilePictureUrl: string | undefined;
     if (profilePicture) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      profilePictureUrl = await uploadToCloudinary(profilePicture, 'marakbi/profiles');
+      profilePictureUrl = await uploadToCloudinary(profilePicture, 'daffa/profiles');
     }
 
     const formData = new FormData();
@@ -1254,7 +1287,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (boatData.boat_images && boatData.boat_images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'daffa/boats');
       imageUrls.push(...urls);
     }
 
@@ -1273,6 +1306,7 @@ export const adminApi = {
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
+    if (boatData.sale_price !== undefined) formData.append('sale_price', boatData.sale_price === null ? 'null' : boatData.sale_price.toString());
 
     if (boatData.services) {
       formData.append('services', JSON.stringify(boatData.services));
@@ -1294,7 +1328,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (boatData.boat_images && boatData.boat_images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'daffa/boats');
       imageUrls.push(...urls);
     }
 
@@ -1312,6 +1346,7 @@ export const adminApi = {
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
+    if (boatData.sale_price !== undefined) formData.append('sale_price', boatData.sale_price === null ? 'null' : boatData.sale_price.toString());
 
     if (boatData.services !== undefined) {
       formData.append('services', JSON.stringify(boatData.services));
@@ -1340,7 +1375,7 @@ export const adminApi = {
     let imageUrl: string | undefined;
     if (image) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      imageUrl = await uploadToCloudinary(image, 'marakbi/categories');
+      imageUrl = await uploadToCloudinary(image, 'daffa/categories');
     }
 
     const formData = new FormData();
@@ -1353,7 +1388,7 @@ export const adminApi = {
     let imageUrl: string | undefined;
     if (image) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      imageUrl = await uploadToCloudinary(image, 'marakbi/categories');
+      imageUrl = await uploadToCloudinary(image, 'daffa/categories');
     }
 
     const formData = new FormData();
@@ -1382,7 +1417,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (images && images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(images, 'marakbi/trips');
+      const urls = await uploadMultipleToCloudinary(images, 'daffa/trips');
       imageUrls.push(...urls);
     }
 
@@ -1397,7 +1432,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (images && images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(images, 'marakbi/trips');
+      const urls = await uploadMultipleToCloudinary(images, 'daffa/trips');
       imageUrls.push(...urls);
     }
 
@@ -1445,7 +1480,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (boatData.boat_images && boatData.boat_images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'daffa/boats');
       imageUrls.push(...urls);
     }
 
@@ -1466,7 +1501,7 @@ export const adminApi = {
     const imageUrls: string[] = [];
     if (boatData.boat_images && boatData.boat_images.length > 0) {
       const { uploadMultipleToCloudinary } = await import('./cloudinaryUpload');
-      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'marakbi/boats');
+      const urls = await uploadMultipleToCloudinary(boatData.boat_images, 'daffa/boats');
       imageUrls.push(...urls);
     }
 
@@ -1491,7 +1526,7 @@ export const adminApi = {
     let iconUrl = serviceData.icon_url;
     if (iconFile) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      iconUrl = await uploadToCloudinary(iconFile, 'marakbi/services');
+      iconUrl = await uploadToCloudinary(iconFile, 'daffa/services');
     }
     const formData = new FormData();
     formData.append('name', serviceData.name);
@@ -1505,7 +1540,7 @@ export const adminApi = {
     let iconUrl = serviceData.icon_url;
     if (iconFile) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      iconUrl = await uploadToCloudinary(iconFile, 'marakbi/services');
+      iconUrl = await uploadToCloudinary(iconFile, 'daffa/services');
     }
     const formData = new FormData();
     if (serviceData.name) formData.append('name', serviceData.name);
@@ -1524,7 +1559,7 @@ export const adminApi = {
     let imageUrl = data.image_url;
     if (imageFile) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      imageUrl = await uploadToCloudinary(imageFile, 'marakbi/facilities');
+      imageUrl = await uploadToCloudinary(imageFile, 'daffa/facilities');
     }
     const formData = new FormData();
     formData.append('name', data.name);
@@ -1536,7 +1571,7 @@ export const adminApi = {
     let imageUrl = data.image_url;
     if (imageFile) {
       const { uploadToCloudinary } = await import('./cloudinaryUpload');
-      imageUrl = await uploadToCloudinary(imageFile, 'marakbi/facilities');
+      imageUrl = await uploadToCloudinary(imageFile, 'daffa/facilities');
     }
     const formData = new FormData();
     if (data.name) formData.append('name', data.name);

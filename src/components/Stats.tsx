@@ -88,51 +88,51 @@ const Stats = () => {
         <div className="grid grid-cols-1 md:hidden gap-6 max-w-md mx-auto">
           {/* Boat Owners */}
           <div className="h-64 bg-purple-700 rounded-2xl flex flex-col justify-center items-center shadow-lg py-8">
-            <div className="text-white text-7xl font-bold font-poppins">{boatOwners} +</div>
-            <div className="text-white text-2xl font-normal font-poppins text-center mt-4">Boat Owners</div>
+            <div className="text-white text-4xl sm:text-5xl md:text-7xl font-bold font-poppins">{boatOwners} +</div>
+            <div className="text-white text-base sm:text-lg md:text-2xl font-normal font-poppins text-center mt-4">Boat Owners</div>
           </div>
 
           {/* Water Activities */}
           <div className="h-64 bg-[#C8A467] rounded-2xl flex flex-col justify-center items-center shadow-lg py-8">
-            <div className="text-white text-7xl font-bold font-poppins">{waterActivities} +</div>
-            <div className="text-white text-2xl font-normal font-poppins text-center mt-4">Water Activities</div>
+            <div className="text-white text-4xl sm:text-5xl md:text-7xl font-bold font-poppins">{waterActivities} +</div>
+            <div className="text-white text-base sm:text-lg md:text-2xl font-normal font-poppins text-center mt-4">Water Activities</div>
           </div>
 
           {/* Available Trips */}
           <div className="h-64 bg-teal-500 rounded-2xl flex flex-col justify-center items-center shadow-lg py-8">
-            <div className="text-white text-7xl font-bold font-poppins">{availableTrips} +</div>
-            <div className="text-white text-2xl font-normal font-poppins text-center mt-4">Available Trips</div>
+            <div className="text-white text-4xl sm:text-5xl md:text-7xl font-bold font-poppins">{availableTrips} +</div>
+            <div className="text-white text-base sm:text-lg md:text-2xl font-normal font-poppins text-center mt-4">Available Trips</div>
           </div>
 
           {/* Trips Done */}
           <div className="h-64 bg-red-500 rounded-2xl flex flex-col justify-center items-center shadow-lg py-8">
-            <div className="text-white text-7xl font-bold font-poppins">{tripsDone} +</div>
-            <div className="text-white text-2xl font-normal font-poppins text-center mt-4">Trips Done</div>
+            <div className="text-white text-4xl sm:text-5xl md:text-7xl font-bold font-poppins">{tripsDone} +</div>
+            <div className="text-white text-base sm:text-lg md:text-2xl font-normal font-poppins text-center mt-4">Trips Done</div>
           </div>
         </div>
 
         {/* Desktop View - Original Layout */}
         <div className="hidden md:flex justify-center gap-6 max-w-6xl mx-auto">
           {/* Boat Owners */}
-          <div className="w-64 h-46 bg-purple-700 rounded-2xl flex flex-col justify-center items-center shadow-lg">
+          <div className="w-48 sm:w-56 md:w-64 h-46 bg-purple-700 rounded-2xl flex flex-col justify-center items-center shadow-lg">
             <div className="text-white text-[66px] font-bold font-poppins capitalize">{boatOwners} +</div>
             <div className="text-white text-[23px] font-normal font-poppins text-center capitalize">Boat Owners</div>
           </div>
 
           {/* Water Activities */}
-          <div className="w-64 h-46 bg-orange-300 rounded-2xl flex flex-col justify-center items-center shadow-lg mt-16">
+          <div className="w-48 sm:w-56 md:w-64 h-46 bg-orange-300 rounded-2xl flex flex-col justify-center items-center shadow-lg mt-16">
             <div className="text-white text-[66px] font-bold font-poppins capitalize">{waterActivities} +</div>
             <div className="text-white text-[23px] font-normal font-poppins text-center capitalize">Water Activities</div>
           </div>
 
           {/* Available Trips */}
-          <div className="w-64 h-46 bg-teal-500 rounded-2xl flex flex-col justify-center items-center shadow-lg">
+          <div className="w-48 sm:w-56 md:w-64 h-46 bg-teal-500 rounded-2xl flex flex-col justify-center items-center shadow-lg">
             <div className="text-white text-[66px] font-bold font-poppins capitalize">{availableTrips} +</div>
             <div className="text-white text-[23px] font-normal font-poppins text-center capitalize">Available Trips</div>
           </div>
 
           {/* Trips Done */}
-          <div className="w-64 h-46 bg-red-500 rounded-2xl flex flex-col justify-center items-center shadow-lg mt-16">
+          <div className="w-48 sm:w-56 md:w-64 h-46 bg-red-500 rounded-2xl flex flex-col justify-center items-center shadow-lg mt-16">
             <div className="text-white text-[66px] font-bold font-poppins capitalize">{tripsDone} +</div>
             <div className="text-white text-[23px] font-normal font-poppins text-center capitalize">Trips Done</div>
           </div>

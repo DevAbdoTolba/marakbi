@@ -11,6 +11,7 @@ interface BoatFormData {
   name: string;
   price_per_hour: number | null;
   price_per_day: number | null;
+  sale_price: number | null;
   max_seats: number;
   max_seats_stay: number;
   description: string;
@@ -262,6 +263,7 @@ export default function AdminBoatListingLayout() {
     name: "",
     price_per_hour: 0,
     price_per_day: null,
+    sale_price: null,
     max_seats: 10,
     max_seats_stay: 6,
     description: "",
@@ -523,6 +525,7 @@ export default function AdminBoatListingLayout() {
         name: "",
         price_per_hour: 0,
         price_per_day: null,
+        sale_price: null,
         max_seats: 10,
         max_seats_stay: 6,
         description: "",
@@ -548,6 +551,7 @@ export default function AdminBoatListingLayout() {
       name: "",
       price_per_hour: 0,
       price_per_day: null,
+      sale_price: null,
       max_seats: 10,
       max_seats_stay: 6,
       description: "",
@@ -588,6 +592,7 @@ export default function AdminBoatListingLayout() {
         name: data.name,
         price_per_hour: data.price_per_hour,
         price_per_day: data.price_per_day,
+        sale_price: data.sale_price ?? null,
         max_seats: data.max_seats,
         max_seats_stay: data.max_seats_stay,
         description: data.description || "",
@@ -715,6 +720,7 @@ export default function AdminBoatListingLayout() {
       name: formData.name,
       price_per_hour: formData.price_per_hour,
       price_per_day: formData.price_per_day,
+      sale_price: formData.sale_price,
       max_seats: formData.max_seats,
       max_seats_stay: formData.max_seats_stay,
       description: formData.description,
@@ -1404,6 +1410,7 @@ export default function AdminBoatListingLayout() {
                           <option value="per_time">Per Hour/Day (Standard)</option>
                           <option value="per_person">Per Person (Fixed)</option>
                           <option value="per_person_per_time">Per Person Per Hour</option>
+                          <option value="per_trip">Per Trip (Fixed)</option>
                         </select>
                       </div>
 
@@ -1412,7 +1419,8 @@ export default function AdminBoatListingLayout() {
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           {formData.price_mode === 'per_person' ? 'Price per Person (EGP)' :
                             formData.price_mode === 'per_person_per_time' ? 'Price per Person/Hour (EGP)' :
-                              'Price per Hour (EGP)'}
+                              formData.price_mode === 'per_trip' ? 'Price per Trip (EGP)' :
+                                'Price per Hour (EGP)'}
                           <span className="text-gray-400 font-normal text-xs ml-1">(Optional if day price set)</span>
                         </label>
                         <input
@@ -1438,6 +1446,22 @@ export default function AdminBoatListingLayout() {
                           className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
                           min="0"
                           placeholder="e.g. 5000"
+                        />
+                      </div>
+
+                      {/* Sale Price (Buy/Sell) */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Sale Price (EGP)
+                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional - shows in Buy/Sell)</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.sale_price || ''}
+                          onChange={(e) => setFormData({ ...formData, sale_price: e.target.value ? Number(e.target.value) : null })}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                          min="0"
+                          placeholder="e.g. 500000"
                         />
                       </div>
 

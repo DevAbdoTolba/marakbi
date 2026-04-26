@@ -9,9 +9,9 @@ export default function FAQsPage() {
   const faqItems = [
     {
       id: 1,
-      question: "What is Marakbi?",
+      question: "What is DAFFA?",
       answer:
-        "Marakbi is an online platform that connects you with trusted boat owners and captains across Egypt. Whether you&apos;re looking for a private trip, a shared tour, or a fishing adventure — we make booking easy and secure.",
+        "DAFFA is an online platform that connects you with trusted boat owners and captains across Egypt. Whether you&apos;re looking for a private trip, a shared tour, or a fishing adventure — we make booking easy and secure.",
     },
     {
       id: 2,
@@ -33,7 +33,7 @@ export default function FAQsPage() {
     },
     {
       id: 5,
-      question: "Is it safe to book through Marakbi?",
+      question: "Is it safe to book through DAFFA?",
       answer:
         "Absolutely! All boats on our platform are thoroughly verified for safety standards, proper licensing, and quality service. We work only with trusted and experienced captains.",
     },
@@ -53,7 +53,7 @@ export default function FAQsPage() {
       id: 8,
       question: "How can I contact support?",
       answer:
-        "You can reach our support team via email at info@marakbi.tours, phone at +2010 31 41 6 900, or through our contact form. We're here to help with any questions or concerns.",
+        "You can reach our support team via email at info@daffa.pro, phone at +2010 31 41 6 900, or through our contact form. We're here to help with any questions or concerns.",
     },
   ];
 
@@ -72,7 +72,7 @@ export default function FAQsPage() {
             <div className="max-w-xl space-y-4 relative z-10">
               <h1 className="text-3xl sm:text-4xl lg:text-[48px] font-poppins font-semibold leading-[1.2] text-[#1a1a1a]">
                 Welcome, Let&apos;s Talk About{" "}
-                <span className="text-[#0b4c99]">Marakbi</span>
+                <span className="text-[#0b4c99]">DAFFA</span>
               </h1>
             </div>
 
@@ -112,7 +112,7 @@ export default function FAQsPage() {
             </h2>
             <p className="mt-3 text-lg sm:text-xl lg:text-[24px] text-[#1a1a1a] font-poppins leading-[1.2]">
               Let&apos;s Dive Into the World of{" "}
-              <span className="text-xl sm:text-2xl lg:text-[32px] text-[#0b4c99]">Marakbi</span>
+              <span className="text-xl sm:text-2xl lg:text-[32px] text-[#0b4c99]">DAFFA</span>
             </p>
           </div>
         </div>

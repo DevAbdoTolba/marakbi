@@ -1,13 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { authApi } from '@/lib/api';
+import { authApi, storage } from '@/lib/api';
 
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const VALID_TLDS = new Set([
+  "com","org","net","edu","gov","mil","int","co","io","dev","app","me",
+  "info","biz","name","pro","online","store","site","tech","space","cloud",
+  "ai","uk","us","ca","au","de","fr","it","es","nl","be","ch","ru","cn",
+  "jp","kr","in","br","mx","ar","za","eg","sa","ae","tr","pk","th","vn",
+  "id","ph","my","sg","hk","tw","nz","se","no","dk","fi","pl","cz","pt",
+  "gr","ie","ro","hu",
+]);
 
-export default function SignUpPage() {
+function SignUpPageInner() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,6 +26,15 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
+
+  // Lock signup page if already logged in
+  useEffect(() => {
+    if (storage.getToken()) {
+      router.replace(redirectTo || '/');
+    }
+  }, [router, redirectTo]);
 
   const handleSignUp = async () => {
     setError('');
@@ -27,6 +45,18 @@ export default function SignUpPage() {
       // Validation
       if (!fullName || !email || !password || !confirmPassword) {
         setError('Please fill in all fields');
+        setLoading(false);
+        return;
+      }
+
+      if (!EMAIL_REGEX.test(email)) {
+        setError('Please enter a valid email address');
+        setLoading(false);
+        return;
+      }
+      const tld = email.toLowerCase().split('@')[1].split('.').pop() || '';
+      if (!VALID_TLDS.has(tld)) {
+        setError('Please enter an email with a valid domain');
         setLoading(false);
         return;
       }
@@ -51,12 +81,28 @@ export default function SignUpPage() {
       });
 
       if (response.success) {
-        setSuccess('Account created successfully! Redirecting to login...');
-
-        // Navigate to login page after successful registration
-        setTimeout(() => {
-          router.push('/login');
-        }, 2000);
+        // Auto-login after successful registration
+        const loginRes = await authApi.login({ username: fullName, password });
+        if (loginRes.success && loginRes.data) {
+          storage.setTokens({
+            access_token: loginRes.data.access_token,
+            refresh_token: loginRes.data.refresh_token,
+          });
+          storage.setUser({
+            id: loginRes.data.user_id,
+            username: loginRes.data.username,
+            role: loginRes.data.role || 'user',
+          });
+          if (typeof document !== 'undefined') {
+            document.cookie = `access_token=${loginRes.data.access_token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+          }
+          router.push(redirectTo || '/');
+        } else {
+          setSuccess('Account created! Redirecting to login...');
+          setTimeout(() => {
+            router.push(redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login');
+          }, 1500);
+        }
       } else {
         setError(response.error || 'Sign up failed. Please try again.');
       }
@@ -95,8 +141,8 @@ export default function SignUpPage() {
           <div className="auth-logo">
             <Link href="/">
               <Image
-                src="/logo.png"
-                alt="Marakbi Logo"
+                src="/images/logo.png"
+                alt="DAFFA Logo"
                 width={200}
                 height={110}
               />
@@ -252,7 +298,7 @@ export default function SignUpPage() {
               You Have An Account?{' '}
               <button
                 type="button"
-                onClick={() => router.push('/login')}
+                onClick={() => router.push(redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login')}
                 className="auth-link-button"
               >
                 Sign In
@@ -316,5 +362,13 @@ export default function SignUpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpPageInner />
+    </Suspense>
   );
 }

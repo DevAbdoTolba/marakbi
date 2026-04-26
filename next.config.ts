@@ -5,13 +5,24 @@ const nextConfig: NextConfig = {
     // Remote images configuration (replacement for deprecated images.domains)
     remotePatterns: [
       {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "5000",
+        pathname: "/**",
+      },
+      {
         protocol: "https",
-        hostname: "marakbi-e0870d98592a.herokuapp.com",
+        hostname: "daffa-e0870d98592a.herokuapp.com",
         pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
         pathname: "/**",
       },
     ],

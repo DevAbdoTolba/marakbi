@@ -42,6 +42,8 @@ export default function AdminUsersLayout() {
 
   const [formData, setFormData] = useState({
     username: "",
+    first_name: "",
+    last_name: "",
     email: "",
     password: "",
     role: "user",
@@ -99,7 +101,7 @@ export default function AdminUsersLayout() {
   }, [fetchUsers]);
 
   const handleCreate = async () => {
-    if (!formData.username || !formData.email || !formData.password) {
+    if (!formData.username || !formData.password) {
       showError("Please fill in required fields");
       return;
     }
@@ -155,6 +157,8 @@ export default function AdminUsersLayout() {
     if (response.success && response.data) {
       setFormData({
         username: response.data.username,
+        first_name: response.data.first_name || "",
+        last_name: response.data.last_name || "",
         email: response.data.email,
         password: "",
         role: response.data.role,
@@ -169,6 +173,8 @@ export default function AdminUsersLayout() {
   const resetForm = () => {
     setFormData({
       username: "",
+      first_name: "",
+      last_name: "",
       email: "",
       password: "",
       role: "user",
@@ -280,7 +286,12 @@ export default function AdminUsersLayout() {
                           </span>
                         )}
                       </div>
-                      <span className="font-medium text-gray-900 truncate max-w-[120px]" title={user.username}>{user.username}</span>
+                      <div className="truncate max-w-[160px]">
+                        <span className="font-medium text-gray-900" title={user.username}>{user.username}</span>
+                        {(user.first_name || user.last_name) && (
+                          <span className="block text-xs text-gray-500">{[user.first_name, user.last_name].filter(Boolean).join(' ')}</span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-[180px]" title={user.email}>{user.email}</td>
@@ -383,10 +394,33 @@ export default function AdminUsersLayout() {
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Unique login username"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <input
+                    type="text"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="First name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="Last name"
+                  />
+                </div>
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   type="email"
                   value={formData.email}
