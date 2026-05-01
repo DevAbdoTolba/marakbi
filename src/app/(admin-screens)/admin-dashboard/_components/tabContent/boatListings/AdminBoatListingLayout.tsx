@@ -25,6 +25,8 @@ interface BoatFormData {
   user_id: number;
   services: BoatServiceAssignment[];
   facilities: BoatFacilityDef[];
+  video_urls: string[];
+  removed_videos: string[];
 }
 interface BoatStats {
   total_fleet: number;
@@ -277,6 +279,8 @@ export default function AdminBoatListingLayout() {
     user_id: 1,
     services: [],
     facilities: [],
+    video_urls: [],
+    removed_videos: [],
   });
 
   // Inline facility creation state
@@ -539,6 +543,8 @@ export default function AdminBoatListingLayout() {
         user_id: parseInt(userId, 10),
         services: [],
         facilities: [],
+        video_urls: [],
+        removed_videos: [],
       });
       setNewImages([]);
       setImagePreviews([]);
@@ -565,6 +571,8 @@ export default function AdminBoatListingLayout() {
       user_id: 1,
       services: [],
       facilities: [],
+      video_urls: [],
+      removed_videos: [],
     });
     setNewImages([]);
     setImagePreviews([]);
@@ -611,6 +619,8 @@ export default function AdminBoatListingLayout() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         services: (data as any).services_full || data.services || [],
         facilities: data.facilities || [],
+        video_urls: (data as any).video_urls || [],
+        removed_videos: [],
       });
       setImagePreviews(data.images || []);
 
@@ -737,6 +747,8 @@ export default function AdminBoatListingLayout() {
       primary_new_image_index: !primaryExistingUrl ? primaryNewImageIndex : undefined,
       services: formData.services,
       facilities: formData.facilities.map(f => f.id),
+      video_urls: formData.video_urls.length > 0 ? formData.video_urls : undefined,
+      removed_videos: formData.removed_videos.length > 0 ? formData.removed_videos : undefined,
     };
 
     let response;
@@ -2214,42 +2226,19 @@ export default function AdminBoatListingLayout() {
                       + Choose Photos
                     </button>
                     <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageSelect} className="hidden" />
-                  </div>
-
-                  {/* Photo Gallery */}
-                  <div className="mb-4">
+                      {/* Photo Gallery */}
+                  <div className="mb-8">
                     <p className="font-bold text-gray-900 mb-4 flex justify-between items-center">
                       Your Photos ({imagePreviews.length})
                       <span className="text-xs font-normal text-gray-500 flex items-center gap-1"><FiStar className="text-orange-400 fill-orange-400" /> = Primary photo</span>
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {/* Existing Previews which are strings in imagePreviews */}
                       {imagePreviews.map((preview, i) => {
-                        const isPrimary = (primaryExistingUrl === preview) || (!primaryExistingUrl && i === primaryNewImageIndex && i >= (editingBoat?.images?.length || 0 - removedImageUrls.length)); // Logic bit complex due to mix of old/new
-
-                        // Simplified logic: 
-                        // We have imagePreviews which is a mix of existing (urls) and new (data urls).
-                        // We need to know if this specific index corresponds to the primary selection.
-
-                        // Identify if this is the currently selected primary
-                        // Logic: 
-                        // If primaryExistingUrl is set, check if preview matches it.
-                        // If not set, check if this index (relative to new images start) matches primaryNewImageIndex.
-
-                        // Calculate "real" index of new images in the preview array
-                        // This is tricky because we are rendering all in one map.
-                        // Let's assume we want user to just click "Set Primary" on any.
-
                         const isSelectedPrimary = (primaryExistingUrl && preview === primaryExistingUrl) || (!primaryExistingUrl && (i - (imagePreviews.length - newImages.length)) === primaryNewImageIndex);
-
-                        // Better logic: handle "Set Primary" by setting state based on what it is.
-                        // If it's an existing URL (starts with http or /), set primaryExistingUrl.
-                        // If it's a data URL (starts with data:), set primaryExistingUrl to null and set primaryNewImageIndex.
 
                         return (
                           <div key={i} className={`relative aspect-[4/3] rounded-xl overflow-hidden group border-2 ${isSelectedPrimary ? 'border-orange-400 ring-2 ring-orange-100' : 'border-gray-100'}`}>
                             <Image src={preview} alt="Preview" fill className="object-cover" />
-                            {/* Top Right: Actions */}
                             <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={(e) => { e.stopPropagation(); removeImage(i); }}
@@ -2260,7 +2249,6 @@ export default function AdminBoatListingLayout() {
                               </button>
                             </div>
 
-                            {/* Bottom Left: Primary Badge or Button */}
                             <div className="absolute bottom-2 left-2 right-2">
                               {isSelectedPrimary ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-400 text-white text-[10px] font-bold rounded shadow-sm">
@@ -2271,7 +2259,6 @@ export default function AdminBoatListingLayout() {
                                   onClick={() => {
                                     if (preview.startsWith('data:')) {
                                       setPrimaryExistingUrl(null);
-                                      // Find index in newImages
                                       const newImgIndex = i - (imagePreviews.length - newImages.length);
                                       setPrimaryNewImageIndex(newImgIndex);
                                     } else {
@@ -2290,6 +2277,107 @@ export default function AdminBoatListingLayout() {
                     </div>
                   </div>
 
+                  {/* YouTube Videos Section */}
+                  <div className="mt-8 border-t pt-8">
+                    <div className="flex items-center gap-2 mb-4">
+                      <FiPlay size={20} className="text-gray-900" />
+                      <h3 className="text-lg font-bold text-gray-900">YouTube Videos</h3>
+                    </div>
+                    <div className="flex gap-2 mb-6">
+                      <input
+                        type="text"
+                        placeholder="Paste YouTube video URL here"
+                        id="new-video-url"
+                        className="flex-1 px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const input = e.currentTarget;
+                            const url = input.value.trim();
+                            if (url) {
+                              setFormData(prev => ({
+                                ...prev,
+                                video_urls: [...prev.video_urls, url]
+                              }));
+                              input.value = '';
+                            }
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          const input = document.getElementById('new-video-url') as HTMLInputElement;
+                          const url = input.value.trim();
+                          if (url) {
+                            setFormData(prev => ({
+                              ...prev,
+                              video_urls: [...prev.video_urls, url]
+                            }));
+                            input.value = '';
+                          }
+                        }}
+                        className="px-6 py-2 bg-[#0F172A] text-white rounded-xl text-sm font-medium"
+                      >
+                        Add Video
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {formData.video_urls.map((url, i) => {
+                        let videoId = "";
+                        if (url.includes("youtu.be/")) {
+                          videoId = url.split("youtu.be/")[1].split("?")[0];
+                        } else if (url.includes("youtube.com/watch")) {
+                          videoId = new URL(url).searchParams.get("v") || "";
+                        }
+                        const thumbnail = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+
+                        return (
+                          <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100 group">
+                            <div className="relative w-24 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                              {thumbnail ? (
+                                <Image src={thumbnail} alt="Video thumbnail" fill className="object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  <FiPlay size={20} />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <FiPlay className="text-white text-sm" />
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-gray-500 truncate">{url}</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (editingBoat && !url.startsWith('blob:') && !url.includes('data:')) {
+                                  // If it's an existing video, we should probably track it for removal
+                                  // But our current schema doesn't distinguish between new and old video_urls in state as clearly as images.
+                                  // Assuming video_urls in state contains ALL videos.
+                                  setFormData(prev => {
+                                    const newVideos = prev.video_urls.filter((_, idx) => idx !== i);
+                                    return {
+                                      ...prev,
+                                      video_urls: newVideos,
+                                      removed_videos: [...prev.removed_videos, url]
+                                    };
+                                  });
+                                } else {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    video_urls: prev.video_urls.filter((_, idx) => idx !== i)
+                                  }));
+                                }
+                              }}
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

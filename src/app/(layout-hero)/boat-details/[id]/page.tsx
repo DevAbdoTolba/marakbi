@@ -165,7 +165,9 @@ export default function BoatDetailsPage() {
   const { boat, owner, reviews, reviews_summary } = boatData;
   const totalRating = reviews_summary.total_reviews;
 
-  const normalizedImages = normalizeImageUrls(boat.images);
+  const normalizedMedia = boat.media && boat.media.length > 0
+    ? boat.media.map(m => ({ ...m, url: m.type === 'image' ? normalizeImageUrl(m.url) : m.url }))
+    : normalizeImageUrls(boat.images).map(url => ({ url, type: 'image' as const, thumbnail_url: url }));
 
   const handleImageClick = (index: number) => {
     setCurrentImageIndex(index);
@@ -173,19 +175,19 @@ export default function BoatDetailsPage() {
   };
 
   const handleNext = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % normalizedImages.length);
+    setCurrentImageIndex((prev) => (prev + 1) % normalizedMedia.length);
   };
 
   const handlePrev = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + normalizedImages.length) % normalizedImages.length);
+    setCurrentImageIndex((prev) => (prev - 1 + normalizedMedia.length) % normalizedMedia.length);
   };
 
   const handleMobileNext = () => {
-    setMobileImageIndex((prev) => (prev + 1) % normalizedImages.length);
+    setMobileImageIndex((prev) => (prev + 1) % normalizedMedia.length);
   };
 
   const handleMobilePrev = () => {
-    setMobileImageIndex((prev) => (prev - 1 + normalizedImages.length) % normalizedImages.length);
+    setMobileImageIndex((prev) => (prev - 1 + normalizedMedia.length) % normalizedMedia.length);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -331,7 +333,7 @@ export default function BoatDetailsPage() {
             <div>
               {/* Mobile View - Single Image Carousel */}
               <div className="block md:hidden">
-                {normalizedImages.length > 0 ? (
+                {normalizedMedia.length > 0 ? (
                   <div className="relative">
                     {/* Main Image */}
                     <div
@@ -342,40 +344,47 @@ export default function BoatDetailsPage() {
                       onTouchEnd={handleTouchEnd}
                     >
                       <Image
-                        src={normalizedImages[mobileImageIndex]}
-                        alt={`Boat image ${mobileImageIndex + 1}`}
+                        src={normalizedMedia[mobileImageIndex].type === 'video' ? normalizedMedia[mobileImageIndex].thumbnail_url : normalizedMedia[mobileImageIndex].url}
+                        alt={`Boat media ${mobileImageIndex + 1}`}
                         fill
                         className="object-cover"
                         priority
                       />
+                      
+                      {normalizedMedia[mobileImageIndex].type === 'video' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <div className="bg-white/90 rounded-full p-4 shadow-lg">
+                            <FiPlay className="text-[#106BD8] text-3xl ml-1" />
+                          </div>
+                        </div>
+                      )}
 
                       {/* Image Counter Overlay - Top Left */}
-                      {normalizedImages.length > 1 && (
+                      {normalizedMedia.length > 1 && (
                         <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium z-10">
-                          {mobileImageIndex + 1} / {normalizedImages.length}
+                          {mobileImageIndex + 1} / {normalizedMedia.length}
                         </div>
                       )}
 
                       {/* Remaining Images Indicator - Bottom Right */}
-                      {normalizedImages.length > 1 && (
+                      {normalizedMedia.length > 1 && (
                         <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium z-10">
-                          {normalizedImages.length - mobileImageIndex - 1 > 0
-                            ? `+${normalizedImages.length - mobileImageIndex - 1} صور`
-                            : 'آخر صورة'}
+                          {normalizedMedia.length - mobileImageIndex - 1 > 0
+                            ? `+${normalizedMedia.length - mobileImageIndex - 1} ${normalizedMedia[mobileImageIndex + 1].type === 'video' ? 'فيديو' : 'صور'}`
+                            : 'آخر وسائط'}
                         </div>
                       )}
 
                       {/* Previous Button - FORCED LEFT */}
-                      {normalizedImages.length > 1 && (
+                      {normalizedMedia.length > 1 && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleMobilePrev();
                           }}
-                          // استخدمنا style left عشان نجبره يروح شمال بغض النظر عن اتجاه الموقع
                           className="absolute top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full p-2.5 hover:bg-black/90 transition-colors shadow-lg z-10"
                           style={{ left: '10px' }}
-                          aria-label="Previous image"
+                          aria-label="Previous media"
                         >
                           <svg
                             className="w-5 h-5"
@@ -394,16 +403,15 @@ export default function BoatDetailsPage() {
                       )}
 
                       {/* Next Button - FORCED RIGHT */}
-                      {normalizedImages.length > 1 && (
+                      {normalizedMedia.length > 1 && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleMobileNext();
                           }}
-                          // استخدمنا style right عشان نجبره يروح يمين بغض النظر عن اتجاه الموقع
                           className="absolute top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full p-2.5 hover:bg-black/90 transition-colors shadow-lg z-10"
                           style={{ right: '10px' }}
-                          aria-label="Next image"
+                          aria-label="Next media"
                         >
                           <svg
                             className="w-5 h-5"
@@ -423,61 +431,77 @@ export default function BoatDetailsPage() {
                     </div>
 
                     {/* Navigation Dots */}
-                    {normalizedImages.length > 1 && (
+                    {normalizedMedia.length > 1 && (
                       <div className="flex justify-center items-center gap-2 mt-4">
-                        {normalizedImages.map((_, idx) => (
+                        {normalizedMedia.map((media, idx) => (
                           <button
                             key={idx}
                             onClick={() => setMobileImageIndex(idx)}
-                            className={`transition-all duration-300 ${idx === mobileImageIndex
+                            className={`transition-all duration-300 flex items-center justify-center ${idx === mobileImageIndex
                               ? 'w-8 h-2 bg-[#106BD8] rounded-full'
                               : 'w-2 h-2 bg-gray-300 rounded-full hover:bg-gray-400'
                               }`}
-                            aria-label={`Go to image ${idx + 1}`}
-                          />
+                            aria-label={`Go to media ${idx + 1}`}
+                          >
+                            {media.type === 'video' && idx !== mobileImageIndex && <div className="w-1 h-1 bg-white rounded-full" />}
+                          </button>
                         ))}
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="w-full h-[400px] flex items-center justify-center bg-gray-200 rounded-lg">
-                    <p className="text-gray-500">No images available</p>
+                    <p className="text-gray-500">No media available</p>
                   </div>
                 )}
               </div>
 
               {/* Desktop View - Grid Layout */}
               <div className="hidden md:grid grid-cols-4 gap-2 h-[400px]">
-                {normalizedImages.length > 0 ? (
+                {normalizedMedia.length > 0 ? (
                   <>
                     <div
-                      className="col-span-2 row-span-2 relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                      className="col-span-2 row-span-2 relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity group"
                       onClick={() => handleImageClick(0)}
                     >
                       <Image
-                        src={normalizedImages[0]}
-                        alt="Main boat"
+                        src={normalizedMedia[0].type === 'video' ? normalizedMedia[0].thumbnail_url : normalizedMedia[0].url}
+                        alt="Main media"
                         fill
                         className="object-cover"
                         priority
                       />
+                      {normalizedMedia[0].type === 'video' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors">
+                          <div className="bg-white/90 rounded-full p-5 shadow-xl">
+                            <FiPlay className="text-[#106BD8] text-4xl ml-1" />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    {normalizedImages.slice(1, 5).map((img, idx) => (
+                    {normalizedMedia.slice(1, 5).map((media, idx) => (
                       <div
                         key={idx}
-                        className="relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                        className="relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity group"
                         onClick={() => handleImageClick(idx + 1)}
                       >
                         <Image
-                          src={img}
+                          src={media.type === 'video' ? media.thumbnail_url : media.url}
                           alt={`Gallery ${idx + 1}`}
                           fill
                           className="object-cover"
                         />
-                        {idx === 3 && normalizedImages.length > 5 && (
+                        {media.type === 'video' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors">
+                            <div className="bg-white/90 rounded-full p-2.5 shadow-lg">
+                              <FiPlay className="text-[#106BD8] text-xl ml-0.5" />
+                            </div>
+                          </div>
+                        )}
+                        {idx === 3 && normalizedMedia.length > 5 && (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                             <span className="text-white text-3xl font-semibold">
-                              +{normalizedImages.length - 5}
+                              +{normalizedMedia.length - 5}
                             </span>
                           </div>
                         )}
@@ -486,7 +510,7 @@ export default function BoatDetailsPage() {
                   </>
                 ) : (
                   <div className="col-span-4 flex items-center justify-center bg-gray-200 rounded-lg">
-                    <p className="text-gray-500">No images available</p>
+                    <p className="text-gray-500">No media available</p>
                   </div>
                 )}
               </div>
@@ -878,11 +902,10 @@ export default function BoatDetailsPage() {
       </div>
 
       {/* Image Gallery Modal */}
-      {isModalOpen && normalizedImages.length > 0 && (
+      {isModalOpen && normalizedMedia.length > 0 && (
         <div
           className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
           onClick={() => setIsModalOpen(false)}
-          // هنا برضوا بنجبر اتجاه المودال عشان زرار الكلوز يظبط
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, direction: 'ltr' }}
         >
           {/* Close Button - FORCED RIGHT */}
@@ -891,7 +914,6 @@ export default function BoatDetailsPage() {
               e.stopPropagation();
               setIsModalOpen(false);
             }}
-            // اجبار المكان بالـ style
             className="absolute top-6 text-white hover:text-gray-300 transition-colors bg-black/60 rounded-full p-2 hover:bg-black/80"
             style={{ right: '24px', zIndex: 10000 }}
             aria-label="Close modal"
@@ -911,13 +933,13 @@ export default function BoatDetailsPage() {
             </svg>
           </button>
 
-          {/* Image Container - Centered */}
+          {/* Media Container - Centered */}
           <div
-            className="relative w-full h-full flex items-center justify-center px-20"
+            className="relative w-full h-full flex items-center justify-center px-4 sm:px-20"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Previous Button - FORCED LEFT */}
-            {normalizedImages.length > 1 && (
+            {normalizedMedia.length > 1 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -925,7 +947,7 @@ export default function BoatDetailsPage() {
                 }}
                 className="absolute text-white hover:text-gray-300 transition-colors bg-black/60 rounded-full p-4 hover:bg-black/80 flex items-center justify-center"
                 style={{ left: '16px', zIndex: 10000 }}
-                aria-label="Previous image"
+                aria-label="Previous media"
               >
                 <svg
                   className="w-10 h-10"
@@ -943,20 +965,44 @@ export default function BoatDetailsPage() {
               </button>
             )}
 
-            {/* Main Image */}
+            {/* Main Media */}
             <div className="relative w-full max-w-6xl h-full max-h-[90vh] flex items-center justify-center">
-              <Image
-                src={normalizedImages[currentImageIndex]}
-                alt={`Boat image ${currentImageIndex + 1}`}
-                width={1200}
-                height={800}
-                className="object-contain max-w-full max-h-full"
-                priority
-              />
+              {normalizedMedia[currentImageIndex].type === 'video' ? (
+                <iframe
+                  width="100%"
+                  height="100%"
+                  className="aspect-video max-w-full max-h-full"
+                  src={(() => {
+                    const url = normalizedMedia[currentImageIndex].url;
+                    let videoId = "";
+                    if (url.includes("youtu.be/")) {
+                      videoId = url.split("youtu.be/")[1].split("?")[0];
+                    } else if (url.includes("youtube.com/watch")) {
+                      videoId = new URL(url).searchParams.get("v") || "";
+                    } else if (url.includes("youtube.com/embed/")) {
+                      return url;
+                    }
+                    return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                  })()}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <Image
+                  src={normalizedMedia[currentImageIndex].url}
+                  alt={`Boat media ${currentImageIndex + 1}`}
+                  width={1200}
+                  height={800}
+                  className="object-contain max-w-full max-h-full"
+                  priority
+                />
+              )}
             </div>
 
             {/* Next Button - FORCED RIGHT */}
-            {normalizedImages.length > 1 && (
+            {normalizedMedia.length > 1 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -964,7 +1010,7 @@ export default function BoatDetailsPage() {
                 }}
                 className="absolute text-white hover:text-gray-300 transition-colors bg-black/60 rounded-full p-4 hover:bg-black/80 flex items-center justify-center"
                 style={{ right: '16px', zIndex: 10000 }}
-                aria-label="Next image"
+                aria-label="Next media"
               >
                 <svg
                   className="w-10 h-10"
@@ -983,10 +1029,10 @@ export default function BoatDetailsPage() {
             )}
           </div>
 
-          {/* Image Counter - Bottom Center */}
-          {normalizedImages.length > 1 && (
+          {/* Media Counter - Bottom Center */}
+          {normalizedMedia.length > 1 && (
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[10000] bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium">
-              {currentImageIndex + 1} / {normalizedImages.length}
+              {currentImageIndex + 1} / {normalizedMedia.length}
             </div>
           )}
         </div>

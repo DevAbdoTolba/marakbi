@@ -72,7 +72,7 @@ export default function AdminBoatListingLayout() {
         title: "Photos & Features",
         subtitle:
           "Add photos and select features to make your listing stand out",
-        fields: ["photos", "boatFeatures", "noApprovalRent"],
+        fields: ["photos", "boatFeatures", "noApprovalRent", "videoUrls"],
       },
     ],
     []

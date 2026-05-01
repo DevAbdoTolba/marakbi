@@ -111,6 +111,12 @@ export interface Boat {
     voyage_hours: number;
     total_price: number;
   }>;
+  media?: Array<{
+    url: string;
+    type: 'image' | 'video';
+    is_primary: boolean;
+    thumbnail_url: string;
+  }>;
 }
 
 // ... (omitted unrelated parts)
@@ -152,6 +158,7 @@ export interface EditBoatData {
   trips?: number[];
   boat_images?: File[];
   removed_images?: string[];
+  removed_videos?: string[];
   primary_image_url?: string;
   primary_new_image_index?: number;
   services?: BoatServiceAssignment[];
@@ -1304,6 +1311,7 @@ export const adminApi = {
 
     // Send Cloudinary URLs instead of files
     imageUrls.forEach(url => formData.append('image_urls', url));
+    if (boatData.video_urls) boatData.video_urls.forEach(url => formData.append('video_urls', url));
     return adminFormRequest('/admin/boats', formData);
   },
   updateBoat: async (boatId: number, boatData: EditBoatData): Promise<ApiResponse<{ message: string; boat: AdminBoat }>> => {
@@ -1345,6 +1353,8 @@ export const adminApi = {
     // Send Cloudinary URLs instead of files
     imageUrls.forEach(url => formData.append('image_urls', url));
     if (boatData.removed_images) boatData.removed_images.forEach(url => formData.append('removed_images', url));
+    if (boatData.video_urls) boatData.video_urls.forEach(url => formData.append('video_urls', url));
+    if (boatData.removed_videos) boatData.removed_videos.forEach(url => formData.append('removed_videos', url));
     return adminFormRequest(`/admin/boats/${boatId}`, formData, 'PUT');
   },
   deleteBoat: async (boatId: number): Promise<ApiResponse<{ message: string }>> => apiRequest(`/admin/boats/${boatId}`, { method: 'DELETE' }),
@@ -1476,6 +1486,7 @@ export const adminApi = {
     boatData.categories.forEach(id => formData.append('categories', id.toString()));
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
     imageUrls.forEach(url => formData.append('image_urls', url));
+    if (boatData.video_urls) boatData.video_urls.forEach(url => formData.append('video_urls', url));
     return adminFormRequest(`/admin/users/${userId}/boats`, formData);
   },
   editBoat: async (boatId: number, boatData: EditBoatData): Promise<ApiResponse<EditBoatResponse>> => {
@@ -1498,6 +1509,8 @@ export const adminApi = {
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
     if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
     imageUrls.forEach(url => formData.append('image_urls', url));
+    if (boatData.video_urls) boatData.video_urls.forEach(url => formData.append('video_urls', url));
+    if (boatData.removed_videos) boatData.removed_videos.forEach(url => formData.append('removed_videos', url));
     return adminFormRequest(`/admin/boats/${boatId}`, formData, 'PUT');
   },
 
