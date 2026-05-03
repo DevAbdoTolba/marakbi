@@ -496,9 +496,7 @@ export default function AdminBoatListingLayout() {
         statsMap[review.boat_id].reviews.push(review);
       });
 
-      Object.keys(statsMap).forEach(key => {
-        const boatId = Number(key);
-        const data = statsMap[boatId];
+      Object.values(statsMap).forEach(data => {
         const totalRating = data.reviews.reduce((sum, r) => sum + r.rating, 0);
         data.reviewCount = data.reviews.length;
         data.rating = data.reviewCount > 0 ? totalRating / data.reviewCount : 0;
