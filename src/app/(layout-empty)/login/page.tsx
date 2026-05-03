@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi, storage } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,6 +13,8 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '';
 
   // Load saved credentials on mount
   useEffect(() => {
@@ -87,14 +89,17 @@ export default function LoginPage() {
         // Also set cookie for middleware
         document.cookie = `access_token=${response.data.access_token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
 
-        // Check if there's an intended URL to redirect to (for booking flow)
-        const intendedUrl = localStorage.getItem('intended_url');
-        if (intendedUrl) {
-          localStorage.removeItem('intended_url'); // Clean up
-          router.push(intendedUrl);
+        // Priority: explicit ?redirect= query param > stored intended_url > home
+        if (redirectTo) {
+          router.push(redirectTo);
         } else {
-          // Redirect to home page
-          router.push('/');
+          const intendedUrl = localStorage.getItem('intended_url');
+          if (intendedUrl) {
+            localStorage.removeItem('intended_url');
+            router.push(intendedUrl);
+          } else {
+            router.push('/');
+          }
         }
       } else {
         // Show specific error message from API
@@ -258,7 +263,7 @@ export default function LoginPage() {
               You Don&apos;t Have An Account?{' '}
               <button
                 type="button"
-                onClick={() => router.push('/signup')}
+                onClick={() => router.push(redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : '/signup')}
                 className="auth-link-button"
               >
                 Sign Up

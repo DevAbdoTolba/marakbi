@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { authApi } from '@/lib/api';
@@ -45,6 +45,8 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '';
 
   const clearFieldError = (field: string) => {
     setFieldErrors((prev) => {
@@ -110,7 +112,7 @@ export default function SignUpPage() {
       if (response.success) {
         setSuccess('Account created successfully! Redirecting to login...');
         setTimeout(() => {
-          router.push('/login');
+          router.push(redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login');
         }, 2000);
       } else {
         if (response.fieldErrors && Object.keys(response.fieldErrors).length > 0) {
@@ -333,7 +335,7 @@ export default function SignUpPage() {
               You Have An Account?{' '}
               <button
                 type="button"
-                onClick={() => router.push('/login')}
+                onClick={() => router.push(redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login')}
                 className="auth-link-button"
               >
                 Sign In
