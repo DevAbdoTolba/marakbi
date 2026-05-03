@@ -2,8 +2,8 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAssignment } from "@/lib/api";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAssignment, Boat } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
 import useBookingStore from "@/hooks/useBookingStore";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
@@ -22,6 +22,20 @@ export default function BoatDetailsPage() {
   const [mobileImageIndex, setMobileImageIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
+
+  // Same operator recommendations
+  const [sameRecPage, setSameRecPage] = useState(1);
+  const [sameRecHasMore, setSameRecHasMore] = useState(false);
+  const [sameRecLoading, setSameRecLoading] = useState(false);
+  const [sameRecs, setSameRecs] = useState<Boat[]>([]);
+  const sameRecCache = useRef<Map<number, { boats: Boat[]; hasMore: boolean }>>(new Map());
+
+  // Other operator recommendations
+  const [otherRecPage, setOtherRecPage] = useState(1);
+  const [otherRecHasMore, setOtherRecHasMore] = useState(false);
+  const [otherRecLoading, setOtherRecLoading] = useState(false);
+  const [otherRecs, setOtherRecs] = useState<Boat[]>([]);
+  const otherRecCache = useRef<Map<number, { boats: Boat[]; hasMore: boolean }>>(new Map());
 
   // Trip-based booking support
   const tripId = searchParams.get("trip_id");
@@ -78,6 +92,43 @@ export default function BoatDetailsPage() {
       fetchBoatDetails();
     }
   }, [params.id, tripId]);
+
+  // Fetch same operator recommendations
+  const fetchSameRecs = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+    const cached = sameRecCache.current.get(page);
+    if (cached) { setSameRecs(cached.boats); setSameRecHasMore(cached.hasMore); setSameRecPage(page); return; }
+    setSameRecLoading(true);
+    const res = await clientApi.getBoatRecommendations(boatId, 'same', page, 3);
+    if (res.success && res.data) {
+      sameRecCache.current.set(page, { boats: res.data.boats, hasMore: res.data.has_more });
+      setSameRecs(res.data.boats); setSameRecHasMore(res.data.has_more); setSameRecPage(page);
+    }
+    setSameRecLoading(false);
+  }, [params.id]);
+
+  // Fetch other operator recommendations
+  const fetchOtherRecs = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+    const cached = otherRecCache.current.get(page);
+    if (cached) { setOtherRecs(cached.boats); setOtherRecHasMore(cached.hasMore); setOtherRecPage(page); return; }
+    setOtherRecLoading(true);
+    const res = await clientApi.getBoatRecommendations(boatId, 'other', page, 3);
+    if (res.success && res.data) {
+      otherRecCache.current.set(page, { boats: res.data.boats, hasMore: res.data.has_more });
+      setOtherRecs(res.data.boats); setOtherRecHasMore(res.data.has_more); setOtherRecPage(page);
+    }
+    setOtherRecLoading(false);
+  }, [params.id]);
+
+  useEffect(() => {
+    if (params.id) {
+      sameRecCache.current.clear(); fetchSameRecs(1);
+      otherRecCache.current.clear(); fetchOtherRecs(1);
+    }
+  }, [params.id, fetchSameRecs, fetchOtherRecs]);
 
   // Handle keyboard navigation for image modal
   useEffect(() => {
@@ -862,6 +913,92 @@ export default function BoatDetailsPage() {
                 </div>
               </div>
             </section>
+
+            {/* Recommendations - Same Operator */}
+            {(sameRecs.length > 0 || sameRecPage > 1) && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold font-poppins text-[#0a0a0a]">From the same operator</h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => fetchSameRecs(sameRecPage - 1)} disabled={sameRecPage <= 1 || sameRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <button onClick={() => fetchSameRecs(sameRecPage + 1)} disabled={!sameRecHasMore || sameRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${sameRecLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                  {sameRecs.map((rec) => (
+                    <button key={rec.id} onClick={() => router.push(`/boat-details/${rec.id}`)}
+                      className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition">
+                      <div className="relative h-36 sm:h-40">
+                        {rec.images?.[0] ? <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" /> : <div className="w-full h-full bg-gray-100" />}
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
+                          <div className="flex items-center gap-1">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Image key={i} src="/icons/Star Icon.svg" alt="Star" width={12} height={12} className={i < Math.round(rec.average_rating || 0) ? 'opacity-100' : 'opacity-30'} />
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500">({rec.total_reviews})</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Recommendations - Other Operators */}
+            {(otherRecs.length > 0 || otherRecPage > 1) && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold font-poppins text-[#0a0a0a]">From other operators</h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => fetchOtherRecs(otherRecPage - 1)} disabled={otherRecPage <= 1 || otherRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <button onClick={() => fetchOtherRecs(otherRecPage + 1)} disabled={!otherRecHasMore || otherRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${otherRecLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                  {otherRecs.map((rec) => (
+                    <button key={rec.id} onClick={() => router.push(`/boat-details/${rec.id}`)}
+                      className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition">
+                      <div className="relative h-36 sm:h-40">
+                        {rec.images?.[0] ? <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" /> : <div className="w-full h-full bg-gray-100" />}
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
+                          <div className="flex items-center gap-1">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Image key={i} src="/icons/Star Icon.svg" alt="Star" width={12} height={12} className={i < Math.round(rec.average_rating || 0) ? 'opacity-100' : 'opacity-30'} />
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500">({rec.total_reviews})</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Customer reviews */}
             <section>
