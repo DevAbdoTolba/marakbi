@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -14,6 +14,14 @@ export default function VerifyCodePage() {
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email') || '';
+
+  useEffect(() => {
+    if (!email) {
+      router.push('/forgot-password');
+    }
+  }, [email, router]);
 
   // Timer for resend functionality
   useEffect(() => {
@@ -28,33 +36,24 @@ export default function VerifyCodePage() {
     return () => clearTimeout(timer);
   }, [resendTimer]);
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCode(e.target.value);
-    setError('');
-  };
-
   const handleVerify = async () => {
     setError('');
     setLoading(true);
 
     try {
-      // Check if code is entered
       if (!code) {
         setError('Please enter the verification code');
         setLoading(false);
         return;
       }
 
-      // Call API
-      const response = await authApi.verifyCode(code);
+      const response = await authApi.verifyCode(email, code);
 
-      if (response.success) {
-        // Navigate to set password page on success
-        router.push('/set-password');
+      if (response.success && response.data?.reset_token) {
+        router.push(`/set-password?token=${encodeURIComponent(response.data.reset_token)}`);
       } else {
         setError(response.error || 'Invalid verification code. Please try again.');
       }
-
     } catch (err) {
       console.error('Verification error:', err);
       setError('Invalid verification code. Please try again.');
@@ -70,12 +69,11 @@ export default function VerifyCodePage() {
     setError('');
 
     try {
-      const response = await authApi.resendCode();
+      const response = await authApi.resendCode(email);
 
       if (!response.success) {
         setError(response.error || 'Failed to resend code. Please try again.');
       }
-
     } catch (err) {
       console.error('Resend error:', err);
       setError('Failed to resend code. Please try again.');
@@ -153,11 +151,16 @@ export default function VerifyCodePage() {
                 Enter Code
               </label>
               <input
-                type="password"
-                placeholder="**************"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Enter 6-digit code"
                 value={code}
-                onChange={handleCodeChange}
-                className="auth-input h-12 px-4"
+                onChange={(e) => {
+                  setCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                  setError('');
+                }}
+                className="auth-input h-12 px-4 tracking-[4px] text-center text-lg"
                 required
               />
             </div>
@@ -195,7 +198,7 @@ export default function VerifyCodePage() {
             <button
               type="button"
               onClick={handleVerify}
-              disabled={loading || !code}
+              disabled={loading || code.length < 6}
               className={`w-[70%] h-12 bg-blue-800 rounded-lg border-none text-white text-base font-medium cursor-pointer transition-colors ${loading || !code ? 'bg-gray-400 cursor-not-allowed' : 'hover:bg-blue-900'
                 } ${loading ? 'opacity-50' : ''}`}
             >

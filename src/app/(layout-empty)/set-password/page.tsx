@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authApi, storage } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { authApi } from '@/lib/api';
 import Image from 'next/image';
 
 
@@ -10,15 +10,24 @@ export default function SetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') || '';
+
+  useEffect(() => {
+    if (!token) {
+      router.push('/forgot-password');
+    }
+  }, [token, router]);
 
   const handleSetPassword = async () => {
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
-      // Validation
       if (!password || !confirmPassword) {
         setError('Please fill in all password fields');
         setLoading(false);
@@ -37,23 +46,16 @@ export default function SetPasswordPage() {
         return;
       }
 
-      // Call API
-      const response = await authApi.resetPassword('', password);
+      const response = await authApi.resetPassword(token, password);
 
       if (response.success) {
-        // Get stored user to check role (in case they're completing password setup)
-        const user = storage.getUser();
-        if (user && (user.role === 'admin' || user.role === 'boat_owner')) {
-          // Admin and boat owners go to dashboard
-          router.push('/dashboard');
-        } else {
-          // Regular users go to home page
-          router.push('/');
-        }
+        setSuccess('Password reset successfully! Redirecting to login...');
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
       } else {
         setError(response.error || 'Failed to set password. Please try again.');
       }
-      
     } catch (err) {
       console.error('Set password error:', err);
       setError('Failed to set password. Please try again.');
@@ -158,6 +160,13 @@ export default function SetPasswordPage() {
             {error && (
               <div className="auth-error-message text-center">
                 {error}
+              </div>
+            )}
+
+            {/* Success Message */}
+            {success && (
+              <div className="mb-4 p-3 bg-green-100 border border-green-300 rounded-lg text-green-700 text-sm">
+                {success}
               </div>
             )}
 
