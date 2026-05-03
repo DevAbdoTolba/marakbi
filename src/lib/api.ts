@@ -20,6 +20,7 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+  fieldErrors?: Record<string, string[]>;
 }
 
 // Authentication Types
@@ -693,7 +694,8 @@ async function apiRequest<T>(
 
       return {
         success: false,
-        error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`
+        error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`,
+        fieldErrors: data.errors || undefined,
       };
     }
 
