@@ -746,17 +746,6 @@ export default function BoatDetailsPage() {
                 </div>
                 <p className="text-gray-700 mb-4">{owner.bio || 'No bio available.'}</p>
                 <div className="space-y-2 mb-4">
-                  {owner.phone && (
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src="/icons/phone_in_talk_y.svg"
-                        alt="Phone"
-                        width={20}
-                        height={20}
-                      />
-                      <span className="text-sm">Phone: {owner.phone}</span>
-                    </div>
-                  )}
                   {owner.address && (
                     <div className="flex items-center gap-2">
                       <Image
