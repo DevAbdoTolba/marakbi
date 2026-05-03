@@ -108,7 +108,7 @@ const BoatCard = ({ boatId, imageUrl, name, category, price, location, guests, s
         {/* Boat Category */}
         {category && (
           <div className="text-center mb-1">
-            <span className="text-[#C5A44E] text-lg italic font-medium" style={{ fontFamily: 'SignPainter, Georgia, serif' }}>
+            <span className="text-[#C5A44E] text-lg italic font-medium" style={{ fontFamily: 'Poppins, sans-serif' }}>
               {category}
             </span>
           </div>
