@@ -3,7 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL } from "@/lib/api";
+import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAssignment } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
 import useBookingStore from "@/hooks/useBookingStore";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
@@ -605,7 +605,15 @@ export default function BoatDetailsPage() {
               <section>
                 <h2 className="text-2xl font-semibold mb-4 font-poppins">Available Services</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {boat.services.map((svc: { service_id: number; service: { id: number; name: string; description: string | null; icon_url: string | null; price_mode: string } | null; price: number | null; is_badge: boolean; badge_display_name: string | null }) => (
+                  {boat.services.map((svc: BoatServiceAssignment) => {
+                    const displayPrice = svc.price ?? svc.service?.default_price;
+                    const priceModeLabel =
+                      svc.service?.price_mode === 'per_person'
+                        ? 'Per Person'
+                        : svc.service?.price_mode === 'per_person_per_time'
+                          ? 'Per Person/Time'
+                          : 'Per Trip';
+                    return (
                     <div key={svc.service_id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 group/svc relative">
                       {/* Icon */}
                       <div className="w-10 h-10 bg-white rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-gray-200">
@@ -630,16 +638,17 @@ export default function BoatDetailsPage() {
                           <p className="text-xs text-gray-500 leading-relaxed">{svc.service.description}</p>
                         )}
                         <div className="flex items-center gap-2 mt-2">
-                          {(svc.price || svc.price === 0) && (
-                            <span className="text-xs font-medium text-[#0F3875]">{svc.price} EGP</span>
+                          {displayPrice != null && (
+                            <span className="text-xs font-medium text-[#0F3875]">{Number(displayPrice).toFixed(2)} EGP</span>
                           )}
                           <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
-                            {svc.service?.price_mode === 'per_trip' ? 'Per Trip' : svc.service?.price_mode === 'per_person' ? 'Per Person' : 'Per Person/Hour'}
+                            {priceModeLabel}
                           </span>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
