@@ -3,7 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAssignment, Boat } from "@/lib/api";
+import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAssignment, Boat, BoatReview, storage } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
 import useBookingStore from "@/hooks/useBookingStore";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
@@ -36,6 +36,14 @@ export default function BoatDetailsPage() {
   const [otherRecLoading, setOtherRecLoading] = useState(false);
   const [otherRecs, setOtherRecs] = useState<Boat[]>([]);
   const otherRecCache = useRef<Map<number, { boats: Boat[]; hasMore: boolean }>>(new Map());
+
+  // Paginated reviews
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewTotalPages, setReviewTotalPages] = useState(1);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [paginatedReviews, setPaginatedReviews] = useState<BoatReview[]>([]);
+  const reviewCacheRef = useRef<Map<number, BoatReview[]>>(new Map());
+  const [deletingReview, setDeletingReview] = useState(false);
 
   // Trip-based booking support
   const tripId = searchParams.get("trip_id");
@@ -123,12 +131,30 @@ export default function BoatDetailsPage() {
     setOtherRecLoading(false);
   }, [params.id]);
 
+  // Fetch paginated reviews
+  const fetchReviews = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+    const cached = reviewCacheRef.current.get(page);
+    if (cached) { setPaginatedReviews(cached); setReviewPage(page); return; }
+    setReviewsLoading(true);
+    const res = await clientApi.getBoatReviewsPaginated(boatId, page, 5);
+    if (res.success && res.data) {
+      reviewCacheRef.current.set(page, res.data.reviews);
+      setPaginatedReviews(res.data.reviews);
+      setReviewTotalPages(res.data.pagination.pages);
+      setReviewPage(page);
+    }
+    setReviewsLoading(false);
+  }, [params.id]);
+
   useEffect(() => {
     if (params.id) {
       sameRecCache.current.clear(); fetchSameRecs(1);
       otherRecCache.current.clear(); fetchOtherRecs(1);
+      reviewCacheRef.current.clear(); fetchReviews(1);
     }
-  }, [params.id, fetchSameRecs, fetchOtherRecs]);
+  }, [params.id, fetchSameRecs, fetchOtherRecs, fetchReviews]);
 
   // Handle keyboard navigation for image modal
   useEffect(() => {
@@ -1048,47 +1074,120 @@ export default function BoatDetailsPage() {
                 </div>
               </div>
 
-              {/* Reviews List */}
-              <div className="space-y-6">
-                {reviews.length === 0 ? (
+              {/* Write a Review CTA + User's own review */}
+              {storage.getUser() && !boatData.user_review && (
+                <div className="mb-6">
+                  <button
+                    onClick={() => router.push(`/write-review/${boat.id}`)}
+                    className="px-6 py-2.5 bg-[#0C4A8C] text-white rounded-lg hover:bg-[#0A3D7A] transition-colors"
+                  >
+                    Write a Review
+                  </button>
+                </div>
+              )}
+
+              {boatData.user_review && (
+                <div className="border border-[#093b77]/20 bg-blue-50/30 rounded-lg p-4 sm:p-6 mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-[#093b77]">Your Review</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => router.push(`/write-review/${boat.id}?edit=${boatData.user_review!.id}`)}
+                        className="text-xs px-3 py-1 border border-[#093b77] text-[#093b77] rounded hover:bg-[#093b77] hover:text-white transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Are you sure you want to delete your review?')) return;
+                          setDeletingReview(true);
+                          const res = await clientApi.deleteOwnBoatReview(boat.id, boatData.user_review!.id);
+                          if (res.success) {
+                            const refreshed = await clientApi.getBoatById(boat.id);
+                            if (refreshed.success && refreshed.data) setBoatData(refreshed.data);
+                            reviewCacheRef.current.clear();
+                            fetchReviews(1);
+                          }
+                          setDeletingReview(false);
+                        }}
+                        disabled={deletingReview}
+                        className="text-xs px-3 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition disabled:opacity-50"
+                      >
+                        {deletingReview ? '...' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Image key={i} src="/icons/Star Icon.svg" alt="Star" width={16} height={16} className={i < boatData.user_review!.rating ? 'opacity-100' : 'opacity-30'} />
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {new Date(boatData.user_review.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-gray-700">{boatData.user_review.comment}</p>
+                </div>
+              )}
+
+              {/* Reviews List (paginated) */}
+              <div className={`space-y-6 ${reviewsLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                {paginatedReviews.length === 0 && !boatData.user_review ? (
                   <p className="text-gray-500 text-center py-8">No reviews yet.</p>
                 ) : (
-                  (showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
-                    <div key={review.id} className="border-b border-gray-200 pb-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-semibold">
-                          {review.username.charAt(0).toUpperCase()}
+                  paginatedReviews.map((review) => {
+                    const currentUser = storage.getUser();
+                    if (currentUser && review.user_id === currentUser.id) return null;
+                    return (
+                      <div key={review.id} className="border-b border-gray-200 pb-6">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-semibold">
+                            {review.username.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold">{review.username}</p>
+                            <p className="text-sm text-gray-600">{new Date(review.created_at).toLocaleDateString()}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold">{review.username}</p>
-                          <p className="text-sm text-gray-600">{new Date(review.created_at).toLocaleDateString()}</p>
+                        <div className="flex items-center mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Image
+                              key={i}
+                              src="/icons/Star Icon.svg"
+                              alt="Star"
+                              width={16}
+                              height={16}
+                              className={`${i < review.rating ? "opacity-100" : "opacity-30"}`}
+                            />
+                          ))}
                         </div>
+                        <p className="text-gray-700 mb-3">{review.comment}</p>
                       </div>
-                      <div className="flex items-center mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Image
-                            key={i}
-                            src="/icons/Star Icon.svg"
-                            alt="Star"
-                            width={16}
-                            height={16}
-                            className={`${i < review.rating ? "opacity-100" : "opacity-30"}`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-gray-700 mb-3">{review.comment}</p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
-              {reviews.length > 3 && (
-                <button
-                  onClick={() => setShowAllReviews(!showAllReviews)}
-                  className="mt-6 px-8 py-3 border-2 border-[#0C4A8C] text-[#0C4A8C] rounded-lg hover:bg-[#0C4A8C] hover:text-white transition-colors"
-                >
-                  {showAllReviews ? "Show Less" : "Show All Comments"}
-                </button>
+              {/* Review Pagination */}
+              {reviewTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-6">
+                  <button
+                    onClick={() => fetchReviews(reviewPage - 1)}
+                    disabled={reviewPage <= 1 || reviewsLoading}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <span className="text-sm text-gray-500">Page {reviewPage} of {reviewTotalPages}</span>
+                  <button
+                    onClick={() => fetchReviews(reviewPage + 1)}
+                    disabled={reviewPage >= reviewTotalPages || reviewsLoading}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </div>
               )}
             </section>
           </div>

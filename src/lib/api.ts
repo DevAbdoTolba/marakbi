@@ -867,6 +867,16 @@ export const clientApi = {
     return apiRequest<{ boat_id: number; type: string; page: number; per_page: number; total: number; has_more: boolean; boats: Boat[] }>(`/client/boats/${boatId}/recommendations?type=${type}&page=${page}&per_page=${perPage}`);
   },
 
+  getBoatReviewsPaginated: async (boatId: number, page = 1, perPage = 5): Promise<ApiResponse<{ boat_id: number; total_reviews: number; average_rating: number; reviews: BoatReview[]; pagination: { total: number; page: number; per_page: number; pages: number } }>> => {
+    return apiRequest(`/client/boats/${boatId}/reviews?page=${page}&per_page=${perPage}`);
+  },
+
+  deleteOwnBoatReview: async (boatId: number, reviewId: number): Promise<ApiResponse<{ message: string }>> => {
+    return apiRequest<{ message: string }>(`/client/boats/${boatId}/reviews/${reviewId}`, {
+      method: 'DELETE'
+    });
+  },
+
   createBoatReview: async (boatId: number, reviewData: ReviewData): Promise<ApiResponse<ReviewResponse>> => {
     return apiRequest<ReviewResponse>(`/client/boats/${boatId}/reviews`, {
       method: 'POST',
