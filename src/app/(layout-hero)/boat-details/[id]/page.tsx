@@ -7,7 +7,7 @@ import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAs
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
 import useBookingStore from "@/hooks/useBookingStore";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
-import { FiClock, FiMapPin } from "react-icons/fi";
+import { FiClock, FiMapPin, FiPlay } from "react-icons/fi";
 
 export default function BoatDetailsPage() {
   const params = useParams();

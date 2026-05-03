@@ -137,6 +137,7 @@ export interface AddBoatData {
   cities: number[];
   trips?: number[];
   boat_images?: File[];
+  video_urls?: string[];
   primary_new_image_index?: number;
   services?: BoatServiceAssignment[];
   facilities?: number[];
@@ -157,6 +158,7 @@ export interface EditBoatData {
   cities?: number[];
   trips?: number[];
   boat_images?: File[];
+  video_urls?: string[];
   removed_images?: string[];
   removed_videos?: string[];
   primary_image_url?: string;

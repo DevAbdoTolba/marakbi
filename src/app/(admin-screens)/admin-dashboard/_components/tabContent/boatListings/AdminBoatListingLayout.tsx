@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminReview, BoatServiceAssignment, BoatServiceDef, BoatFacilityDef } from "@/lib/api";
-import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight, FiHelpCircle } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight, FiHelpCircle, FiPlay } from "react-icons/fi";
 import Image from "next/image";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
@@ -2226,7 +2226,9 @@ export default function AdminBoatListingLayout() {
                       + Choose Photos
                     </button>
                     <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageSelect} className="hidden" />
-                      {/* Photo Gallery */}
+                  </div>
+
+                  {/* Photo Gallery */}
                   <div className="mb-8">
                     <p className="font-bold text-gray-900 mb-4 flex justify-between items-center">
                       Your Photos ({imagePreviews.length})
