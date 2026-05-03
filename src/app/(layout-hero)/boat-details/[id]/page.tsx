@@ -785,6 +785,86 @@ export default function BoatDetailsPage() {
               </div>
             </section>
 
+            {/* Good to Know */}
+            <section>
+              <h2 className="text-2xl font-semibold mb-4 font-poppins">Good to Know</h2>
+              <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">Please arrive at the departure point at least 15 minutes before the scheduled time.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">Life jackets and safety equipment are provided on board for all guests.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">Children under 12 must be accompanied by an adult at all times.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">The trip may be rescheduled due to unfavorable weather conditions for your safety.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">Any damage to the boat or equipment during the rental period is the responsibility of the renter.</p>
+                </div>
+              </div>
+            </section>
+
+            {/* Withdrawal and Cancellation Policy */}
+            <section>
+              <h2 className="text-2xl font-semibold mb-4 font-poppins">Withdrawal and Cancellation Policy</h2>
+              <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-gray-900 font-medium text-sm">Free cancellation up to 48 hours before the trip</p>
+                    <p className="text-gray-500 text-xs mt-1">Full refund will be issued to your original payment method.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-gray-900 font-medium text-sm">Cancellation within 24–48 hours</p>
+                    <p className="text-gray-500 text-xs mt-1">50% of the total amount will be refunded.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-gray-900 font-medium text-sm">Cancellation within less than 24 hours</p>
+                    <p className="text-gray-500 text-xs mt-1">No refund will be issued for last-minute cancellations.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-gray-900 font-medium text-sm">No-show policy</p>
+                    <p className="text-gray-500 text-xs mt-1">If you do not show up for the trip without prior notice, no refund will be provided.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* Customer reviews */}
             <section>
               <h2 className="text-2xl font-semibold mb-6 font-poppins">Customer Reviews</h2>

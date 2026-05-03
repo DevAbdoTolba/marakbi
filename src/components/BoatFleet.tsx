@@ -106,6 +106,7 @@ const BoatFleet = () => {
                   boatId={boat.id}
                   imageUrl={boat.images?.[0] || '/images/Rectangle 3463853.webp'}
                   name={boat.name || 'Boat'}
+                  category={boat.categories?.[0]}
                   price={`${displayPrice}`}
                   location={boat.cities?.[0] || 'Aswan - Egypt'}
                   guests={boat.max_seats || 4}
