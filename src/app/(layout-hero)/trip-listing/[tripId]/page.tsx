@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
+
+export const dynamic = 'force-dynamic';
 import Image from "next/image";
 import { clientApi, Trip, Boat, BASE_URL } from "@/lib/api";
 

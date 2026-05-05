@@ -1,6 +1,8 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
+
+export const dynamic = 'force-dynamic';
 import { Suspense } from "react";
 // import type { Metadata } from "next";
 import Link from "next/link";

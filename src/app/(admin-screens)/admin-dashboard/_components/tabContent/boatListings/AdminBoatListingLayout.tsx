@@ -617,6 +617,7 @@ export default function AdminBoatListingLayout() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         services: (data as any).services_full || data.services || [],
         facilities: data.facilities || [],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         video_urls: (data as any).video_urls || [],
         removed_videos: [],
       });
