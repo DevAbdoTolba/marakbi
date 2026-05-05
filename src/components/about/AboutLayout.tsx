@@ -181,8 +181,8 @@ export default function AboutLayout() {
               </h3>
               <p className="text-gray-600 leading-relaxed font-poppins">
                 DAFFA was born from a simple idea: making Egypt&apos;s
-                beautiful waterways accessible to everyone. Our founders,
-                experienced sailors and travel enthusiasts, noticed that booking
+                beautiful waterways accessible to everyone. Our founder,
+                an experienced sailor and travel enthusiast, noticed that booking
                 a boat trip was unnecessarily complicated and expensive.
               </p>
             </div>
@@ -356,75 +356,7 @@ export default function AboutLayout() {
         </div>
       </div>
 
-      {/* Team Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black mb-4 font-poppins">
-            Meet Our Team
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins">
-            The passionate people behind DAFFA, dedicated to making your water
-            adventures unforgettable.
-          </p>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-12">
-          <div className="text-center">
-            <div className="w-48 h-48 bg-gray-200 rounded-full mx-auto mb-6 flex items-center justify-center">
-              <span className="text-4xl font-bold text-gray-500 font-poppins">
-                AH
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-black mb-2 font-poppins">
-              Ahmed Hassan
-            </h3>
-            <p className="text-[#0C4A8C] font-semibold mb-4 font-poppins">
-              Founder & CEO
-            </p>
-            <p className="text-gray-600 leading-relaxed font-poppins">
-              Former naval officer with 15 years of experience on Egypt&apos;s
-              waterways. Passionate about making boat travel accessible to
-              everyone.
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-48 h-48 bg-gray-200 rounded-full mx-auto mb-6 flex items-center justify-center">
-              <span className="text-4xl font-bold text-gray-500 font-poppins">
-                SM
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-black mb-2 font-poppins">
-              Sarah Mohamed
-            </h3>
-            <p className="text-[#0C4A8C] font-semibold mb-4 font-poppins">
-              Head of Operations
-            </p>
-            <p className="text-gray-600 leading-relaxed font-poppins">
-              Tourism industry veteran with expertise in customer experience and
-              sustainable travel practices across Egypt.
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-48 h-48 bg-gray-200 rounded-full mx-auto mb-6 flex items-center justify-center">
-              <span className="text-4xl font-bold text-gray-500 font-poppins">
-                MK
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-black mb-2 font-poppins">
-              Mohamed Khalil
-            </h3>
-            <p className="text-[#0C4A8C] font-semibold mb-4 font-poppins">
-              Technology Director
-            </p>
-            <p className="text-gray-600 leading-relaxed font-poppins">
-              Tech innovator focused on creating seamless booking experiences
-              and connecting travelers with the perfect boat.
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* Call to Action Section */}
       <div className="bg-gradient-to-r from-[#0C4A8C] to-blue-600 py-20">

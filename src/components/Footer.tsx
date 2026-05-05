@@ -276,7 +276,7 @@ const Footer = () => {
               <Link href="https://www.linkedin.com/company/daffa" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
                 <Image src="/icons/Linkedin.svg" alt="LinkedIn" width={24} height={24} className="w-full h-full" />
               </Link>
-              <Link href="https://www.instagram.com/marakbi_app/" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
+              <Link href="https://www.instagram.com/daffa_app/" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">
                 <Image src="/icons/instgram.svg" alt="Instagram" width={24} height={24} className="w-full h-full" />
               </Link>
               <Link href="https://www.youtube.com/@daffa" target="_blank" rel="noopener noreferrer" className="w-6 h-6 relative overflow-hidden hover:opacity-80 transition-opacity">

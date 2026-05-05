@@ -470,7 +470,7 @@ export default function ContactPage() {
                     />
                   </Link>
                   <Link
-                    href="https://www.instagram.com/marakbi_app/"
+                    href="https://www.instagram.com/daffa_app/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 bg-white border border-[rgba(0,0,0,0.1)] rounded-lg flex items-center justify-center hover:opacity-80 transition-opacity"

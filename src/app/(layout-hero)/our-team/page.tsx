@@ -382,7 +382,7 @@ export default function OurTeamPage() {
               Meet the Founder
             </h2>
             <p className="text-[27px] font-normal text-black font-poppins max-w-4xl mx-auto leading-[62px] break-words">
-              Meet the passionate minds and dedicated hands behind Daffa
+              Meet the passionate mind and dedicated hand behind Daffa
             </p>
           </div>
 
