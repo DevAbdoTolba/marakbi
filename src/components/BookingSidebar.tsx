@@ -47,6 +47,7 @@ export interface BookingData {
     boat_id: number;
     boat_name: string;
     guest_count: number;
+    children_count?: number;
     rental_type: "hourly" | "daily" | "trip";
     hours?: number;
     start_date: string;
@@ -100,6 +101,8 @@ export default function BookingSidebar({
         const s = getStoredBooking();
         return s ? s.guest_count : initialGuestCount;
     });
+    const [includeChildren, setIncludeChildren] = useState(false);
+    const [childrenCount, setChildrenCount] = useState(0);
     // Selected optional services
     const [selectedServiceIds, setSelectedServiceIds] = useState<Set<number>>(() => {
         const s = getStoredBooking();
@@ -762,6 +765,7 @@ export default function BookingSidebar({
             boat_id: boatId,
             boat_name: boatName,
             guest_count: guestCount,
+            children_count: includeChildren && childrenCount > 0 ? childrenCount : undefined,
             rental_type: rentalType === "hour" ? "hourly" : rentalType === "day" ? "daily" : "trip",
             hours: (rentalType === "hour" || rentalType === "trip") ? calculatedHours : undefined,
             start_date: startDateIso,
@@ -882,6 +886,14 @@ export default function BookingSidebar({
                             Per Day
                         </button>
                     )}
+                    <button
+                        onClick={() => {
+                            toast('Custom request feature coming soon!', { icon: '📝' });
+                        }}
+                        className="px-4 py-2 rounded-lg text-sm font-normal font-poppins border border-zinc-400 text-zinc-500 hover:bg-gray-50 transition-colors"
+                    >
+                        Custom Request
+                    </button>
                 </div>
             ) : (
                 <div className="mb-4">
@@ -1113,6 +1125,58 @@ export default function BookingSidebar({
                     </button>                </div>
             </div>
 
+            {/* Children (0-12) */}
+            <div className="mb-6">
+                <label
+                    className="flex items-center gap-2 cursor-pointer mb-3"
+                    onClick={() => {
+                        setIncludeChildren(!includeChildren);
+                        if (includeChildren) setChildrenCount(0);
+                        else setChildrenCount(1);
+                    }}
+                >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        includeChildren ? 'bg-[#0F3875] border-[#0F3875]' : 'border-gray-300'
+                    }`}>
+                        {includeChildren && (
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                            </svg>
+                        )}
+                    </div>
+                    <span className="text-stone-700 text-sm font-normal font-poppins">Children (0–12)</span>
+                </label>
+                {includeChildren && (
+                    <>
+                        <label className="flex items-center gap-2 text-stone-700 text-sm font-normal font-poppins mb-3">
+                            <span className="text-zinc-500">
+                                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7.5 7.8125C9.39844 7.8125 10.9375 6.27344 10.9375 4.375C10.9375 2.47656 9.39844 0.9375 7.5 0.9375C5.60156 0.9375 4.0625 2.47656 4.0625 4.375C4.0625 6.27344 5.60156 7.8125 7.5 7.8125ZM9.80469 8.75H5.19531C2.96484 8.75 1.17188 10.543 1.17188 12.7734V13.4375C1.17188 13.7852 1.45312 14.0625 1.80078 14.0625H13.1992C13.5469 14.0625 13.8281 13.7852 13.8281 13.4375V12.7734C13.8281 10.543 12.0352 8.75 9.80469 8.75Z" fill="#757575" />
+                                </svg>
+                            </span>
+                            Number of Children
+                        </label>
+                        <div className="flex items-center justify-between h-11 px-4 py-2.5 bg-white rounded border border-neutral-200">
+                            <button
+                                onClick={() => setChildrenCount(Math.max(1, childrenCount - 1))}
+                                className="text-stone-900 text-xl font-medium"
+                            >
+                                −
+                            </button>
+                            <span className="text-stone-900 text-sm font-medium font-poppins">
+                                {childrenCount}
+                            </span>
+                            <button
+                                onClick={() => setChildrenCount(childrenCount + 1)}
+                                className="text-stone-900 text-xl font-medium"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
+
             {/* Optional Services */}
             {boatServices.length > 0 && (
                 <div className="mb-6">
@@ -1265,10 +1329,20 @@ export default function BookingSidebar({
 
             <button
                 onClick={handleRequestToBook}
-                className="w-full h-11 px-6 py-2.5 bg-[#0C4A8C] rounded-lg flex justify-center items-center gap-2.5 text-white text-base font-medium font-poppins hover:bg-[#0A3D7A] transition-colors"
+                className="w-full h-11 px-6 py-2.5 bg-[#0C4A8C] rounded-lg flex justify-center items-center gap-2.5 text-white text-base font-medium font-poppins hover:bg-[#0A3D7A] transition-colors mb-4"
             >
-                Continue
+                Request to Book
             </button>
+
+            {/* Disclaimer */}
+            <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-zinc-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-zinc-400 text-xs font-poppins leading-relaxed">
+                    You won&apos;t be charged yet. The host will review your request.
+                </p>
+            </div>
         </div>
     );
 }

@@ -2,12 +2,12 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL } from "@/lib/api";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { clientApi, BoatDetails as ApiBoatDetails, Trip, BASE_URL, BoatServiceAssignment, Boat, BoatReview, storage } from "@/lib/api";
 import BookingSidebar, { BookingData } from "@/components/BookingSidebar";
 import useBookingStore from "@/hooks/useBookingStore";
 import { normalizeImageUrl, normalizeImageUrls } from "@/lib/imageUtils";
-import { FiClock, FiMapPin } from "react-icons/fi";
+import { FiClock, FiMapPin, FiPlay } from "react-icons/fi";
 
 export default function BoatDetailsPage() {
   const params = useParams();
@@ -22,6 +22,28 @@ export default function BoatDetailsPage() {
   const [mobileImageIndex, setMobileImageIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
+
+  // Same operator recommendations
+  const [sameRecPage, setSameRecPage] = useState(1);
+  const [sameRecHasMore, setSameRecHasMore] = useState(false);
+  const [sameRecLoading, setSameRecLoading] = useState(false);
+  const [sameRecs, setSameRecs] = useState<Boat[]>([]);
+  const sameRecCache = useRef<Map<number, { boats: Boat[]; hasMore: boolean }>>(new Map());
+
+  // Other operator recommendations
+  const [otherRecPage, setOtherRecPage] = useState(1);
+  const [otherRecHasMore, setOtherRecHasMore] = useState(false);
+  const [otherRecLoading, setOtherRecLoading] = useState(false);
+  const [otherRecs, setOtherRecs] = useState<Boat[]>([]);
+  const otherRecCache = useRef<Map<number, { boats: Boat[]; hasMore: boolean }>>(new Map());
+
+  // Paginated reviews
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewTotalPages, setReviewTotalPages] = useState(1);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [paginatedReviews, setPaginatedReviews] = useState<BoatReview[]>([]);
+  const reviewCacheRef = useRef<Map<number, BoatReview[]>>(new Map());
+  const [deletingReview, setDeletingReview] = useState(false);
 
   // Trip-based booking support
   const tripId = searchParams.get("trip_id");
@@ -78,6 +100,61 @@ export default function BoatDetailsPage() {
       fetchBoatDetails();
     }
   }, [params.id, tripId]);
+
+  // Fetch same operator recommendations
+  const fetchSameRecs = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+    const cached = sameRecCache.current.get(page);
+    if (cached) { setSameRecs(cached.boats); setSameRecHasMore(cached.hasMore); setSameRecPage(page); return; }
+    setSameRecLoading(true);
+    const res = await clientApi.getBoatRecommendations(boatId, 'same', page, 3);
+    if (res.success && res.data) {
+      sameRecCache.current.set(page, { boats: res.data.boats, hasMore: res.data.has_more });
+      setSameRecs(res.data.boats); setSameRecHasMore(res.data.has_more); setSameRecPage(page);
+    }
+    setSameRecLoading(false);
+  }, [params.id]);
+
+  // Fetch other operator recommendations
+  const fetchOtherRecs = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+    const cached = otherRecCache.current.get(page);
+    if (cached) { setOtherRecs(cached.boats); setOtherRecHasMore(cached.hasMore); setOtherRecPage(page); return; }
+    setOtherRecLoading(true);
+    const res = await clientApi.getBoatRecommendations(boatId, 'other', page, 3);
+    if (res.success && res.data) {
+      otherRecCache.current.set(page, { boats: res.data.boats, hasMore: res.data.has_more });
+      setOtherRecs(res.data.boats); setOtherRecHasMore(res.data.has_more); setOtherRecPage(page);
+    }
+    setOtherRecLoading(false);
+  }, [params.id]);
+
+  // Fetch paginated reviews
+  const fetchReviews = useCallback(async (page: number) => {
+    const boatId = parseInt(params.id as string);
+    if (!boatId) return;
+    const cached = reviewCacheRef.current.get(page);
+    if (cached) { setPaginatedReviews(cached); setReviewPage(page); return; }
+    setReviewsLoading(true);
+    const res = await clientApi.getBoatReviewsPaginated(boatId, page, 5);
+    if (res.success && res.data) {
+      reviewCacheRef.current.set(page, res.data.reviews);
+      setPaginatedReviews(res.data.reviews);
+      setReviewTotalPages(res.data.pagination.pages);
+      setReviewPage(page);
+    }
+    setReviewsLoading(false);
+  }, [params.id]);
+
+  useEffect(() => {
+    if (params.id) {
+      sameRecCache.current.clear(); fetchSameRecs(1);
+      otherRecCache.current.clear(); fetchOtherRecs(1);
+      reviewCacheRef.current.clear(); fetchReviews(1);
+    }
+  }, [params.id, fetchSameRecs, fetchOtherRecs, fetchReviews]);
 
   // Handle keyboard navigation for image modal
   useEffect(() => {
@@ -605,7 +682,15 @@ export default function BoatDetailsPage() {
               <section>
                 <h2 className="text-2xl font-semibold mb-4 font-poppins">Available Services</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {boat.services.map((svc: { service_id: number; service: { id: number; name: string; description: string | null; icon_url: string | null; price_mode: string } | null; price: number | null; is_badge: boolean; badge_display_name: string | null }) => (
+                  {boat.services.map((svc: BoatServiceAssignment) => {
+                    const displayPrice = svc.price ?? svc.service?.default_price;
+                    const priceModeLabel =
+                      svc.service?.price_mode === 'per_person'
+                        ? 'Per Person'
+                        : svc.service?.price_mode === 'per_person_per_time'
+                          ? 'Per Person/Time'
+                          : 'Per Trip';
+                    return (
                     <div key={svc.service_id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 group/svc relative">
                       {/* Icon */}
                       <div className="w-10 h-10 bg-white rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-gray-200">
@@ -630,16 +715,17 @@ export default function BoatDetailsPage() {
                           <p className="text-xs text-gray-500 leading-relaxed">{svc.service.description}</p>
                         )}
                         <div className="flex items-center gap-2 mt-2">
-                          {(svc.price || svc.price === 0) && (
-                            <span className="text-xs font-medium text-[#0F3875]">{svc.price} EGP</span>
+                          {displayPrice != null && (
+                            <span className="text-xs font-medium text-[#0F3875]">{Number(displayPrice).toFixed(2)} EGP</span>
                           )}
                           <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
-                            {svc.service?.price_mode === 'per_trip' ? 'Per Trip' : svc.service?.price_mode === 'per_person' ? 'Per Person' : 'Per Person/Hour'}
+                            {priceModeLabel}
                           </span>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -737,17 +823,6 @@ export default function BoatDetailsPage() {
                 </div>
                 <p className="text-gray-700 mb-4">{owner.bio || 'No bio available.'}</p>
                 <div className="space-y-2 mb-4">
-                  {owner.phone && (
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src="/icons/phone_in_talk_y.svg"
-                        alt="Phone"
-                        width={20}
-                        height={20}
-                      />
-                      <span className="text-sm">Phone: {owner.phone}</span>
-                    </div>
-                  )}
                   {owner.address && (
                     <div className="flex items-center gap-2">
                       <Image
@@ -784,6 +859,172 @@ export default function BoatDetailsPage() {
                 )}
               </div>
             </section>
+
+            {/* Good to Know */}
+            <section>
+              <h2 className="text-2xl font-semibold mb-4 font-poppins">Good to Know</h2>
+              <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">Please arrive at the departure point at least 15 minutes before the scheduled time.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">Life jackets and safety equipment are provided on board for all guests.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">Children under 12 must be accompanied by an adult at all times.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">The trip may be rescheduled due to unfavorable weather conditions for your safety.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#0C4A8C]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-[#0C4A8C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">Any damage to the boat or equipment during the rental period is the responsibility of the renter.</p>
+                </div>
+              </div>
+            </section>
+
+            {/* Withdrawal and Cancellation Policy */}
+            <section>
+              <h2 className="text-2xl font-semibold mb-4 font-poppins">Withdrawal and Cancellation Policy</h2>
+              <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-gray-900 font-medium text-sm">Free cancellation up to 48 hours before the trip</p>
+                    <p className="text-gray-500 text-xs mt-1">Full refund will be issued to your original payment method.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-gray-900 font-medium text-sm">Cancellation within 24–48 hours</p>
+                    <p className="text-gray-500 text-xs mt-1">50% of the total amount will be refunded.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-gray-900 font-medium text-sm">Cancellation within less than 24 hours</p>
+                    <p className="text-gray-500 text-xs mt-1">No refund will be issued for last-minute cancellations.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-gray-900 font-medium text-sm">No-show policy</p>
+                    <p className="text-gray-500 text-xs mt-1">If you do not show up for the trip without prior notice, no refund will be provided.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Recommendations - Same Operator */}
+            {(sameRecs.length > 0 || sameRecPage > 1) && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold font-poppins text-[#0a0a0a]">From the same operator</h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => fetchSameRecs(sameRecPage - 1)} disabled={sameRecPage <= 1 || sameRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <button onClick={() => fetchSameRecs(sameRecPage + 1)} disabled={!sameRecHasMore || sameRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${sameRecLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                  {sameRecs.map((rec) => (
+                    <button key={rec.id} onClick={() => router.push(`/boat-details/${rec.id}`)}
+                      className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition">
+                      <div className="relative h-36 sm:h-40">
+                        {rec.images?.[0] ? <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" /> : <div className="w-full h-full bg-gray-100" />}
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
+                          <div className="flex items-center gap-1">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Image key={i} src="/icons/Star Icon.svg" alt="Star" width={12} height={12} className={i < Math.round(rec.average_rating || 0) ? 'opacity-100' : 'opacity-30'} />
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500">({rec.total_reviews})</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Recommendations - Other Operators */}
+            {(otherRecs.length > 0 || otherRecPage > 1) && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold font-poppins text-[#0a0a0a]">From other operators</h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => fetchOtherRecs(otherRecPage - 1)} disabled={otherRecPage <= 1 || otherRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <button onClick={() => fetchOtherRecs(otherRecPage + 1)} disabled={!otherRecHasMore || otherRecLoading}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${otherRecLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                  {otherRecs.map((rec) => (
+                    <button key={rec.id} onClick={() => router.push(`/boat-details/${rec.id}`)}
+                      className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition">
+                      <div className="relative h-36 sm:h-40">
+                        {rec.images?.[0] ? <Image src={normalizeImageUrl(rec.images[0])} alt={rec.name} fill className="object-cover" sizes="300px" /> : <div className="w-full h-full bg-gray-100" />}
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <p className="font-semibold text-sm sm:text-base text-black truncate">{rec.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm text-[#093b77] font-semibold">{rec.price_per_hour ? `${rec.price_per_hour} EGP/hr` : ''}</span>
+                          <div className="flex items-center gap-1">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Image key={i} src="/icons/Star Icon.svg" alt="Star" width={12} height={12} className={i < Math.round(rec.average_rating || 0) ? 'opacity-100' : 'opacity-30'} />
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500">({rec.total_reviews})</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Customer reviews */}
             <section>
@@ -833,47 +1074,120 @@ export default function BoatDetailsPage() {
                 </div>
               </div>
 
-              {/* Reviews List */}
-              <div className="space-y-6">
-                {reviews.length === 0 ? (
+              {/* Write a Review CTA + User's own review */}
+              {storage.getUser() && !boatData.user_review && (
+                <div className="mb-6">
+                  <button
+                    onClick={() => router.push(`/write-review/${boat.id}`)}
+                    className="px-6 py-2.5 bg-[#0C4A8C] text-white rounded-lg hover:bg-[#0A3D7A] transition-colors"
+                  >
+                    Write a Review
+                  </button>
+                </div>
+              )}
+
+              {boatData.user_review && (
+                <div className="border border-[#093b77]/20 bg-blue-50/30 rounded-lg p-4 sm:p-6 mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-[#093b77]">Your Review</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => router.push(`/write-review/${boat.id}?edit=${boatData.user_review!.id}`)}
+                        className="text-xs px-3 py-1 border border-[#093b77] text-[#093b77] rounded hover:bg-[#093b77] hover:text-white transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Are you sure you want to delete your review?')) return;
+                          setDeletingReview(true);
+                          const res = await clientApi.deleteOwnBoatReview(boat.id, boatData.user_review!.id);
+                          if (res.success) {
+                            const refreshed = await clientApi.getBoatById(boat.id);
+                            if (refreshed.success && refreshed.data) setBoatData(refreshed.data);
+                            reviewCacheRef.current.clear();
+                            fetchReviews(1);
+                          }
+                          setDeletingReview(false);
+                        }}
+                        disabled={deletingReview}
+                        className="text-xs px-3 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition disabled:opacity-50"
+                      >
+                        {deletingReview ? '...' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Image key={i} src="/icons/Star Icon.svg" alt="Star" width={16} height={16} className={i < boatData.user_review!.rating ? 'opacity-100' : 'opacity-30'} />
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {new Date(boatData.user_review.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-gray-700">{boatData.user_review.comment}</p>
+                </div>
+              )}
+
+              {/* Reviews List (paginated) */}
+              <div className={`space-y-6 ${reviewsLoading ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
+                {paginatedReviews.length === 0 && !boatData.user_review ? (
                   <p className="text-gray-500 text-center py-8">No reviews yet.</p>
                 ) : (
-                  (showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
-                    <div key={review.id} className="border-b border-gray-200 pb-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-semibold">
-                          {review.username.charAt(0).toUpperCase()}
+                  paginatedReviews.map((review) => {
+                    const currentUser = storage.getUser();
+                    if (currentUser && review.user_id === currentUser.id) return null;
+                    return (
+                      <div key={review.id} className="border-b border-gray-200 pb-6">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-semibold">
+                            {review.username.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold">{review.username}</p>
+                            <p className="text-sm text-gray-600">{new Date(review.created_at).toLocaleDateString()}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold">{review.username}</p>
-                          <p className="text-sm text-gray-600">{new Date(review.created_at).toLocaleDateString()}</p>
+                        <div className="flex items-center mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Image
+                              key={i}
+                              src="/icons/Star Icon.svg"
+                              alt="Star"
+                              width={16}
+                              height={16}
+                              className={`${i < review.rating ? "opacity-100" : "opacity-30"}`}
+                            />
+                          ))}
                         </div>
+                        <p className="text-gray-700 mb-3">{review.comment}</p>
                       </div>
-                      <div className="flex items-center mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Image
-                            key={i}
-                            src="/icons/Star Icon.svg"
-                            alt="Star"
-                            width={16}
-                            height={16}
-                            className={`${i < review.rating ? "opacity-100" : "opacity-30"}`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-gray-700 mb-3">{review.comment}</p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
-              {reviews.length > 3 && (
-                <button
-                  onClick={() => setShowAllReviews(!showAllReviews)}
-                  className="mt-6 px-8 py-3 border-2 border-[#0C4A8C] text-[#0C4A8C] rounded-lg hover:bg-[#0C4A8C] hover:text-white transition-colors"
-                >
-                  {showAllReviews ? "Show Less" : "Show All Comments"}
-                </button>
+              {/* Review Pagination */}
+              {reviewTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-6">
+                  <button
+                    onClick={() => fetchReviews(reviewPage - 1)}
+                    disabled={reviewPage <= 1 || reviewsLoading}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <span className="text-sm text-gray-500">Page {reviewPage} of {reviewTotalPages}</span>
+                  <button
+                    onClick={() => fetchReviews(reviewPage + 1)}
+                    disabled={reviewPage >= reviewTotalPages || reviewsLoading}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 disabled:opacity-30 hover:bg-gray-100 transition"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </div>
               )}
             </section>
           </div>

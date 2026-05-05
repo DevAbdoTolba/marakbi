@@ -20,6 +20,7 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+  fieldErrors?: Record<string, string[]>;
 }
 
 // Authentication Types
@@ -137,6 +138,7 @@ export interface AddBoatData {
   cities: number[];
   trips?: number[];
   boat_images?: File[];
+  video_urls?: string[];
   primary_new_image_index?: number;
   services?: BoatServiceAssignment[];
   facilities?: number[];
@@ -157,6 +159,7 @@ export interface EditBoatData {
   cities?: number[];
   trips?: number[];
   boat_images?: File[];
+  video_urls?: string[];
   removed_images?: string[];
   removed_videos?: string[];
   primary_image_url?: string;
@@ -691,7 +694,8 @@ async function apiRequest<T>(
 
       return {
         success: false,
-        error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`
+        error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`,
+        fieldErrors: data.errors || undefined,
       };
     }
 
@@ -763,16 +767,17 @@ export const authApi = {
     });
   },
 
-  verifyCode: async (code: string): Promise<ApiResponse<{ message: string }>> => {
-    return apiRequest<{ message: string }>('/auth/verify-code', {
+  verifyCode: async (email: string, code: string): Promise<ApiResponse<{ message: string; reset_token?: string }>> => {
+    return apiRequest<{ message: string; reset_token?: string }>('/auth/verify-code', {
       method: 'POST',
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ email, code })
     });
   },
 
-  resendCode: async (): Promise<ApiResponse<{ message: string }>> => {
+  resendCode: async (email: string): Promise<ApiResponse<{ message: string }>> => {
     return apiRequest<{ message: string }>('/auth/resend-code', {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify({ email })
     });
   }
 };
@@ -858,6 +863,20 @@ export const clientApi = {
   },
 
 
+
+  getBoatRecommendations: async (boatId: number, type: 'same' | 'other', page = 1, perPage = 3): Promise<ApiResponse<{ boat_id: number; type: string; page: number; per_page: number; total: number; has_more: boolean; boats: Boat[] }>> => {
+    return apiRequest<{ boat_id: number; type: string; page: number; per_page: number; total: number; has_more: boolean; boats: Boat[] }>(`/client/boats/${boatId}/recommendations?type=${type}&page=${page}&per_page=${perPage}`);
+  },
+
+  getBoatReviewsPaginated: async (boatId: number, page = 1, perPage = 5): Promise<ApiResponse<{ boat_id: number; total_reviews: number; average_rating: number; reviews: BoatReview[]; pagination: { total: number; page: number; per_page: number; pages: number } }>> => {
+    return apiRequest(`/client/boats/${boatId}/reviews?page=${page}&per_page=${perPage}`);
+  },
+
+  deleteOwnBoatReview: async (boatId: number, reviewId: number): Promise<ApiResponse<{ message: string }>> => {
+    return apiRequest<{ message: string }>(`/client/boats/${boatId}/reviews/${reviewId}`, {
+      method: 'DELETE'
+    });
+  },
 
   createBoatReview: async (boatId: number, reviewData: ReviewData): Promise<ApiResponse<ReviewResponse>> => {
     return apiRequest<ReviewResponse>(`/client/boats/${boatId}/reviews`, {

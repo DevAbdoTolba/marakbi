@@ -19,6 +19,7 @@ interface BoatCardProps {
   boatId?: number;
   imageUrl: string;
   name: string;
+  category?: string;
   price: string;
   location: string;
   guests: number;
@@ -33,7 +34,7 @@ interface BoatCardProps {
   maxGuests?: number;
 }
 
-const BoatCard = ({ boatId, imageUrl, name, price, location, guests, status, rooms, rating = 0, reviewsCount = 0, guestCount, priceMode = 'per_time', badgeServices, showGuestsBadge = false, maxGuests }: BoatCardProps) => {
+const BoatCard = ({ boatId, imageUrl, name, category, price, location, guests, status, rooms, rating = 0, reviewsCount = 0, guestCount, priceMode = 'per_time', badgeServices, showGuestsBadge = false, maxGuests }: BoatCardProps) => {
   // Determine label based on priceMode
   let priceUnit = ' /Hour';
   if (priceMode === 'per_person') {
@@ -58,7 +59,7 @@ const BoatCard = ({ boatId, imageUrl, name, price, location, guests, status, roo
   const hasBadges = effectiveBadges.length > 0;
 
   const cardContent = (
-    <div className="relative z-0 w-96 h-[465px] bg-white rounded-2xl shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-hidden hover:shadow-xl transition-shadow" style={{ fontFamily: 'Poppins, sans-serif' }}>
+    <div className="relative z-0 w-96 h-[473px] mb-2 bg-white rounded-2xl shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-hidden hover:shadow-xl transition-shadow" style={{ fontFamily: 'Poppins, sans-serif' }}>
       {/* Image Container with Rating Overlay */}
       <div className="relative w-full h-64 overflow-hidden rounded-lg">
         <Image
@@ -104,13 +105,17 @@ const BoatCard = ({ boatId, imageUrl, name, price, location, guests, status, roo
 
       {/* Card Content */}
       <div className="p-6">
-        {/* Boat Name */}
-        <div className="text-black text-xl font-semibold text-center mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
-          {name}
-        </div>
+        {/* Boat Category */}
+        {category && (
+          <div className="text-center mb-1">
+            <span className="text-[#C5A44E] text-lg italic font-medium" style={{ fontFamily: 'Poppins, sans-serif' }}>
+              {category}
+            </span>
+          </div>
+        )}
 
         {/* Decorative Line */}
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mb-2">
           <Image
             src="/icons/Line 74.svg"
             alt="Decorative line"
@@ -118,6 +123,11 @@ const BoatCard = ({ boatId, imageUrl, name, price, location, guests, status, roo
             height={4}
             className="w-15 pt-1"
           />
+        </div>
+
+        {/* Boat Name */}
+        <div className="text-black text-xl font-semibold text-center mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
+          {name}
         </div>
 
         {/* Location and Price Row */}

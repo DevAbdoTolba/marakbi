@@ -693,6 +693,7 @@ export default function BoatListingLayout() {
                   boatId={boat.id}
                   imageUrl={normalizeImageUrl(boat.images?.[0])}
                   name={boat.name}
+                  category={boat.categories?.[0]}
                   price={`${displayPrice}`}
                   location={boat.cities?.[0] || "Aswan - Egypt"}
                   guests={boat.max_seats}
