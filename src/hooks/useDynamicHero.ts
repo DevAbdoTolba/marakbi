@@ -21,6 +21,13 @@ export default function useDynamicHero() {
       background: "/mainBg.jpg",
     },
     {
+      route: "/boat-market",
+      title: "Buy &\nSell",
+      description:
+        "Discover boats currently for sale, or list your own vessel and find its next captain. Daffa connects buyers and sellers across Egypt&apos;s waters.",
+      background: "/mainBg.jpg",
+    },
+    {
       route: "/boat-details",
       title: "Boat\nName",
       description:
