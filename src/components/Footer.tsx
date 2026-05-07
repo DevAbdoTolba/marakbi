@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import toast from 'react-hot-toast';
 import Logo from './Logo';
 import { useRouter } from 'next/navigation';
 
@@ -219,25 +220,23 @@ const Footer = () => {
             <div className="mt-4 md:mt-6">
               <h5 className="text-base md:text-lg text-amber-300 font-semibold mb-3 md:mb-4 font-poppins">Download App</h5>
               <div className="flex gap-1 md:gap-2">
-                <Link
-                  href="https://play.google.com/store/apps/details?id=com.daffa.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-start hover:scale-105 transition-all duration-200"
-                  title="Download on Google Play"
+                <button
+                  type="button"
+                  onClick={() => toast('The mobile app is coming soon — stay tuned!')}
+                  className="flex items-center justify-start hover:scale-105 transition-all duration-200 cursor-pointer"
+                  title="Coming soon"
                 >
                   <Image src="/icons/Google Play.svg" alt="Google Play" width={120} height={40} className="w-28 h-10 md:w-32 md:h-12" />
-                </Link>
+                </button>
 
-                <Link
-                  href="https://apps.apple.com/app/daffa/id123456789"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-start hover:scale-105 transition-all duration-200"
-                  title="Download on App Store"
+                <button
+                  type="button"
+                  onClick={() => toast('The mobile app is coming soon — stay tuned!')}
+                  className="flex items-center justify-start hover:scale-105 transition-all duration-200 cursor-pointer"
+                  title="Coming soon"
                 >
                   <Image src="/icons/App Store.svg" alt="App Store" width={120} height={40} className="w-28 h-10 md:w-32 md:h-12" />
-                </Link>
+                </button>
               </div>
             </div>
           </div>
