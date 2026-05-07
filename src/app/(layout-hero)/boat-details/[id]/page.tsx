@@ -1202,7 +1202,7 @@ export default function BoatDetailsPage() {
               pricePerHour={boat.price_per_hour}
               pricePerDay={boat.price_per_day}
               maxGuests={boat.max_seats}
-              serviceFeeRate={boatData.service_fee_rate}
+              serviceFeeRate={0.03}
               onBookingRequest={handleRequestToBook}
               isTripBooking={!!selectedTrip}
               tripDuration={selectedTrip?.voyage_hours}
