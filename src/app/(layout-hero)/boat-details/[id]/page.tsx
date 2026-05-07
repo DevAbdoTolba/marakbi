@@ -375,7 +375,7 @@ export default function BoatDetailsPage() {
                     <h2 className="text-2xl font-bold text-gray-900 font-poppins">{selectedTrip.name}</h2>
                     <div className="text-right">
                       <p className="text-sm text-gray-500">Trip Price</p>
-                      <p className="text-2xl font-bold text-sky-900">E£ {selectedTrip.total_price}</p>
+                      <p className="text-2xl font-bold text-sky-900">EGP {selectedTrip.total_price}</p>
                     </div>
                   </div>
                   <p className="text-gray-600 line-clamp-2 mb-4">{selectedTrip.description}</p>

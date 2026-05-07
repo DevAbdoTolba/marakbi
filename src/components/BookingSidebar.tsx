@@ -834,19 +834,19 @@ export default function BookingSidebar({
         if (isTripBooking) return 'Flat Rate';
         if (rentalType === 'day') {
             if (priceMode === 'per_person' || priceMode === 'per_person_per_time') {
-                return `E£ ${effectivePrice} × ${guestCount} guests × ${days} days`;
+                return `EGP ${effectivePrice} × ${guestCount} guests × ${days} days`;
             }
-            return `E£ ${effectivePrice} × ${days} days`;
+            return `EGP ${effectivePrice} × ${days} days`;
         }
 
         // Hourly Logic Breakdown
         if (priceMode === 'per_person') {
-            return `E£ ${pricePerHour || 0} × ${guestCount} guests`;
+            return `EGP ${pricePerHour || 0} × ${guestCount} guests`;
         } else if (priceMode === 'per_person_per_time') {
-            return `E£ ${pricePerHour || 0} × ${guestCount} guests × ${calculatedHours} hours`;
+            return `EGP ${pricePerHour || 0} × ${guestCount} guests × ${calculatedHours} hours`;
         } else {
             // Standard
-            return `E£ ${pricePerHour || 0} × ${calculatedHours} hours`;
+            return `EGP ${pricePerHour || 0} × ${calculatedHours} hours`;
         }
     };
 
@@ -912,7 +912,7 @@ export default function BookingSidebar({
                             {effectivePrice}
                         </span>
                         <span className="text-black text-sm font-normal font-poppins capitalize">
-                            {" "}EGP{rentalType === "day" ? priceDailyUnitLabel : priceUnitLabel}
+                            {" "}EGP {rentalType === "day" ? priceDailyUnitLabel : priceUnitLabel}
                         </span>
                     </div>
                 </div>
@@ -1228,7 +1228,7 @@ export default function BookingSidebar({
                                             )}
                                         </div>
                                         <span className="text-[#106BD8] text-sm font-semibold font-poppins whitespace-nowrap">
-                                            E£ {svcPrice}{priceModeLabel}
+                                            EGP {svcPrice}{priceModeLabel}
                                         </span>
                                     </div>
                                     {/* Person count picker for per-person services where admin allows choosing */}
@@ -1282,7 +1282,7 @@ export default function BookingSidebar({
                         {breakdownLabel()}
                     </span>
                     <span className="text-stone-900 text-sm font-medium font-poppins">
-                        E£ {basePrice}
+                        EGP {basePrice}
                     </span>
                 </div>
                 {servicesTotal > 0 && (
@@ -1292,7 +1292,7 @@ export default function BookingSidebar({
                                 Add-on Services
                             </span>
                             <span className="text-stone-900 text-sm font-medium font-poppins">
-                                E£ {servicesTotal}
+                                EGP {servicesTotal}
                             </span>
                         </div>                        {selectedServicesArr.map(svc => (
                             <div key={svc.service_id} className="flex justify-between items-center ml-2">
@@ -1303,7 +1303,7 @@ export default function BookingSidebar({
                                     )}
                                 </span>
                                 <span className="text-zinc-500 text-xs font-poppins">
-                                    E£ {svc.calculated_price}
+                                    EGP {svc.calculated_price}
                                 </span>
                             </div>
                         ))}
@@ -1314,7 +1314,7 @@ export default function BookingSidebar({
                         Service fee ({serviceFeeRate * 100}%)
                     </span>
                     <span className="text-stone-900 text-sm font-medium font-poppins">
-                        E£ {serviceFee}
+                        EGP {serviceFee}
                     </span>
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-gray-100">
@@ -1322,7 +1322,7 @@ export default function BookingSidebar({
                         Total
                     </span>
                     <span className="text-stone-900 text-base font-semibold font-poppins">
-                        E£ {total}
+                        EGP {total}
                     </span>
                 </div>
             </div>
