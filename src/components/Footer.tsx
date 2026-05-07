@@ -26,12 +26,12 @@ const Footer = () => {
     "Boat Rentals": null, // All boats (no category filter)
     "Water Sports": 38, // Water Activities → category_id=38
     "Family activities": null, // All boats (Fishing + Water Activities - handled by showing all)
-    "Corporate Events": undefined, // Disabled
+    "Corporate Events": null, // No specific category yet → all boats
     "Fishing Trips": 3, // Fishing → category_id=3
     "Occassions": 4, // Occasion → category_id=4
     "Occasions": 4, // Occasion → category_id=4
     "Travel Boat": 39, // Travel → category_id=39
-    "Dahabya": undefined, // Disabled
+    "Dahabya": null, // No specific category yet → all boats
   };
   return (
     <footer className="text-white bg-gradient-to-t from-[#083872] via-[#0A4489] to-[#106BD8]">
