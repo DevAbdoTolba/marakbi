@@ -165,9 +165,9 @@ export default function SignUpPage() {
           <div className="auth-logo">
             <Link href="/">
               <Image
-                src="/logo_daffa.png"
+                src="/images/logo.png"
                 alt="Daffa Logo"
-                width={200}
+                width={78}
                 height={110}
               />
             </Link>
