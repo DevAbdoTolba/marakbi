@@ -14,7 +14,7 @@ const LogoShape: React.FC<LogoShapeProps> = ({
 }) => {
   return (
     <Image
-      src="/images/logo.png"
+      src="/images/logo_colored.png"
       alt="DAFFA Logo Shape"
       width={width}
       height={height}
