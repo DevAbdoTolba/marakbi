@@ -29,7 +29,7 @@ export default function useDynamicHero() {
     },
     {
       route: "/boat-details",
-      title: "Boat\nName",
+      title: "Boat\nProfile",
       description:
         "No Matter The Journey, We Have A Boat For Your Story. Explore Egypt&apos;s Stunning Waterways With A Curated Selection Of Vessels And Seasoned Captains.",
       background: "/mainBg.jpg",
