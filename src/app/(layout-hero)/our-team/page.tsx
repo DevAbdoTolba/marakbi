@@ -106,9 +106,12 @@ export default function OurTeamPage() {
               </p>
 
               {/* Button */}
-              <button className="bg-[#CEAF6E] text-white px-8 py-4 rounded-lg font-medium text-lg hover:bg-[#B8941F] transition-colors">
+              <Link
+                href="/boat-listing"
+                className="inline-block bg-[#CEAF6E] text-white px-8 py-4 rounded-lg font-medium text-lg hover:bg-[#B8941F] transition-colors"
+              >
                 Book Now
-              </button>
+              </Link>
             </div>
 
             {/* Right Column - Carousel */}
