@@ -28,7 +28,6 @@ const Footer = () => {
     "Family activities": null, // All boats (Fishing + Water Activities - handled by showing all)
     "Corporate Events": null, // No specific category yet → all boats
     "Fishing Trips": 3, // Fishing → category_id=3
-    "Occassions": 4, // Occasion → category_id=4
     "Occasions": 4, // Occasion → category_id=4
     "Travel Boat": 39, // Travel → category_id=39
     "Dahabya": null, // No specific category yet → all boats
@@ -122,15 +121,15 @@ const Footer = () => {
                 )}
               </li>
               <li>
-                {serviceCategoryMap["Occassions"] !== undefined ? (
+                {serviceCategoryMap["Occasions"] !== undefined ? (
                   <button
-                    onClick={() => handleServiceClick(serviceCategoryMap["Occassions"] || null)}
+                    onClick={() => handleServiceClick(serviceCategoryMap["Occasions"] || null)}
                     className=" hover:text-orange-300 transition-colors font-poppins text-left"
                   >
-                    Occassions
+                    Occasions
                   </button>
                 ) : (
-                  <span className="text-gray-400 cursor-not-allowed font-poppins">Occassions</span>
+                  <span className="text-gray-400 cursor-not-allowed font-poppins">Occasions</span>
                 )}
               </li>
               <li>
