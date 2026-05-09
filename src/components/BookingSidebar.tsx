@@ -886,14 +886,14 @@ export default function BookingSidebar({
                             Per Day
                         </button>
                     )}
-                    <button
-                        onClick={() => {
-                            toast('Custom request feature coming soon!', { icon: '📝' });
-                        }}
+                    <a
+                        href="https://wa.me/201031416900"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="px-4 py-2 rounded-lg text-sm font-normal font-poppins border border-zinc-400 text-zinc-500 hover:bg-gray-50 transition-colors"
                     >
                         Custom Request
-                    </button>
+                    </a>
                 </div>
             ) : (
                 <div className="mb-4">
