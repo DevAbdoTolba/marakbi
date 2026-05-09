@@ -143,6 +143,9 @@ export interface AddBoatData {
   categories: number[];
   cities: number[];
   trips?: number[];
+  // Per-trip custom price overrides (parallel to `trips`, same index).
+  // Use null/undefined at an index to mean "use the trip's default total_price".
+  trip_prices?: (number | null)[];
   boat_images?: File[];
   video_urls?: string[];
   primary_new_image_index?: number;
@@ -164,6 +167,9 @@ export interface EditBoatData {
   categories?: number[];
   cities?: number[];
   trips?: number[];
+  // Per-trip custom price overrides (parallel to `trips`, same index).
+  // Use null/undefined at an index to mean "use the trip's default total_price".
+  trip_prices?: (number | null)[];
   boat_images?: File[];
   video_urls?: string[];
   removed_images?: string[];
@@ -1164,6 +1170,11 @@ export interface AdminTrip {
   guests_on_board: number | null;
   rooms_available: number | null;
   created_at: string;
+  // Present when the trip is returned in a boat-detail context (admin GET
+  // /boats/:id and the public /boats/:id endpoints). NULL custom_price means
+  // no override is set; effective_price is the resolved value to display.
+  custom_price?: number | null;
+  effective_price?: number;
 }
 
 export interface AdminVoyage {
@@ -1349,7 +1360,15 @@ export const adminApi = {
     formData.append('description', boatData.description);
     boatData.categories.forEach(id => formData.append('categories', id.toString()));
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
-    if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+    if (boatData.trips) {
+      boatData.trips.forEach((id, idx) => {
+        formData.append('trips', id.toString());
+        // Backend reads `trip_prices` as a parallel multipart array indexed
+        // alongside `trips`. Empty string at an index means "no override".
+        const price = boatData.trip_prices?.[idx];
+        formData.append('trip_prices', price === null || price === undefined ? '' : price.toString());
+      });
+    }
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
 
     if (boatData.services) {
@@ -1389,7 +1408,15 @@ export const adminApi = {
     if (boatData.description) formData.append('description', boatData.description);
     if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
-    if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+    if (boatData.trips) {
+      boatData.trips.forEach((id, idx) => {
+        formData.append('trips', id.toString());
+        // Backend reads `trip_prices` as a parallel multipart array indexed
+        // alongside `trips`. Empty string at an index means "no override".
+        const price = boatData.trip_prices?.[idx];
+        formData.append('trip_prices', price === null || price === undefined ? '' : price.toString());
+      });
+    }
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
 
     if (boatData.services !== undefined) {
