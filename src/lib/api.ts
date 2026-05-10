@@ -4,9 +4,15 @@
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-// export const BASE_URL = 'https://daffa-e0870d98592a.herokuapp.com';
-export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com/';
-// export const BASE_URL = 'http://127.0.0.1:8787';
+// API base URL — read from NEXT_PUBLIC_API_URL at build time so dev can
+// point to localhost via a .env.local file without editing source.
+// Falls back to the production Heroku URL when the env var is unset.
+// (NEXT_PUBLIC_API_URL is inlined client-side by Next.js, so this works
+// in both server and browser contexts.)
+const DEFAULT_API_URL = 'https://marakbi-e0870d98592a.herokuapp.com/';
+export const BASE_URL =
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) ||
+  DEFAULT_API_URL;
 
 
 // Toggle for verbose API logging in the console
@@ -567,6 +573,12 @@ export const storage = {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      // Also expire the access_token cookie that the Next.js middleware
+      // reads — without this, a stale cookie keeps the middleware thinking
+      // we're authenticated, so it redirects /login back to / and the user
+      // can't escape the home page after a 401.
+      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     }
   },
 
@@ -628,14 +640,20 @@ async function apiRequest<T>(
       console.log(`📡 API Response: ${response.status} ${response.statusText}`);
     }
 
-    // Handle non-JSON responses
+    // Handle non-JSON responses (e.g. Flask's HTML 500 error page).
+    // Don't spam DevTools with the entire HTML body — log one summary
+    // line behind the API_LOGS flag and surface a status-aware message.
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('❌ Non-JSON response:', text);
+      if (ENABLE_API_LOGS) {
+        console.warn(`API ${response.status} non-JSON response from ${endpoint}`);
+      }
       return {
         success: false,
-        error: 'Server returned non-JSON response'
+        error:
+          response.status >= 500
+            ? 'Server error. Please try again later.'
+            : `Unexpected response from server (HTTP ${response.status}).`,
       };
     }
 
@@ -1214,6 +1232,23 @@ async function adminFormRequest<T>(
       },
       body: formData
     });
+
+    // Same defensive non-JSON guard as apiRequest — without this a Flask
+    // 500 HTML page would crash response.json() and bubble a cryptic
+    // "Unexpected token '<'" SyntaxError into the UI.
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      if (ENABLE_API_LOGS) {
+        console.warn(`adminFormRequest ${response.status} non-JSON response from ${endpoint}`);
+      }
+      return {
+        success: false,
+        error:
+          response.status >= 500
+            ? 'Server error. Please try again later.'
+            : `Unexpected response from server (HTTP ${response.status}).`,
+      };
+    }
 
     const data = await response.json();
 
