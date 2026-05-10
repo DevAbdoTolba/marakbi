@@ -550,6 +550,7 @@ const Header = ({ variant = 'transparent' }: HeaderProps) => {
                 <Link href="/services/stayover-boats" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 rounded-lg text-gray-700 text-sm font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">STAYOVER BOATS</Link>
                 <Link href="/services/water-activities" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 rounded-lg text-gray-700 text-sm font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">WATER ACTIVITIES</Link>
                 <Link href="/services/occasions" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 rounded-lg text-gray-700 text-sm font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">OCCASIONS</Link>
+                <Link href="/boat-listing" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 rounded-lg text-gray-700 text-sm font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">YACHTS</Link>
               </div>
               <Link href="/boat-market" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Buy/Sell</Link>
               <Link href="/contact" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Contact</Link>
