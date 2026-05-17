@@ -614,7 +614,7 @@ export default function AdminBoatListingLayout() {
         price_mode: (data as any)['price_mode'] || "per_time",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         show_guests_badge: (data as any).show_guests_badge || false,
-        categories: data.categories_full?.map((c) => c.id) || [],
+        categories: data.categories_full && data.categories_full.length > 0 ? [data.categories_full[0].id] : [],
         cities: cityIds,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         trips: data.trips?.map((t: any) => t.id) || [],
@@ -1403,25 +1403,28 @@ export default function AdminBoatListingLayout() {
                         />
                       </div>
 
-                      {/* Categories (Boat Type) */}
+                      {/* Categories (Boat Type) — strict single-select */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Boat Type *</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Boat Type *
+                          <span className="text-gray-400 font-normal text-xs ml-1">(select exactly one)</span>
+                        </label>
                         <div className="flex flex-wrap gap-2">
-                          {categories.map((cat) => (
-                            <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => {
-                                const newCategories = formData.categories.includes(cat.id)
-                                  ? formData.categories.filter((id) => id !== cat.id)
-                                  : [...formData.categories, cat.id];
-                                setFormData({ ...formData, categories: newCategories });
-                              }}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${formData.categories.includes(cat.id) ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
-                            >
-                              {cat.name}
-                            </button>
-                          ))}
+                          {categories.map((cat) => {
+                            const selected = formData.categories[0] === cat.id;
+                            return (
+                              <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, categories: [cat.id] });
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${selected ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
+                              >
+                                {cat.name}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
