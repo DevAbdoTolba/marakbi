@@ -52,6 +52,29 @@ export default function BoatDetailsPage() {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [currentTripImageIndex, setCurrentTripImageIndex] = useState(0);
 
+  // Service selection state — lifted here so Available Services cards can drive selection
+  // and the BookingSidebar can render the resulting list. Restore from Zustand on mount.
+  const [selectedServiceIds, setSelectedServiceIds] = useState<Set<number>>(() => {
+    const stored = useBookingStore.getState().bookingData;
+    const currentBoatId = parseInt(params.id as string);
+    if (stored?.selected_services && stored.boat_id === currentBoatId) {
+      return new Set(stored.selected_services.map((svc: { service_id: number }) => svc.service_id));
+    }
+    return new Set();
+  });
+  const [servicePersonCounts, setServicePersonCounts] = useState<Map<number, number>>(() => {
+    const stored = useBookingStore.getState().bookingData;
+    const currentBoatId = parseInt(params.id as string);
+    if (stored?.selected_services && stored.boat_id === currentBoatId) {
+      const map = new Map<number, number>();
+      (stored.selected_services as { service_id: number; person_count?: number }[]).forEach(svc => {
+        if (svc.person_count != null) map.set(svc.service_id, svc.person_count);
+      });
+      return map;
+    }
+    return new Map();
+  });
+
   // Auto-advance trip image slider
   useEffect(() => {
     if (!selectedTrip?.images || selectedTrip.images.length === 0) return;
@@ -681,8 +704,9 @@ export default function BoatDetailsPage() {
 
             {/* Boat Services */}
             {boat.services && boat.services.length > 0 && (
-              <section>
+              <section id="services-section">
                 <h2 className="text-2xl font-semibold mb-4 font-poppins">Available Services</h2>
+                <p className="text-sm text-gray-500 mb-4">Tap a service to add it to your booking. Selected services appear in the sidebar.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {boat.services.map((svc: BoatServiceAssignment) => {
                     const displayPrice = svc.price ?? svc.service?.default_price;
@@ -692,11 +716,51 @@ export default function BoatDetailsPage() {
                         : svc.service?.price_mode === 'per_person_per_time'
                           ? 'Per Person/Time'
                           : 'Per Trip';
+                    const isSelected = selectedServiceIds.has(svc.service_id);
                     return (
-                    <div key={svc.service_id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 group/svc relative">
-                      {/* Icon */}
-                      <div className="w-10 h-10 bg-white rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-gray-200">
-                        {svc.service?.icon_url ? (
+                    <div
+                      key={svc.service_id}
+                      role="checkbox"
+                      aria-checked={isSelected}
+                      tabIndex={0}
+                      onClick={() => {
+                        setSelectedServiceIds(prev => {
+                          const next = new Set(prev);
+                          if (next.has(svc.service_id)) next.delete(svc.service_id);
+                          else next.add(svc.service_id);
+                          return next;
+                        });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === ' ' || e.key === 'Enter') {
+                          e.preventDefault();
+                          setSelectedServiceIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(svc.service_id)) next.delete(svc.service_id);
+                            else next.add(svc.service_id);
+                            return next;
+                          });
+                        }
+                      }}
+                      className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-blue-50/60 border-[#0F3875] ring-1 ring-[#0F3875]/40 shadow-sm'
+                          : 'bg-gray-50 border-gray-100 hover:border-gray-300 hover:bg-gray-100'
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
+                        isSelected ? 'bg-[#0F3875] border-[#0F3875]' : 'border-gray-300 bg-white'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      {/* Icon (only if provided) */}
+                      {svc.service?.icon_url && (
+                        <div className="w-10 h-10 bg-white rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-gray-200">
                           <Image
                             src={svc.service.icon_url}
                             alt={svc.service?.name || ''}
@@ -704,12 +768,8 @@ export default function BoatDetailsPage() {
                             height={32}
                             className="object-contain"
                           />
-                        ) : (
-                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 text-sm mb-1">{svc.badge_display_name || svc.service?.name || 'Service'}</h3>
@@ -718,7 +778,7 @@ export default function BoatDetailsPage() {
                         )}
                         <div className="flex items-center gap-2 mt-2">
                           {displayPrice != null && (
-                            <span className="text-xs font-medium text-[#0F3875]">{Number(displayPrice).toFixed(2)} EGP</span>
+                            <span className="text-xs font-medium text-[#0F3875]">{Math.round(Number(displayPrice))} EGP</span>
                           )}
                           <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
                             {priceModeLabel}
@@ -1211,6 +1271,10 @@ export default function BoatDetailsPage() {
               locationUrl={boat.location_url}
               priceMode={boat.price_mode as "per_time" | "per_person" | "per_person_per_time"}
               boatServices={boat.services}
+              selectedServiceIds={selectedServiceIds}
+              setSelectedServiceIds={setSelectedServiceIds}
+              servicePersonCounts={servicePersonCounts}
+              setServicePersonCounts={setServicePersonCounts}
             />
             </div>
           </div>
