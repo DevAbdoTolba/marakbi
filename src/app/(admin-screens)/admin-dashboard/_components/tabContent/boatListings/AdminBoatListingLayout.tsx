@@ -1437,6 +1437,7 @@ export default function AdminBoatListingLayout() {
                           <option value="per_person">Per Person (Fixed)</option>
                           <option value="per_person_per_time">Per Person Per Hour</option>
                           <option value="per_trip">Per Trip (flat fee)</option>
+                          <option value="per_session">Per Session</option>
                         </select>
                       </div>
 
