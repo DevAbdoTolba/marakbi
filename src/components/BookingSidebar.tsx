@@ -810,19 +810,20 @@ export default function BookingSidebar({
         if (isTripBooking) return 'Flat Rate';
         if (rentalType === 'day') {
             if (priceMode === 'per_person' || priceMode === 'per_person_per_time') {
-                return `E£ ${effectivePrice} × ${guestCount} guests × ${days} days`;
+                return `E£ ${Math.round(effectivePrice)} × ${guestCount} guests × ${days} days`;
             }
-            return `E£ ${effectivePrice} × ${days} days`;
+            return `E£ ${Math.round(effectivePrice)} × ${days} days`;
         }
 
         // Hourly Logic Breakdown
+        const hourly = Math.round(pricePerHour || 0);
         if (priceMode === 'per_person') {
-            return `E£ ${pricePerHour || 0} × ${guestCount} guests`;
+            return `E£ ${hourly} × ${guestCount} guests`;
         } else if (priceMode === 'per_person_per_time') {
-            return `E£ ${pricePerHour || 0} × ${guestCount} guests × ${calculatedHours} hours`;
+            return `E£ ${hourly} × ${guestCount} guests × ${calculatedHours} hours`;
         } else {
             // Standard
-            return `E£ ${pricePerHour || 0} × ${calculatedHours} hours`;
+            return `E£ ${hourly} × ${calculatedHours} hours`;
         }
     };
 
@@ -885,7 +886,7 @@ export default function BookingSidebar({
                     </div>
                     <div className="text-right">
                         <span className="text-[#106BD8] text-xl font-semibold font-poppins capitalize">
-                            {effectivePrice}
+                            {Math.round(effectivePrice)}
                         </span>
                         <span className="text-black text-sm font-normal font-poppins capitalize">
                             {" "}EGP{rentalType === "day" ? priceDailyUnitLabel : priceUnitLabel}
@@ -1266,7 +1267,7 @@ export default function BookingSidebar({
                         {breakdownLabel()}
                     </span>
                     <span className="text-stone-900 text-sm font-medium font-poppins">
-                        E£ {basePrice}
+                        E£ {Math.round(basePrice)}
                     </span>
                 </div>
                 {servicesTotal > 0 && (
@@ -1276,21 +1277,26 @@ export default function BookingSidebar({
                                 Add-on Services
                             </span>
                             <span className="text-stone-900 text-sm font-medium font-poppins">
-                                E£ {servicesTotal}
+                                E£ {Math.round(servicesTotal)}
                             </span>
-                        </div>                        {selectedServicesArr.map(svc => (
+                        </div>                        {selectedServicesArr.map(svc => {
+                            const hrsForLabel = svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count && svc.person_count > 0
+                                ? Math.round(svc.calculated_price / (svc.price * svc.person_count))
+                                : 0;
+                            return (
                             <div key={svc.service_id} className="flex justify-between items-center ml-2">
                                 <span className="text-zinc-400 text-xs font-normal font-poppins">
                                     {svc.name}
                                     {svc.price_mode !== 'per_trip' && svc.person_count && (
-                                        <span className="text-zinc-400"> — {svc.price} × {svc.person_count} {svc.person_count === 1 ? 'person' : 'persons'}{svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 ? ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))} hr${Math.round(svc.calculated_price / (svc.price * svc.person_count)) !== 1 ? 's' : ''}` : ''}</span>
+                                        <span className="text-zinc-400"> — {Math.round(svc.price)} × {svc.person_count} {svc.person_count === 1 ? 'person' : 'persons'}{hrsForLabel > 0 ? ` × ${hrsForLabel} hr${hrsForLabel !== 1 ? 's' : ''}` : ''}</span>
                                     )}
                                 </span>
                                 <span className="text-zinc-500 text-xs font-poppins">
-                                    E£ {svc.calculated_price}
+                                    E£ {Math.round(svc.calculated_price)}
                                 </span>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
                 <div className="flex justify-between items-center mb-3">
@@ -1298,7 +1304,7 @@ export default function BookingSidebar({
                         Service fee ({serviceFeeRate * 100}%)
                     </span>
                     <span className="text-stone-900 text-sm font-medium font-poppins">
-                        E£ {serviceFee}
+                        E£ {Math.round(serviceFee)}
                     </span>
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-gray-100">
@@ -1306,7 +1312,7 @@ export default function BookingSidebar({
                         Total
                     </span>
                     <span className="text-stone-900 text-base font-semibold font-poppins">
-                        E£ {total}
+                        E£ {Math.round(total)}
                     </span>
                 </div>
             </div>
