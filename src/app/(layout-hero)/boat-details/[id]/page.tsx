@@ -398,7 +398,7 @@ export default function BoatDetailsPage() {
                     <h2 className="text-2xl font-bold text-gray-900 font-poppins">{selectedTrip.name}</h2>
                     <div className="text-right">
                       <p className="text-sm text-gray-500">Trip Price</p>
-                      <p className="text-2xl font-bold text-sky-900">E£ {selectedTrip.total_price}</p>
+                      <p className="text-2xl font-bold text-sky-900">EGP {selectedTrip.total_price}</p>
                     </div>
                   </div>
                   <p className="text-gray-600 line-clamp-2 mb-4">{selectedTrip.description}</p>
@@ -1262,7 +1262,7 @@ export default function BoatDetailsPage() {
               pricePerHour={boat.price_per_hour}
               pricePerDay={boat.price_per_day}
               maxGuests={boat.max_seats}
-              serviceFeeRate={boatData.service_fee_rate}
+              serviceFeeRate={0.03}
               onBookingRequest={handleRequestToBook}
               isTripBooking={!!selectedTrip}
               tripDuration={selectedTrip?.voyage_hours}

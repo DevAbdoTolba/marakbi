@@ -522,7 +522,7 @@ export default function BoatListingLayout() {
     <div className="relative mt-10 sm:mt-12 lg:mt-16 z-0">
       {/* Filter Bar Background + Buttons */}
       <div className="relative z-10 bg-white border-b border-[rgba(0,0,0,0.1)]">
-        <div className="flex gap-3 sm:gap-4 px-4 sm:px-8 lg:px-16 py-3 overflow-x-auto relative">
+        <div className="flex flex-wrap gap-3 sm:gap-4 px-4 sm:px-8 lg:px-16 py-3 relative">
           {/* Price Sort Button */}
           <FilterButton
             onClick={handlePriceSort}

@@ -810,20 +810,20 @@ export default function BookingSidebar({
         if (isTripBooking) return 'Flat Rate';
         if (rentalType === 'day') {
             if (priceMode === 'per_person' || priceMode === 'per_person_per_time') {
-                return `E£ ${Math.round(effectivePrice)} × ${guestCount} guests × ${days} days`;
+                return `EGP ${Math.round(effectivePrice)} × ${guestCount} guests × ${days} days`;
             }
-            return `E£ ${Math.round(effectivePrice)} × ${days} days`;
+            return `EGP ${Math.round(effectivePrice)} × ${days} days`;
         }
 
         // Hourly Logic Breakdown
         const hourly = Math.round(pricePerHour || 0);
         if (priceMode === 'per_person') {
-            return `E£ ${hourly} × ${guestCount} guests`;
+            return `EGP ${hourly} × ${guestCount} guests`;
         } else if (priceMode === 'per_person_per_time') {
-            return `E£ ${hourly} × ${guestCount} guests × ${calculatedHours} hours`;
+            return `EGP ${hourly} × ${guestCount} guests × ${calculatedHours} hours`;
         } else {
             // Standard
-            return `E£ ${hourly} × ${calculatedHours} hours`;
+            return `EGP ${hourly} × ${calculatedHours} hours`;
         }
     };
 
@@ -889,7 +889,7 @@ export default function BookingSidebar({
                             {Math.round(effectivePrice)}
                         </span>
                         <span className="text-black text-sm font-normal font-poppins capitalize">
-                            {" "}EGP{rentalType === "day" ? priceDailyUnitLabel : priceUnitLabel}
+                            {" "}EGP {rentalType === "day" ? priceDailyUnitLabel : priceUnitLabel}
                         </span>
                     </div>
                 </div>
@@ -1200,7 +1200,7 @@ export default function BookingSidebar({
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-stone-900 text-sm font-medium font-poppins truncate">{svc.name}</p>
                                                     <span className="text-[#106BD8] text-xs font-semibold font-poppins">
-                                                        E£ {Math.round(svcPrice)}{priceModeLabel}
+                                                        EGP {Math.round(svcPrice)}{priceModeLabel}
                                                     </span>
                                                 </div>
                                                 <button
@@ -1267,7 +1267,7 @@ export default function BookingSidebar({
                         {breakdownLabel()}
                     </span>
                     <span className="text-stone-900 text-sm font-medium font-poppins">
-                        E£ {Math.round(basePrice)}
+                        EGP {Math.round(basePrice)}
                     </span>
                 </div>
                 {servicesTotal > 0 && (
@@ -1277,7 +1277,7 @@ export default function BookingSidebar({
                                 Add-on Services
                             </span>
                             <span className="text-stone-900 text-sm font-medium font-poppins">
-                                E£ {Math.round(servicesTotal)}
+                                EGP {Math.round(servicesTotal)}
                             </span>
                         </div>                        {selectedServicesArr.map(svc => {
                             const hrsForLabel = svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count && svc.person_count > 0
@@ -1292,7 +1292,7 @@ export default function BookingSidebar({
                                     )}
                                 </span>
                                 <span className="text-zinc-500 text-xs font-poppins">
-                                    E£ {Math.round(svc.calculated_price)}
+                                    EGP {Math.round(svc.calculated_price)}
                                 </span>
                             </div>
                             );
@@ -1304,7 +1304,7 @@ export default function BookingSidebar({
                         Service fee ({serviceFeeRate * 100}%)
                     </span>
                     <span className="text-stone-900 text-sm font-medium font-poppins">
-                        E£ {Math.round(serviceFee)}
+                        EGP {Math.round(serviceFee)}
                     </span>
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-gray-100">
@@ -1312,7 +1312,7 @@ export default function BookingSidebar({
                         Total
                     </span>
                     <span className="text-stone-900 text-base font-semibold font-poppins">
-                        E£ {Math.round(total)}
+                        EGP {Math.round(total)}
                     </span>
                 </div>
             </div>

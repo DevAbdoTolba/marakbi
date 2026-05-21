@@ -211,7 +211,7 @@ export default function FiltersPanel({
                 </label>
               </div>
               <span className="text-sm font-poppins font-normal text-[#717182]">
-                ${priceRange[0]} - ${priceRange[1]}
+                EGP {priceRange[0]} - EGP {priceRange[1]}
               </span>
             </div>
 
@@ -256,8 +256,8 @@ export default function FiltersPanel({
             </div>
 
             <div className="flex items-center justify-between text-xs font-poppins font-normal text-[#717182]">
-              <span>$0</span>
-              <span>$2500+</span>
+              <span>EGP 0</span>
+              <span>EGP 2500+</span>
             </div>
           </div>
 
