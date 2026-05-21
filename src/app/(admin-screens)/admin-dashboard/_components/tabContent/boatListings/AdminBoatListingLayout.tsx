@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminReview, BoatServiceAssignment, BoatServiceDef, BoatFacilityDef } from "@/lib/api";
-import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight, FiHelpCircle, FiPlay } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight, FiHelpCircle, FiPlay, FiDollarSign } from "react-icons/fi";
 import Image from "next/image";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
@@ -70,7 +70,7 @@ export default function AdminBoatListingLayout() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [removedImageUrls, setRemovedImageUrls] = useState<string[]>([]);
   // Modal UI State
-  const [activeTab, setActiveTab] = useState<'details' | 'photos' | 'trips' | 'services' | 'facilities'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'photos' | 'trips' | 'services' | 'facilities' | 'sell'>('details');
   const [primaryNewImageIndex, setPrimaryNewImageIndex] = useState<number>(0);
   const [primaryExistingUrl, setPrimaryExistingUrl] = useState<string | null>(null);
 
@@ -1372,6 +1372,12 @@ export default function AdminBoatListingLayout() {
                   >
                     <FiCheck className="inline mr-2" /> Facilities
                   </button>
+                  <button
+                    onClick={() => setActiveTab('sell')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'sell' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                  >
+                    <FiDollarSign className="inline mr-2" /> Sell
+                  </button>
                 </div>
               </div>
               <button
@@ -1500,22 +1506,6 @@ export default function AdminBoatListingLayout() {
                         />
                       </div>
                       )}
-
-                      {/* Sale Price (Buy/Sell) */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Sale Price (EGP)
-                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional - shows in Buy/Sell)</span>
-                        </label>
-                        <input
-                          type="number"
-                          value={formData.sale_price || ''}
-                          onChange={(e) => setFormData({ ...formData, sale_price: e.target.value ? Number(e.target.value) : null })}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
-                          min="0"
-                          placeholder="e.g. 500000"
-                        />
-                      </div>
 
                       {/* Location (Cities) */}
                       <div>
@@ -1646,6 +1636,36 @@ export default function AdminBoatListingLayout() {
 
 
 
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'sell' && (
+                <div>
+                  <div className="flex items-center gap-2 mb-6">
+                    <FiDollarSign size={20} className="text-gray-900" />
+                    <h3 className="text-lg font-bold text-gray-900">Sell This Boat</h3>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-6">Set a sale price to list this boat in the Buy/Sell marketplace. Leave empty if the boat is not for sale.</p>
+
+                  <div className="max-w-md">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Sale Price (EGP)
+                      <span className="text-gray-400 font-normal text-xs ml-1">(Optional — shows in Buy/Sell)</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.sale_price || ''}
+                      onChange={(e) => setFormData({ ...formData, sale_price: e.target.value ? Number(e.target.value) : null })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                      min="0"
+                      placeholder="e.g. 500000"
+                    />
+                    {formData.sale_price ? (
+                      <p className="text-xs text-emerald-600 mt-2">This boat will appear in the Buy/Sell marketplace at EGP {formData.sale_price}.</p>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-2">Not listed for sale.</p>
+                    )}
                   </div>
                 </div>
               )}
