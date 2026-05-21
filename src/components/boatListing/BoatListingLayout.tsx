@@ -21,6 +21,10 @@ export default function BoatListingLayout() {
   const [cities, setCities] = useState<City[]>([]);
 
   // Filter states
+  // Upper bound of the price slider. Defaults to 2500 but is recomputed from
+  // the actual boats once they load (see effect below) so boats priced higher
+  // than the old hard-coded 2500 are no longer cut off by the filter.
+  const [maxPrice, setMaxPrice] = useState(2500);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 2500]);
   const [selectedBoatTypes, setSelectedBoatTypes] = useState<string[]>([]);
   const [selectedCabins, setSelectedCabins] = useState<string[]>([]);
@@ -264,6 +268,21 @@ export default function BoatListingLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceRange, selectedBoatTypes, selectedCabins, selectedActivities, selectedRentalTypes, selectedCities, priceSortOrder, searchQuery, allBoats]);
 
+  // Derive the price slider's upper bound from the actual boat prices so the
+  // filter never cuts off the most expensive boats. Ceil to the nearest 10 for
+  // a tidy number, and reset the selected range to span the full new max.
+  useEffect(() => {
+    if (allBoats.length === 0) return;
+    const prices = allBoats
+      .flatMap((b) => [b.price_per_hour, b.price_per_day])
+      .filter((p): p is number => typeof p === 'number' && p > 0);
+    const computed = prices.length > 0
+      ? Math.max(100, Math.ceil(Math.max(...prices) / 10) * 10)
+      : 2500;
+    setMaxPrice(computed);
+    setPriceRange([0, computed]);
+  }, [allBoats]);
+
   // Load cities on mount
   useEffect(() => {
     const fetchCities = async () => {
@@ -282,7 +301,7 @@ export default function BoatListingLayout() {
   // Reset filters when category_id changes (to ensure clean state when navigating from Footer)
   useEffect(() => {
     // Reset all filters when category_id changes
-    setPriceRange([0, 2500]);
+    setPriceRange([0, maxPrice]);
     setSelectedBoatTypes([]);
     setSelectedCabins([]);
     setSelectedActivities([]);
@@ -623,7 +642,7 @@ export default function BoatListingLayout() {
           {/* Reset Button */}
           <FilterButton
             onClick={() => {
-              setPriceRange([0, 2500]);
+              setPriceRange([0, maxPrice]);
               setSelectedBoatTypes([]);
               setSelectedCabins([]);
               setSelectedActivities([]);
@@ -643,6 +662,7 @@ export default function BoatListingLayout() {
         onClose={() => setIsFiltersOpen(false)}
         priceRange={priceRange}
         setPriceRange={setPriceRange}
+        maxPrice={maxPrice}
         selectedBoatTypes={selectedBoatTypes}
         setSelectedBoatTypes={setSelectedBoatTypes}
         selectedCabins={selectedCabins}

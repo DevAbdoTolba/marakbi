@@ -9,6 +9,7 @@ interface FiltersPanelProps {
   onClose: () => void;
   priceRange: [number, number];
   setPriceRange: (range: [number, number]) => void;
+  maxPrice: number;
   selectedBoatTypes: string[];
   setSelectedBoatTypes: (types: string[] | ((prev: string[]) => string[])) => void;
   selectedCabins: string[];
@@ -28,6 +29,7 @@ export default function FiltersPanel({
   onClose,
   priceRange,
   setPriceRange,
+  maxPrice,
   selectedBoatTypes,
   setSelectedBoatTypes,
   selectedCabins,
@@ -117,7 +119,7 @@ export default function FiltersPanel({
   };
 
   const handleClearAll = () => {
-    setPriceRange([0, 2500]);
+    setPriceRange([0, maxPrice]);
     setSelectedBoatTypes([]);
     setSelectedCabins([]);
     setSelectedActivities([]);
@@ -219,16 +221,16 @@ export default function FiltersPanel({
             <div className="relative h-1 bg-[#030213] rounded-full">
               <div
                 className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border border-[#030213] rounded-full shadow-md cursor-pointer z-10"
-                style={{ left: `calc(${(priceRange[0] / 2500) * 100}% - 8px)` }}
+                style={{ left: `calc(${(priceRange[0] / maxPrice) * 100}% - 8px)` }}
               />
               <div
                 className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border border-[#030213] rounded-full shadow-md cursor-pointer z-10"
-                style={{ left: `calc(${(priceRange[1] / 2500) * 100}% - 8px)` }}
+                style={{ left: `calc(${(priceRange[1] / maxPrice) * 100}% - 8px)` }}
               />
               <input
                 type="range"
                 min="0"
-                max="2500"
+                max={maxPrice}
                 step="50"
                 value={priceRange[0]}
                 onChange={(e) =>
@@ -242,7 +244,7 @@ export default function FiltersPanel({
               <input
                 type="range"
                 min="0"
-                max="2500"
+                max={maxPrice}
                 step="50"
                 value={priceRange[1]}
                 onChange={(e) =>
@@ -257,7 +259,7 @@ export default function FiltersPanel({
 
             <div className="flex items-center justify-between text-xs font-poppins font-normal text-[#717182]">
               <span>EGP 0</span>
-              <span>EGP 2500+</span>
+              <span>EGP {maxPrice}</span>
             </div>
           </div>
 
