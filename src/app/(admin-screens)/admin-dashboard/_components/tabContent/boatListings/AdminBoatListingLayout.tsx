@@ -273,7 +273,7 @@ export default function AdminBoatListingLayout() {
     description: "",
     location_url: "",
     address: "",
-    price_mode: "per_time",
+    price_mode: "per_hour",
     show_guests_badge: false,
     categories: [],
     cities: [],
@@ -536,7 +536,7 @@ export default function AdminBoatListingLayout() {
         description: "",
         location_url: "",
         address: "",
-        price_mode: "per_time",
+        price_mode: "per_hour",
         show_guests_badge: false,
         categories: [],
         cities: [],
@@ -1433,24 +1433,42 @@ export default function AdminBoatListingLayout() {
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Pricing Model *</label>
                         <select
                           value={formData.price_mode}
-                          onChange={(e) => setFormData({ ...formData, price_mode: e.target.value })}
+                          onChange={(e) => {
+                            const mode = e.target.value;
+                            setFormData((prev) => ({
+                              ...prev,
+                              price_mode: mode,
+                              // Keep stored prices consistent with the chosen mode so the
+                              // booking page only offers the tab the admin intends.
+                              price_per_day: mode === 'per_hour' ? null : prev.price_per_day,
+                              price_per_hour: mode === 'per_day' ? null : prev.price_per_hour,
+                            }));
+                          }}
                           className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
                         >
-                          <option value="per_time">Per Hour/Day (Standard)</option>
+                          <option value="per_hour">Per Hour</option>
+                          <option value="per_day">Per Day</option>
                           <option value="per_person">Per Person (Fixed)</option>
                           <option value="per_person_per_time">Per Person Per Hour</option>
                           <option value="per_trip">Per Trip (flat fee)</option>
                           <option value="per_session">Per Session</option>
+                          {/* Legacy combined mode — only shown for boats already saved as per_time */}
+                          {formData.price_mode === 'per_time' && (
+                            <option value="per_time">Per Hour &amp; Per Day (legacy)</option>
+                          )}
                         </select>
                       </div>
 
-                      {/* Price Value (Hour) */}
+                      {/* Price Value (Hour) — hidden when the boat is priced Per Day only */}
+                      {formData.price_mode !== 'per_day' && (
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           {formData.price_mode === 'per_person' ? 'Price per Person (EGP)' :
                             formData.price_mode === 'per_person_per_time' ? 'Price per Person/Hour (EGP)' :
                               'Price per Hour (EGP)'}
-                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional if day price set)</span>
+                          {formData.price_mode === 'per_time' && (
+                            <span className="text-gray-400 font-normal text-xs ml-1">(Optional if day price set)</span>
+                          )}
                         </label>
                         <input
                           type="number"
@@ -1461,12 +1479,16 @@ export default function AdminBoatListingLayout() {
                           placeholder="e.g. 500"
                         />
                       </div>
+                      )}
 
-                      {/* Price Value (Day) - NEW */}
+                      {/* Price Value (Day) — hidden when the boat is priced Per Hour only */}
+                      {formData.price_mode !== 'per_hour' && (
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Price per Day (EGP)
-                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional if hour price set)</span>
+                          {formData.price_mode === 'per_time' && (
+                            <span className="text-gray-400 font-normal text-xs ml-1">(Optional if hour price set)</span>
+                          )}
                         </label>
                         <input
                           type="number"
@@ -1477,6 +1499,7 @@ export default function AdminBoatListingLayout() {
                           placeholder="e.g. 5000"
                         />
                       </div>
+                      )}
 
                       {/* Sale Price (Buy/Sell) */}
                       <div>

@@ -1269,7 +1269,7 @@ export default function BoatDetailsPage() {
               tripPrice={selectedTrip?.total_price}
               initialGuestCount={searchParams.get("guest_count") ? parseInt(searchParams.get("guest_count")!) : (searchParams.get("min_passengers") ? parseInt(searchParams.get("min_passengers")!) : 2)}
               locationUrl={boat.location_url}
-              priceMode={boat.price_mode as "per_time" | "per_person" | "per_person_per_time"}
+              priceMode={boat.price_mode as "per_time" | "per_hour" | "per_day" | "per_person" | "per_person_per_time"}
               boatServices={boat.services}
               selectedServiceIds={selectedServiceIds}
               setSelectedServiceIds={setSelectedServiceIds}

@@ -29,7 +29,7 @@ interface BookingSidebarProps {
     tripPrice?: number;
     initialGuestCount?: number;
     locationUrl?: string;
-    priceMode?: "per_time" | "per_person" | "per_person_per_time";
+    priceMode?: "per_time" | "per_hour" | "per_day" | "per_person" | "per_person_per_time";
     // Boat services
     boatServices?: BoatServiceAssignment[];
     // Service selection state lifted to parent so Available Services cards can drive it
