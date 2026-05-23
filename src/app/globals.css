@@ -154,6 +154,8 @@ body {
   position: absolute;
   top: 27px;
   left: 37px;
+  width: 174px;
+  height: 174px;
 }
 
 .auth-circle-bg {
@@ -311,6 +313,8 @@ body {
   .auth-logo-container {
     top: 16px;
     left: 20px;
+    width: 130px;
+    height: 130px;
   }
 
   .auth-circle-bg {
@@ -338,6 +342,8 @@ body {
   .auth-logo-container {
     top: 12px;
     left: 16px;
+    width: 100px;
+    height: 100px;
   }
 
   .auth-circle-bg {

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { adminApi, AdminBoat, AdminCategory, AdminUser, AdminReview, BoatServiceAssignment, BoatServiceDef, BoatFacilityDef } from "@/lib/api";
-import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight, FiHelpCircle, FiPlay } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiUpload, FiEye, FiUsers, FiAnchor, FiCalendar, FiStar, FiMapPin, FiDownload, FiMap, FiCheck, FiChevronLeft, FiChevronRight, FiHelpCircle, FiPlay, FiDollarSign } from "react-icons/fi";
 import Image from "next/image";
 import { useToast } from "../../ToastProvider";
 import ConfirmModal from "../../ConfirmModal";
@@ -22,6 +22,8 @@ interface BoatFormData {
   categories: number[];
   cities: number[];
   trips: number[];
+  // Per-trip custom price overrides keyed by trip_id (null = use trip default)
+  trip_prices: Record<number, number | null>;
   user_id: number;
   services: BoatServiceAssignment[];
   facilities: BoatFacilityDef[];
@@ -68,7 +70,7 @@ export default function AdminBoatListingLayout() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [removedImageUrls, setRemovedImageUrls] = useState<string[]>([]);
   // Modal UI State
-  const [activeTab, setActiveTab] = useState<'details' | 'photos' | 'trips' | 'services' | 'facilities'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'photos' | 'trips' | 'services' | 'facilities' | 'sell'>('details');
   const [primaryNewImageIndex, setPrimaryNewImageIndex] = useState<number>(0);
   const [primaryExistingUrl, setPrimaryExistingUrl] = useState<string | null>(null);
 
@@ -271,11 +273,12 @@ export default function AdminBoatListingLayout() {
     description: "",
     location_url: "",
     address: "",
-    price_mode: "per_time",
+    price_mode: "per_hour",
     show_guests_badge: false,
     categories: [],
     cities: [],
     trips: [],
+    trip_prices: {},
     user_id: 1,
     services: [],
     facilities: [],
@@ -533,11 +536,12 @@ export default function AdminBoatListingLayout() {
         description: "",
         location_url: "",
         address: "",
-        price_mode: "per_time",
+        price_mode: "per_hour",
         show_guests_badge: false,
         categories: [],
         cities: [],
         trips: [],
+        trip_prices: {},
         user_id: parseInt(userId, 10),
         services: [],
         facilities: [],
@@ -566,6 +570,7 @@ export default function AdminBoatListingLayout() {
       categories: [],
       cities: [],
       trips: [],
+      trip_prices: {},
       user_id: 1,
       services: [],
       facilities: [],
@@ -609,10 +614,17 @@ export default function AdminBoatListingLayout() {
         price_mode: (data as any)['price_mode'] || "per_time",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         show_guests_badge: (data as any).show_guests_badge || false,
-        categories: data.categories_full?.map((c) => c.id) || [],
+        categories: data.categories_full && data.categories_full.length > 0 ? [data.categories_full[0].id] : [],
         cities: cityIds,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         trips: data.trips?.map((t: any) => t.id) || [],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        trip_prices: (data.trips || []).reduce((acc: Record<number, number | null>, t: any) => {
+          // Backend returns custom_price (null if no override). Keep null for
+          // unset overrides so the UI shows an empty input for those rows.
+          acc[t.id] = t.custom_price ?? null;
+          return acc;
+        }, {}),
         user_id: data.owner_username ? 0 : 1,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         services: (data as any).services_full || data.services || [],
@@ -740,6 +752,9 @@ export default function AdminBoatListingLayout() {
       categories: formData.categories,
       cities: formData.cities,
       trips: formData.trips,
+      // Send custom prices in the same order as `trips` so the backend can
+      // pair them by index. null at an index = "no override" (use trip default).
+      trip_prices: formData.trips.map(tripId => formData.trip_prices[tripId] ?? null),
       boat_images: newImages.length > 0 ? newImages : undefined,
       removed_images: removedImageUrls.length > 0 ? removedImageUrls : undefined,
       primary_image_url: primaryExistingUrl || undefined,
@@ -1357,6 +1372,12 @@ export default function AdminBoatListingLayout() {
                   >
                     <FiCheck className="inline mr-2" /> Facilities
                   </button>
+                  <button
+                    onClick={() => setActiveTab('sell')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'sell' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                  >
+                    <FiDollarSign className="inline mr-2" /> Sell
+                  </button>
                 </div>
               </div>
               <button
@@ -1388,25 +1409,28 @@ export default function AdminBoatListingLayout() {
                         />
                       </div>
 
-                      {/* Categories (Boat Type) */}
+                      {/* Categories (Boat Type) — strict single-select */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Boat Type *</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Boat Type *
+                          <span className="text-gray-400 font-normal text-xs ml-1">(select exactly one)</span>
+                        </label>
                         <div className="flex flex-wrap gap-2">
-                          {categories.map((cat) => (
-                            <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => {
-                                const newCategories = formData.categories.includes(cat.id)
-                                  ? formData.categories.filter((id) => id !== cat.id)
-                                  : [...formData.categories, cat.id];
-                                setFormData({ ...formData, categories: newCategories });
-                              }}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${formData.categories.includes(cat.id) ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
-                            >
-                              {cat.name}
-                            </button>
-                          ))}
+                          {categories.map((cat) => {
+                            const selected = formData.categories[0] === cat.id;
+                            return (
+                              <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, categories: [cat.id] });
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${selected ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
+                              >
+                                {cat.name}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -1415,22 +1439,42 @@ export default function AdminBoatListingLayout() {
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Pricing Model *</label>
                         <select
                           value={formData.price_mode}
-                          onChange={(e) => setFormData({ ...formData, price_mode: e.target.value })}
+                          onChange={(e) => {
+                            const mode = e.target.value;
+                            setFormData((prev) => ({
+                              ...prev,
+                              price_mode: mode,
+                              // Keep stored prices consistent with the chosen mode so the
+                              // booking page only offers the tab the admin intends.
+                              price_per_day: mode === 'per_hour' ? null : prev.price_per_day,
+                              price_per_hour: mode === 'per_day' ? null : prev.price_per_hour,
+                            }));
+                          }}
                           className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
                         >
-                          <option value="per_time">Per Hour/Day (Standard)</option>
+                          <option value="per_hour">Per Hour</option>
+                          <option value="per_day">Per Day</option>
                           <option value="per_person">Per Person (Fixed)</option>
                           <option value="per_person_per_time">Per Person Per Hour</option>
+                          <option value="per_trip">Per Trip (flat fee)</option>
+                          <option value="per_session">Per Session</option>
+                          {/* Legacy combined mode — only shown for boats already saved as per_time */}
+                          {formData.price_mode === 'per_time' && (
+                            <option value="per_time">Per Hour &amp; Per Day (legacy)</option>
+                          )}
                         </select>
                       </div>
 
-                      {/* Price Value (Hour) */}
+                      {/* Price Value (Hour) — hidden when the boat is priced Per Day only */}
+                      {formData.price_mode !== 'per_day' && (
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           {formData.price_mode === 'per_person' ? 'Price per Person (EGP)' :
                             formData.price_mode === 'per_person_per_time' ? 'Price per Person/Hour (EGP)' :
                               'Price per Hour (EGP)'}
-                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional if day price set)</span>
+                          {formData.price_mode === 'per_time' && (
+                            <span className="text-gray-400 font-normal text-xs ml-1">(Optional if day price set)</span>
+                          )}
                         </label>
                         <input
                           type="number"
@@ -1441,12 +1485,16 @@ export default function AdminBoatListingLayout() {
                           placeholder="e.g. 500"
                         />
                       </div>
+                      )}
 
-                      {/* Price Value (Day) - NEW */}
+                      {/* Price Value (Day) — hidden when the boat is priced Per Hour only */}
+                      {formData.price_mode !== 'per_hour' && (
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Price per Day (EGP)
-                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional if hour price set)</span>
+                          {formData.price_mode === 'per_time' && (
+                            <span className="text-gray-400 font-normal text-xs ml-1">(Optional if hour price set)</span>
+                          )}
                         </label>
                         <input
                           type="number"
@@ -1457,22 +1505,7 @@ export default function AdminBoatListingLayout() {
                           placeholder="e.g. 5000"
                         />
                       </div>
-
-                      {/* Sale Price (Buy/Sell) */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Sale Price (EGP)
-                          <span className="text-gray-400 font-normal text-xs ml-1">(Optional - shows in Buy/Sell)</span>
-                        </label>
-                        <input
-                          type="number"
-                          value={formData.sale_price || ''}
-                          onChange={(e) => setFormData({ ...formData, sale_price: e.target.value ? Number(e.target.value) : null })}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
-                          min="0"
-                          placeholder="e.g. 500000"
-                        />
-                      </div>
+                      )}
 
                       {/* Location (Cities) */}
                       <div>
@@ -1493,8 +1526,13 @@ export default function AdminBoatListingLayout() {
                                   const trip = trips.find((t: any) => t.id === tripId);
                                   return trip && newCities.includes(trip.city_id);
                                 });
+                                // Drop custom prices for trips that just got auto-deselected
+                                const newTripPrices: Record<number, number | null> = {};
+                                newSelectedTrips.forEach(id => {
+                                  if (id in formData.trip_prices) newTripPrices[id] = formData.trip_prices[id];
+                                });
 
-                                setFormData({ ...formData, cities: newCities, trips: newSelectedTrips });
+                                setFormData({ ...formData, cities: newCities, trips: newSelectedTrips, trip_prices: newTripPrices });
                               }}
                               className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${formData.cities.includes(city.id) ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
                             >
@@ -1602,6 +1640,36 @@ export default function AdminBoatListingLayout() {
                 </div>
               )}
 
+              {activeTab === 'sell' && (
+                <div>
+                  <div className="flex items-center gap-2 mb-6">
+                    <FiDollarSign size={20} className="text-gray-900" />
+                    <h3 className="text-lg font-bold text-gray-900">Sell This Boat</h3>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-6">Set a sale price to list this boat in the Buy/Sell marketplace. Leave empty if the boat is not for sale.</p>
+
+                  <div className="max-w-md">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Sale Price (EGP)
+                      <span className="text-gray-400 font-normal text-xs ml-1">(Optional — shows in Buy/Sell)</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.sale_price || ''}
+                      onChange={(e) => setFormData({ ...formData, sale_price: e.target.value ? Number(e.target.value) : null })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                      min="0"
+                      placeholder="e.g. 500000"
+                    />
+                    {formData.sale_price ? (
+                      <p className="text-xs text-emerald-600 mt-2">This boat will appear in the Buy/Sell marketplace at EGP {formData.sale_price}.</p>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-2">Not listed for sale.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'trips' && (
                 <div>
                   <div className="flex items-center gap-2 mb-6">
@@ -1626,22 +1694,42 @@ export default function AdminBoatListingLayout() {
                         .map((trip: any) => { // Assuming trip has image now?
                           const isSelected = formData.trips.includes(trip.id);
                           // Find full trip data to get image if available, else placeholder
+                          const customPrice = formData.trip_prices[trip.id];
                           return (
                             <div
                               key={trip.id}
+                              className={`rounded-xl border-2 p-3 transition-all flex gap-4 items-center group relative overflow-hidden ${isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-100 hover:border-gray-300 cursor-pointer'}`}
                               onClick={() => {
-                                const newTrips = isSelected
-                                  ? formData.trips.filter(id => id !== trip.id)
-                                  : [...formData.trips, trip.id];
-                                setFormData(prev => ({ ...prev, trips: newTrips }));
+                                // Toggle on the card itself only when NOT yet selected.
+                                // Once selected, the user clicks the price input or the
+                                // checkmark to deselect, so accidental clicks on the card
+                                // body don't blow away their custom price.
+                                if (!isSelected) {
+                                  setFormData(prev => ({ ...prev, trips: [...prev.trips, trip.id] }));
+                                }
                               }}
-                              className={`rounded-xl border-2 p-3 cursor-pointer transition-all flex gap-4 items-center group relative overflow-hidden ${isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-100 hover:border-gray-300'}`}
                             >
-                              {/* Checkmark when selected */}
+                              {/* Checkmark when selected (also acts as deselect button) */}
                               {isSelected && (
-                                <div className="absolute top-2 right-2 w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center text-white z-10">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFormData(prev => {
+                                      const nextPrices = { ...prev.trip_prices };
+                                      delete nextPrices[trip.id];
+                                      return {
+                                        ...prev,
+                                        trips: prev.trips.filter(id => id !== trip.id),
+                                        trip_prices: nextPrices,
+                                      };
+                                    });
+                                  }}
+                                  className="absolute top-2 right-2 w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center text-white z-10 hover:bg-red-600 transition-colors"
+                                  title="Remove this trip"
+                                >
                                   <FiCheck size={14} />
-                                </div>
+                                </button>
                               )}
 
                               {/* Image container */}
@@ -1657,13 +1745,53 @@ export default function AdminBoatListingLayout() {
 
                               <div className="flex-1 min-w-0">
                                 <p className={`font-bold text-sm mb-1 truncate ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>{trip.name}</p>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                                   <span className="bg-gray-100 px-2 py-0.5 rounded text-[10px]">{trip.trip_type}</span>
                                   <span>•</span>
                                   <span>{trip.voyage_hours}h</span>
                                   <span>•</span>
-                                  <span className="font-semibold text-gray-900">{trip.total_price.toLocaleString()} EGP</span>
+                                  <span className="font-semibold text-gray-900">Default {trip.total_price.toLocaleString()} EGP</span>
                                 </div>
+                                {/* Per-boat custom price input — only meaningful when the
+                                    boat's Pricing Model is "Per Trip (flat fee)". For other
+                                    pricing modes (per_time / per_person / per_person_per_time)
+                                    we leave the field hidden because the override has no
+                                    effect on the booking math. */}
+                                {isSelected && formData.price_mode === 'per_trip' && (
+                                  <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex items-center gap-2 mt-1"
+                                  >
+                                    <label className="text-[11px] font-medium text-gray-600 whitespace-nowrap">
+                                      Your price (EGP)
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      value={customPrice ?? ''}
+                                      onChange={(e) => {
+                                        const raw = e.target.value;
+                                        const parsed = raw === '' ? null : Number(raw);
+                                        const value = parsed !== null && Number.isFinite(parsed) ? parsed : null;
+                                        setFormData(prev => ({
+                                          ...prev,
+                                          trip_prices: { ...prev.trip_prices, [trip.id]: value },
+                                        }));
+                                      }}
+                                      placeholder={trip.total_price.toLocaleString()}
+                                      className="w-28 px-2 py-1 text-xs bg-white border border-gray-300 rounded focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+                                    />
+                                    <span className="text-[10px] text-gray-400">
+                                      {customPrice == null ? 'Using default' : 'Override'}
+                                    </span>
+                                  </div>
+                                )}
+                                {isSelected && formData.price_mode !== 'per_trip' && (
+                                  <p className="text-[10px] text-gray-400 italic mt-1">
+                                    Switch Pricing Model to &quot;Per Trip&quot; to set a custom price for this trip.
+                                  </p>
+                                )}
                               </div>
                             </div>
                           );

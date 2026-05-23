@@ -146,7 +146,7 @@ export default function TripBoatsPage() {
                         </div>
                         <div className="px-5 py-2.5 bg-emerald-50 text-emerald-900 rounded-full border border-emerald-100 flex items-center gap-2 shadow-sm">
                             <MdOutlineAttachMoney className="text-xl" />
-                            <span>Starts from E£ {trip.total_price}</span>
+                            <span>Starts from EGP {trip.total_price}</span>
                         </div>
                         <div className="px-5 py-2.5 bg-amber-50 text-amber-900 rounded-full border border-amber-100 flex items-center gap-2 shadow-sm">
                             <FiMapPin className="text-lg" />

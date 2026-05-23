@@ -4,9 +4,15 @@
 
 // ===== BASE CONFIGURATION =====
 // Updated to the new Heroku backend
-// export const BASE_URL = 'https://daffa-e0870d98592a.herokuapp.com';
-export const BASE_URL = 'https://marakbi-e0870d98592a.herokuapp.com/';
-// export const BASE_URL = 'http://127.0.0.1:8787';
+// API base URL — read from NEXT_PUBLIC_API_URL at build time so dev can
+// point to localhost via a .env.local file without editing source.
+// Falls back to the production Heroku URL when the env var is unset.
+// (NEXT_PUBLIC_API_URL is inlined client-side by Next.js, so this works
+// in both server and browser contexts.)
+const DEFAULT_API_URL = 'https://marakbi-e0870d98592a.herokuapp.com/';
+export const BASE_URL =
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) ||
+  DEFAULT_API_URL;
 
 
 // Toggle for verbose API logging in the console
@@ -137,6 +143,9 @@ export interface AddBoatData {
   categories: number[];
   cities: number[];
   trips?: number[];
+  // Per-trip custom price overrides (parallel to `trips`, same index).
+  // Use null/undefined at an index to mean "use the trip's default total_price".
+  trip_prices?: (number | null)[];
   boat_images?: File[];
   video_urls?: string[];
   primary_new_image_index?: number;
@@ -158,6 +167,9 @@ export interface EditBoatData {
   categories?: number[];
   cities?: number[];
   trips?: number[];
+  // Per-trip custom price overrides (parallel to `trips`, same index).
+  // Use null/undefined at an index to mean "use the trip's default total_price".
+  trip_prices?: (number | null)[];
   boat_images?: File[];
   video_urls?: string[];
   removed_images?: string[];
@@ -567,6 +579,12 @@ export const storage = {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      // Also expire the access_token cookie that the Next.js middleware
+      // reads — without this, a stale cookie keeps the middleware thinking
+      // we're authenticated, so it redirects /login back to / and the user
+      // can't escape the home page after a 401.
+      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     }
   },
 
@@ -628,14 +646,20 @@ async function apiRequest<T>(
       console.log(`📡 API Response: ${response.status} ${response.statusText}`);
     }
 
-    // Handle non-JSON responses
+    // Handle non-JSON responses (e.g. Flask's HTML 500 error page).
+    // Don't spam DevTools with the entire HTML body — log one summary
+    // line behind the API_LOGS flag and surface a status-aware message.
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('❌ Non-JSON response:', text);
+      if (ENABLE_API_LOGS) {
+        console.warn(`API ${response.status} non-JSON response from ${endpoint}`);
+      }
       return {
         success: false,
-        error: 'Server returned non-JSON response'
+        error:
+          response.status >= 500
+            ? 'Server error. Please try again later.'
+            : `Unexpected response from server (HTTP ${response.status}).`,
       };
     }
 
@@ -1146,6 +1170,11 @@ export interface AdminTrip {
   guests_on_board: number | null;
   rooms_available: number | null;
   created_at: string;
+  // Present when the trip is returned in a boat-detail context (admin GET
+  // /boats/:id and the public /boats/:id endpoints). NULL custom_price means
+  // no override is set; effective_price is the resolved value to display.
+  custom_price?: number | null;
+  effective_price?: number;
 }
 
 export interface AdminVoyage {
@@ -1214,6 +1243,23 @@ async function adminFormRequest<T>(
       },
       body: formData
     });
+
+    // Same defensive non-JSON guard as apiRequest — without this a Flask
+    // 500 HTML page would crash response.json() and bubble a cryptic
+    // "Unexpected token '<'" SyntaxError into the UI.
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      if (ENABLE_API_LOGS) {
+        console.warn(`adminFormRequest ${response.status} non-JSON response from ${endpoint}`);
+      }
+      return {
+        success: false,
+        error:
+          response.status >= 500
+            ? 'Server error. Please try again later.'
+            : `Unexpected response from server (HTTP ${response.status}).`,
+      };
+    }
 
     const data = await response.json();
 
@@ -1314,7 +1360,15 @@ export const adminApi = {
     formData.append('description', boatData.description);
     boatData.categories.forEach(id => formData.append('categories', id.toString()));
     boatData.cities.forEach(id => formData.append('cities', id.toString()));
-    if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+    if (boatData.trips) {
+      boatData.trips.forEach((id, idx) => {
+        formData.append('trips', id.toString());
+        // Backend reads `trip_prices` as a parallel multipart array indexed
+        // alongside `trips`. Empty string at an index means "no override".
+        const price = boatData.trip_prices?.[idx];
+        formData.append('trip_prices', price === null || price === undefined ? '' : price.toString());
+      });
+    }
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
 
     if (boatData.services) {
@@ -1354,7 +1408,15 @@ export const adminApi = {
     if (boatData.description) formData.append('description', boatData.description);
     if (boatData.categories) boatData.categories.forEach(id => formData.append('categories', id.toString()));
     if (boatData.cities) boatData.cities.forEach(id => formData.append('cities', id.toString()));
-    if (boatData.trips) boatData.trips.forEach(id => formData.append('trips', id.toString()));
+    if (boatData.trips) {
+      boatData.trips.forEach((id, idx) => {
+        formData.append('trips', id.toString());
+        // Backend reads `trip_prices` as a parallel multipart array indexed
+        // alongside `trips`. Empty string at an index means "no override".
+        const price = boatData.trip_prices?.[idx];
+        formData.append('trip_prices', price === null || price === undefined ? '' : price.toString());
+      });
+    }
     if (boatData.show_guests_badge !== undefined) formData.append('show_guests_badge', boatData.show_guests_badge.toString());
 
     if (boatData.services !== undefined) {

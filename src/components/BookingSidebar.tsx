@@ -29,9 +29,14 @@ interface BookingSidebarProps {
     tripPrice?: number;
     initialGuestCount?: number;
     locationUrl?: string;
-    priceMode?: "per_time" | "per_person" | "per_person_per_time";
+    priceMode?: "per_time" | "per_hour" | "per_day" | "per_person" | "per_person_per_time";
     // Boat services
     boatServices?: BoatServiceAssignment[];
+    // Service selection state lifted to parent so Available Services cards can drive it
+    selectedServiceIds: Set<number>;
+    setSelectedServiceIds: React.Dispatch<React.SetStateAction<Set<number>>>;
+    servicePersonCounts: Map<number, number>;
+    setServicePersonCounts: React.Dispatch<React.SetStateAction<Map<number, number>>>;
 }
 
 export interface SelectedServiceItem {
@@ -78,6 +83,10 @@ export default function BookingSidebar({
     locationUrl,
     priceMode = "per_time",
     boatServices = [],
+    selectedServiceIds,
+    setSelectedServiceIds,
+    servicePersonCounts,
+    setServicePersonCounts,
 }: BookingSidebarProps) {
     // Restore previous selections from Zustand store (e.g. when navigating back from payment)
     const getStoredBooking = () => {
@@ -103,28 +112,7 @@ export default function BookingSidebar({
     });
     const [includeChildren, setIncludeChildren] = useState(false);
     const [childrenCount, setChildrenCount] = useState(0);
-    // Selected optional services
-    const [selectedServiceIds, setSelectedServiceIds] = useState<Set<number>>(() => {
-        const s = getStoredBooking();
-        if (s?.selected_services) {
-            return new Set(s.selected_services.map((svc: { service_id: number }) => svc.service_id));
-        }
-        return new Set();
-    });
-    // Per-service person count (for per_person/per_person_per_time services with per_person_all_required=false)
-    const [servicePersonCounts, setServicePersonCounts] = useState<Map<number, number>>(() => {
-        const s = getStoredBooking();
-        if (s?.selected_services) {
-            const map = new Map<number, number>();
-            (s.selected_services as { service_id: number; person_count?: number }[]).forEach(svc => {
-                if (svc.person_count != null) {
-                    map.set(svc.service_id, svc.person_count);
-                }
-            });
-            return map;
-        }
-        return new Map();
-    });
+    // Service selection state is owned by parent (boat-details page) so service cards drive it
     // const [hours, setHours] = useState(1); // Removed in favor of start/end time
     const [startTime, setStartTime] = useState<string>(() => {
         const s = getStoredBooking();
@@ -544,18 +532,6 @@ export default function BookingSidebar({
 
     const { basePrice, serviceFee, total, days, calculatedHours, servicesTotal, selectedServicesArr } = calculatePrice();
 
-    const toggleService = (serviceId: number) => {
-        setSelectedServiceIds(prev => {
-            const next = new Set(prev);
-            if (next.has(serviceId)) {
-                next.delete(serviceId);
-            } else {
-                next.add(serviceId);
-            }
-            return next;
-        });
-    };
-
     // Calendar helpers
     const getDaysInMonth = (date: Date) => {
         const year = date.getFullYear();
@@ -834,19 +810,20 @@ export default function BookingSidebar({
         if (isTripBooking) return 'Flat Rate';
         if (rentalType === 'day') {
             if (priceMode === 'per_person' || priceMode === 'per_person_per_time') {
-                return `E£ ${effectivePrice} × ${guestCount} guests × ${days} days`;
+                return `EGP ${Math.round(effectivePrice)} × ${guestCount} guests × ${days} days`;
             }
-            return `E£ ${effectivePrice} × ${days} days`;
+            return `EGP ${Math.round(effectivePrice)} × ${days} days`;
         }
 
         // Hourly Logic Breakdown
+        const hourly = Math.round(pricePerHour || 0);
         if (priceMode === 'per_person') {
-            return `E£ ${pricePerHour || 0} × ${guestCount} guests`;
+            return `EGP ${hourly} × ${guestCount} guests`;
         } else if (priceMode === 'per_person_per_time') {
-            return `E£ ${pricePerHour || 0} × ${guestCount} guests × ${calculatedHours} hours`;
+            return `EGP ${hourly} × ${guestCount} guests × ${calculatedHours} hours`;
         } else {
             // Standard
-            return `E£ ${pricePerHour || 0} × ${calculatedHours} hours`;
+            return `EGP ${hourly} × ${calculatedHours} hours`;
         }
     };
 
@@ -886,14 +863,14 @@ export default function BookingSidebar({
                             Per Day
                         </button>
                     )}
-                    <button
-                        onClick={() => {
-                            toast('Custom request feature coming soon!', { icon: '📝' });
-                        }}
+                    <a
+                        href="https://wa.me/201031416900"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="px-4 py-2 rounded-lg text-sm font-normal font-poppins border border-zinc-400 text-zinc-500 hover:bg-gray-50 transition-colors"
                     >
                         Custom Request
-                    </button>
+                    </a>
                 </div>
             ) : (
                 <div className="mb-4">
@@ -909,10 +886,10 @@ export default function BookingSidebar({
                     </div>
                     <div className="text-right">
                         <span className="text-[#106BD8] text-xl font-semibold font-poppins capitalize">
-                            {effectivePrice}
+                            {Math.round(effectivePrice)}
                         </span>
                         <span className="text-black text-sm font-normal font-poppins capitalize">
-                            {" "}EGP{rentalType === "day" ? priceDailyUnitLabel : priceUnitLabel}
+                            {" "}EGP {rentalType === "day" ? priceDailyUnitLabel : priceUnitLabel}
                         </span>
                     </div>
                 </div>
@@ -1187,93 +1164,101 @@ export default function BookingSidebar({
                             </svg>
                         </span>
                         Add-on Services
-                    </label>                    <div className="space-y-2">
-                        {boatServices.map((svcAssign) => {
-                            const svc = svcAssign.service;
-                            if (!svc) return null;
-                            const svcPrice = svcAssign.price ?? svc.default_price ?? 0;
-                            const isSelected = selectedServiceIds.has(svcAssign.service_id);
-                            const priceModeLabel = svc.price_mode === 'per_trip' ? '' : svc.price_mode === 'per_person' ? '/person' : '/person/hr';
-                            const isPerPerson = svc.price_mode === 'per_person' || svc.price_mode === 'per_person_per_time';
-                            const perPersonAllRequired = svcAssign.per_person_all_required !== false;
-                            const showPersonPicker = isSelected && isPerPerson && !perPersonAllRequired;
-                            const currentPersonCount = servicePersonCounts.get(svcAssign.service_id) ?? guestCount;
+                    </label>
+                    {selectedServiceIds.size === 0 ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }}
+                            className="w-full p-4 border border-dashed border-gray-300 rounded-lg text-center text-zinc-500 text-sm font-poppins hover:border-[#0F3875] hover:text-[#0F3875] hover:bg-blue-50/30 transition-colors"
+                        >
+                            No services selected — pick from the Services section above
+                        </button>
+                    ) : (
+                        <div className="space-y-2">
+                            {boatServices
+                                .filter(svcAssign => selectedServiceIds.has(svcAssign.service_id))
+                                .map((svcAssign) => {
+                                    const svc = svcAssign.service;
+                                    if (!svc) return null;
+                                    const svcPrice = svcAssign.price ?? svc.default_price ?? 0;
+                                    const priceModeLabel = svc.price_mode === 'per_trip' ? '' : svc.price_mode === 'per_person' ? '/person' : '/person/hr';
+                                    const isPerPerson = svc.price_mode === 'per_person' || svc.price_mode === 'per_person_per_time';
+                                    const perPersonAllRequired = svcAssign.per_person_all_required !== false;
+                                    const showPersonPicker = isPerPerson && !perPersonAllRequired;
+                                    const currentPersonCount = servicePersonCounts.get(svcAssign.service_id) ?? guestCount;
 
-                            return (
-                                <div key={svcAssign.service_id}>
-                                    <div
-                                        onClick={() => toggleService(svcAssign.service_id)}
-                                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${isSelected
-                                            ? 'border-[#0F3875] bg-blue-50/50'
-                                            : 'border-neutral-200 hover:border-gray-300'
-                                            }${showPersonPicker ? ' rounded-b-none border-b-0' : ''}`}
-                                    >
-                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#0F3875] border-[#0F3875]' : 'border-gray-300'
-                                            }`}>
-                                            {isSelected && (
-                                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            )}
-                                        </div>
-                                        {svc.icon_url && (
-                                            <div className="w-8 h-8 rounded overflow-hidden relative flex-shrink-0">
-                                                <Image src={svc.icon_url} alt={svc.name} fill className="object-cover" />
-                                            </div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-stone-900 text-sm font-medium font-poppins truncate">{svc.name}</p>
-                                            {svc.description && (
-                                                <p className="text-zinc-400 text-xs font-poppins truncate">{svc.description}</p>
-                                            )}
-                                        </div>
-                                        <span className="text-[#106BD8] text-sm font-semibold font-poppins whitespace-nowrap">
-                                            E£ {svcPrice}{priceModeLabel}
-                                        </span>
-                                    </div>
-                                    {/* Person count picker for per-person services where admin allows choosing */}
-                                    {showPersonPicker && (
-                                        <div className="flex items-center justify-between px-3 py-2 bg-blue-50/30 border border-[#0F3875] border-t-0 rounded-b-lg"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <span className="text-zinc-600 text-xs font-poppins">How many persons?</span>
-                                            <div className="flex items-center gap-2">
+                                    return (
+                                        <div key={svcAssign.service_id} className="border border-[#0F3875] bg-blue-50/30 rounded-lg overflow-hidden">
+                                            <div className="flex items-center gap-3 p-3">
+                                                {svc.icon_url && (
+                                                    <div className="w-8 h-8 rounded overflow-hidden relative flex-shrink-0">
+                                                        <Image src={svc.icon_url} alt={svc.name} fill className="object-cover" />
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-stone-900 text-sm font-medium font-poppins truncate">{svc.name}</p>
+                                                    <span className="text-[#106BD8] text-xs font-semibold font-poppins">
+                                                        EGP {Math.round(svcPrice)}{priceModeLabel}
+                                                    </span>
+                                                </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        setServicePersonCounts(prev => {
-                                                            const next = new Map(prev);
-                                                            next.set(svcAssign.service_id, Math.max(1, currentPersonCount - 1));
+                                                        setSelectedServiceIds(prev => {
+                                                            const next = new Set(prev);
+                                                            next.delete(svcAssign.service_id);
                                                             return next;
                                                         });
                                                     }}
-                                                    disabled={currentPersonCount <= 1}
-                                                    className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                    aria-label="Remove service"
+                                                    className="w-6 h-6 rounded-full border border-red-300 text-red-500 hover:bg-red-50 flex items-center justify-center text-base font-bold flex-shrink-0 leading-none"
                                                 >
-                                                    −
-                                                </button>
-                                                <span className="text-stone-900 text-sm font-semibold font-poppins min-w-[20px] text-center">{currentPersonCount}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setServicePersonCounts(prev => {
-                                                            const next = new Map(prev);
-                                                            next.set(svcAssign.service_id, Math.min(guestCount, currentPersonCount + 1));
-                                                            return next;
-                                                        });
-                                                    }}
-                                                    disabled={currentPersonCount >= guestCount}
-                                                    className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                                                >
-                                                    +
+                                                    ×
                                                 </button>
                                             </div>
+                                            {showPersonPicker && (
+                                                <div className="flex items-center justify-between px-3 py-2 border-t border-[#0F3875]/30">
+                                                    <span className="text-zinc-600 text-xs font-poppins">How many persons?</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setServicePersonCounts(prev => {
+                                                                    const next = new Map(prev);
+                                                                    next.set(svcAssign.service_id, Math.max(1, currentPersonCount - 1));
+                                                                    return next;
+                                                                });
+                                                            }}
+                                                            disabled={currentPersonCount <= 1}
+                                                            className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                        >
+                                                            −
+                                                        </button>
+                                                        <span className="text-stone-900 text-sm font-semibold font-poppins min-w-[20px] text-center">{currentPersonCount}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setServicePersonCounts(prev => {
+                                                                    const next = new Map(prev);
+                                                                    next.set(svcAssign.service_id, Math.min(guestCount, currentPersonCount + 1));
+                                                                    return next;
+                                                                });
+                                                            }}
+                                                            disabled={currentPersonCount >= guestCount}
+                                                            className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                                    );
+                                })}
+                        </div>
+                    )}
                 </div>
             )}            {/* Price Breakdown */}
             <div className="mb-6 pt-4 border-t border-gray-100">
@@ -1282,7 +1267,7 @@ export default function BookingSidebar({
                         {breakdownLabel()}
                     </span>
                     <span className="text-stone-900 text-sm font-medium font-poppins">
-                        E£ {basePrice}
+                        EGP {Math.round(basePrice)}
                     </span>
                 </div>
                 {servicesTotal > 0 && (
@@ -1292,21 +1277,26 @@ export default function BookingSidebar({
                                 Add-on Services
                             </span>
                             <span className="text-stone-900 text-sm font-medium font-poppins">
-                                E£ {servicesTotal}
+                                EGP {Math.round(servicesTotal)}
                             </span>
-                        </div>                        {selectedServicesArr.map(svc => (
+                        </div>                        {selectedServicesArr.map(svc => {
+                            const hrsForLabel = svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count && svc.person_count > 0
+                                ? Math.round(svc.calculated_price / (svc.price * svc.person_count))
+                                : 0;
+                            return (
                             <div key={svc.service_id} className="flex justify-between items-center ml-2">
                                 <span className="text-zinc-400 text-xs font-normal font-poppins">
                                     {svc.name}
                                     {svc.price_mode !== 'per_trip' && svc.person_count && (
-                                        <span className="text-zinc-400"> — {svc.price} × {svc.person_count} {svc.person_count === 1 ? 'person' : 'persons'}{svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 ? ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))} hr${Math.round(svc.calculated_price / (svc.price * svc.person_count)) !== 1 ? 's' : ''}` : ''}</span>
+                                        <span className="text-zinc-400"> — {Math.round(svc.price)} × {svc.person_count} {svc.person_count === 1 ? 'person' : 'persons'}{hrsForLabel > 0 ? ` × ${hrsForLabel} hr${hrsForLabel !== 1 ? 's' : ''}` : ''}</span>
                                     )}
                                 </span>
                                 <span className="text-zinc-500 text-xs font-poppins">
-                                    E£ {svc.calculated_price}
+                                    EGP {Math.round(svc.calculated_price)}
                                 </span>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
                 <div className="flex justify-between items-center mb-3">
@@ -1314,7 +1304,7 @@ export default function BookingSidebar({
                         Service fee ({serviceFeeRate * 100}%)
                     </span>
                     <span className="text-stone-900 text-sm font-medium font-poppins">
-                        E£ {serviceFee}
+                        EGP {Math.round(serviceFee)}
                     </span>
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-gray-100">
@@ -1322,7 +1312,7 @@ export default function BookingSidebar({
                         Total
                     </span>
                     <span className="text-stone-900 text-base font-semibold font-poppins">
-                        E£ {total}
+                        EGP {Math.round(total)}
                     </span>
                 </div>
             </div>

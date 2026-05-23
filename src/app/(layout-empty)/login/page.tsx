@@ -130,23 +130,14 @@ export default function LoginPage() {
           height={700}
         />
 
-        {/* Circle Background */}
+        {/* Logo */}
         <div className="auth-logo-container">
-          <Image
-            src="/icons/Ellipse 46.svg"
-            alt="Circle Background"
-            width={200}
-            height={200}
-            className="auth-circle-bg"
-          />
-
-          {/* Logo */}
           <div className="auth-logo">
             <Link href="/">
               <Image
-                src="/logo.png"
+                src="/images/logo.png"
                 alt="Daffa Logo"
-                width={200}
+                width={78}
                 height={110}
               />
             </Link>
