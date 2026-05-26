@@ -9,7 +9,7 @@
 // Falls back to the production Heroku URL when the env var is unset.
 // (NEXT_PUBLIC_API_URL is inlined client-side by Next.js, so this works
 // in both server and browser contexts.)
-const DEFAULT_API_URL = 'https://marakbi-e0870d98592a.herokuapp.com/';
+const DEFAULT_API_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
 // const DEFAULT_API_URL = 'http://127.0.0.1:8787';
 
 export const BASE_URL =
