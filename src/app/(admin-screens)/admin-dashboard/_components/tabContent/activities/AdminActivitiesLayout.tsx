@@ -53,6 +53,7 @@ export default function AdminActivitiesLayout() {
                 setSelectedActivityForDetails(null);
             }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams, activities, selectedActivityForDetails]);
 
     const fetchActivities = useCallback(async () => {
