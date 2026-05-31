@@ -764,11 +764,11 @@ export default function AdminBoatListingLayout() {
       return;
     }
 
-    // Validation: At least one price required
+    // Validation: At least one price required (except for Trip Only pricing model)
     const hasHourlyPrice = formData.price_per_hour && formData.price_per_hour > 0;
     const hasDailyPrice = formData.price_per_day && formData.price_per_day > 0;
 
-    if (!hasHourlyPrice && !hasDailyPrice) {
+    if (formData.price_mode !== 'per_trip' && !hasHourlyPrice && !hasDailyPrice) {
       showError("Please provide at least one price (per hour or per day)");
       return;
     }
