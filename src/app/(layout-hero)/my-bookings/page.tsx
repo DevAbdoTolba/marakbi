@@ -23,13 +23,24 @@ function BookingCard({ order }: BookingCardProps) {
   const startDate = new Date(order.start_date);
   const endDate = new Date(order.end_date);
   const durationMs = endDate.getTime() - startDate.getTime();
-  const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
-  const durationDays = Math.floor(durationHours / 24);
-  const remainingHours = durationHours % 24;
 
-  const durationText = durationDays > 0
-    ? `${durationDays} Day${durationDays > 1 ? 's' : ''} ${remainingHours > 0 ? `${remainingHours} Hr${remainingHours > 1 ? 's' : ''}` : ''}`
-    : `${durationHours} Hour${durationHours !== 1 ? 's' : ''}`;
+  let durationText = "";
+  if (order.booking_type === "daily") {
+    const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+    durationText = `${durationDays} Day${durationDays !== 1 ? "s" : ""}`;
+  } else {
+    const durationHours = Math.round((durationMs / (1000 * 60 * 60)) * 100) / 100;
+    const durationDays = Math.floor(durationHours / 24);
+    const remainingHours = Math.round((durationHours % 24) * 100) / 100;
+
+    if (durationDays > 0) {
+      const dayText = `${durationDays} Day${durationDays > 1 ? "s" : ""}`;
+      const hrText = remainingHours > 0 ? ` ${Number(remainingHours.toFixed(1))} Hr${remainingHours > 1 ? "s" : ""}` : "";
+      durationText = `${dayText}${hrText}`;
+    } else {
+      durationText = `${Number(durationHours.toFixed(1))} Hour${durationHours !== 1 ? "s" : ""}`;
+    }
+  }
 
   // Format date
   const dayOfMonth = startDate.getDate();

@@ -133,9 +133,26 @@ export default function BookingDetailsPage() {
     const startDate = new Date(order.start_date);
     const endDate = new Date(order.end_date);
     const durationMs = endDate.getTime() - startDate.getTime();
-    const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
-    const durationDays = Math.floor(durationHours / 24);
-    const remainingHours = durationHours % 24;
+
+    let durationText = "";
+    let durationHours = 0;
+    if (order.booking_type === "daily") {
+        const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+        durationText = `${durationDays} Day${durationDays !== 1 ? "s" : ""}`;
+        durationHours = durationDays * 24;
+    } else {
+        durationHours = Math.round((durationMs / (1000 * 60 * 60)) * 100) / 100;
+        const durationDays = Math.floor(durationHours / 24);
+        const remainingHours = Math.round((durationHours % 24) * 100) / 100;
+
+        if (durationDays > 0) {
+            const dayText = `${durationDays} Day${durationDays > 1 ? "s" : ""}`;
+            const hrText = remainingHours > 0 ? ` ${Number(remainingHours.toFixed(1))} Hr${remainingHours > 1 ? "s" : ""}` : "";
+            durationText = `${dayText}${hrText}`;
+        } else {
+            durationText = `${Number(durationHours.toFixed(1))} Hour${durationHours !== 1 ? "s" : ""}`;
+        }
+    }
 
 
     // Determine Rate to show (Base Rate)
@@ -145,12 +162,9 @@ export default function BookingDetailsPage() {
     } else if (order.price_per_day) {
         ratePerUnit = order.price_per_day;
     } else {
+        // Fallback (calculated, might include fees if not careful, but better than 0)
         ratePerUnit = order.total_price / (durationHours || 1);
     }
-
-    const durationText = durationDays > 0
-        ? `${durationDays} Day${durationDays > 1 ? 's' : ''} ${remainingHours > 0 ? `${remainingHours} Hr${remainingHours > 1 ? 's' : ''}` : ''}`
-        : `${durationHours} Hour${durationHours !== 1 ? 's' : ''}`;
 
     // Status Badge Logic
     const getStatusColor = (status: string) => {
@@ -459,7 +473,7 @@ export default function BookingDetailsPage() {
                                                                 <p className="text-[11px] text-gray-400 mt-0.5">
                                                                     {formatCurrency(svc.price)} × {svc.person_count} {svc.person_count === 1 ? 'person' : 'persons'}
                                                                     {svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 &&
-                                                                        ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))} hr${Math.round(svc.calculated_price / (svc.price * svc.person_count)) !== 1 ? 's' : ''}`
+                                                                        ` × ${Number((Math.round((svc.calculated_price / (svc.price * svc.person_count)) * 100) / 100).toFixed(1))} hr${Number((Math.round((svc.calculated_price / (svc.price * svc.person_count)) * 100) / 100).toFixed(1)) !== 1 ? 's' : ''}`
                                                                     }
                                                                 </p>
                                                             )}
@@ -482,7 +496,7 @@ export default function BookingDetailsPage() {
                                 )}
 
                                 {/* Children price breakdown */}
-                                {order.children_count && order.children_count > 0 && order.child_price_snapshot != null && order.child_price_snapshot > 0 && (
+                                {!!order.children_count && order.children_count > 0 && order.child_price_snapshot != null && order.child_price_snapshot > 0 && (
                                     <>
                                         <div className="flex justify-between text-sm pt-2 border-t border-gray-100">
                                             <span className="text-gray-500">Children</span>
@@ -582,7 +596,7 @@ export default function BookingDetailsPage() {
                             <div className="text-center py-4 bg-blue-50 rounded-xl border border-blue-100">
                                 <span className="block text-3xl font-bold text-[#106BD8] mb-1">{order.guest_count}</span>
                                 <span className="text-sm text-blue-600 font-medium">People</span>
-                                {order.children_count && order.children_count > 0 && (
+                                {!!order.children_count && order.children_count > 0 && (
                                     <div className="mt-2 pt-2 border-t border-blue-200">
                                         <span className="text-lg font-bold text-[#106BD8]">{order.children_count}</span>
                                         <span className="text-sm text-blue-600 font-medium ml-1">{order.children_count === 1 ? 'Child' : 'Children'}</span>

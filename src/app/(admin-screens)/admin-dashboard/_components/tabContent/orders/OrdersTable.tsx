@@ -34,8 +34,8 @@ export default function OrdersTable({
     const diffTime = Math.abs(end.getTime() - start.getTime());
 
     if (type === 'hourly') {
-      const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
-      return { value: diffHours || 1, unit: 'hour' };
+      const diffHours = Math.round((diffTime / (1000 * 60 * 60)) * 100) / 100;
+      return { value: diffHours || 0.5, unit: 'hour' };
     } else {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return { value: diffDays || 1, unit: 'day' };

@@ -146,7 +146,7 @@ export default function TripBoatsPage() {
                         </div>
                         <div className="px-5 py-2.5 bg-emerald-50 text-emerald-900 rounded-full border border-emerald-100 flex items-center gap-2 shadow-sm">
                             <MdOutlineAttachMoney className="text-xl" />
-                            <span>Starts from EGP {trip.total_price}</span>
+                            <span>Starts from EGP {trip.min_price ?? trip.total_price}</span>
                         </div>
                         <div className="px-5 py-2.5 bg-amber-50 text-amber-900 rounded-full border border-amber-100 flex items-center gap-2 shadow-sm">
                             <FiMapPin className="text-lg" />
@@ -193,9 +193,22 @@ export default function TripBoatsPage() {
                                             <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors line-clamp-1">{boat.name}</h3>
                                         </div>
 
-                                        <div className="flex items-center gap-2 text-gray-500 text-sm mb-6">
-                                            <FiUsers className="text-lg" />
-                                            <span>Max {boat.max_seats} Guests</span>
+                                        <div className="flex items-center justify-between text-sm mb-6">
+                                            <div className="flex items-center gap-2 text-gray-500">
+                                                <FiUsers className="text-lg" />
+                                                <span>Max {boat.max_seats} Guests</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-xs text-gray-400 block uppercase tracking-wider font-semibold">
+                                                    Trip Price
+                                                </span>
+                                                <span className="text-[#0C4A8C] text-lg font-extrabold font-poppins">
+                                                    EGP {(() => {
+                                                        const assoc = boat.trips?.find(t => t.id === parseInt(tripId)) as { effective_price?: number } | undefined;
+                                                        return assoc?.effective_price ?? trip.total_price;
+                                                    })()}
+                                                </span>
+                                            </div>
                                         </div>
 
                                         <div className="mt-auto">

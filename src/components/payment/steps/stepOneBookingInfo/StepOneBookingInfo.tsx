@@ -119,7 +119,7 @@ export default function StepOneBookingInfo() {
                       {svc.name}
                       {svc.price_mode !== 'per_trip' && svc.person_count && (
                         <span className="text-gray-300 text-xs ml-1">
-                          ({svc.price} × {svc.person_count}{svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 ? ` × ${Math.round(svc.calculated_price / (svc.price * svc.person_count))}h` : ''})
+                          ({svc.price} × {svc.person_count}{svc.price_mode === 'per_person_per_time' && svc.price > 0 && svc.person_count > 0 ? ` × ${Number((Math.round((svc.calculated_price / (svc.price * svc.person_count)) * 100) / 100).toFixed(1))}h` : ''})
                         </span>
                       )}
                     </span>

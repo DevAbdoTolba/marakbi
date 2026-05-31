@@ -160,8 +160,11 @@ export default function TripListingLayout() {
 
                                         <div className="flex justify-between items-center mt-4">
                                             <div>
+                                                <span className="text-gray-500 text-xs block font-medium uppercase tracking-wider mb-0.5">
+                                                    Starting from
+                                                </span>
                                                 <span className="text-sky-900 text-xl font-bold">
-                                                    EGP {trip.total_price}
+                                                    EGP {trip.min_price ?? trip.total_price}
                                                 </span>
                                                 <span className="text-gray-500 text-sm ml-1">
                                                     / {trip.voyage_hours}h

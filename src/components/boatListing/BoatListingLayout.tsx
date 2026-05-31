@@ -516,6 +516,9 @@ export default function BoatListingLayout() {
             }
           }
 
+          // Exclude boats whose pricing model is 'per_trip' (Trip Only)
+          filteredBoats = filteredBoats.filter(boat => boat.price_mode !== 'per_trip');
+
           // Store all boats for filtering (before search query filter)
           // Note: Search query filtering will be handled in applyFilters via allBoats
           setAllBoats(filteredBoats);

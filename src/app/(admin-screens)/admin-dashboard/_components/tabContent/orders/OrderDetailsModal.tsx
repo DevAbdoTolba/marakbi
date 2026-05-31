@@ -45,8 +45,8 @@ export default function OrderDetailsModal({
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
 
         if (type === 'hourly') {
-            const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
-            return { value: diffHours || 1, unit: 'hour' };
+            const diffHours = Math.round((diffTime / (1000 * 60 * 60)) * 100) / 100;
+            return { value: diffHours || 0.5, unit: 'hour' };
         } else {
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             return { value: diffDays || 1, unit: 'day' };
@@ -394,7 +394,7 @@ export default function OrderDetailsModal({
                                     )}
                                     <span>× {duration} {unit}{duration > 1 ? 's' : ''}</span>
                                 </div>
-                                {order.children_count && order.children_count > 0 && order.child_price_snapshot != null && order.child_price_snapshot > 0 && (
+                                {!!order.children_count && order.children_count > 0 && order.child_price_snapshot != null && order.child_price_snapshot > 0 && (
                                     <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
                                         <div className="flex justify-between items-center mb-1">
                                             <span className="text-sm text-gray-600 font-medium">Children Rate</span>

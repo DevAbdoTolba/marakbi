@@ -9,8 +9,8 @@
 // Falls back to the production Heroku URL when the env var is unset.
 // (NEXT_PUBLIC_API_URL is inlined client-side by Next.js, so this works
 // in both server and browser contexts.)
-const DEFAULT_API_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
-// const DEFAULT_API_URL = 'http://127.0.0.1:8787';
+// const DEFAULT_API_URL = 'https://marakbi-e0870d98592a.herokuapp.com';
+const DEFAULT_API_URL = 'http://127.0.0.1:8787';
 
 export const BASE_URL =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) ||
@@ -259,6 +259,7 @@ export interface Trip {
   city_id: number;
   city_name: string;
   total_price: number;
+  min_price?: number;
   trip_type: string;
   voyage_hours: number;
   images: string[];
@@ -266,6 +267,12 @@ export interface Trip {
   pax: number | null;
   rooms_available: number | null;
   created_at: string;
+  boat_prices?: Array<{
+    boat_id: number;
+    boat_name?: string;
+    custom_price: number | null;
+    effective_price: number;
+  }>;
 }
 
 export interface TripBooking {

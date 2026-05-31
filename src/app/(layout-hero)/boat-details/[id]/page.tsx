@@ -226,7 +226,10 @@ export default function BoatDetailsPage() {
       trip_description: selectedTrip?.description,
       trip_image: selectedTrip?.images && selectedTrip.images.length > 0 ? normalizeImageUrl(selectedTrip.images[0]) : null,
       trip_images: selectedTrip?.images ? normalizeImageUrls(selectedTrip.images) : [],
-      trip_price: selectedTrip?.total_price,
+      trip_price: (() => {
+        const assoc = boatData?.boat.trips?.find(t => t.id === selectedTrip?.id) as { effective_price?: number } | undefined;
+        return assoc?.effective_price ?? selectedTrip?.total_price;
+      })(),
       trip_duration: selectedTrip?.voyage_hours,
       is_trip_booking: !!selectedTrip,
       boat_rating: reviews_summary.average_rating,
@@ -403,7 +406,10 @@ export default function BoatDetailsPage() {
                     <h2 className="text-2xl font-bold text-gray-900 font-poppins">{selectedTrip.name}</h2>
                     <div className="text-right">
                       <p className="text-sm text-gray-500">Trip Price</p>
-                      <p className="text-2xl font-bold text-sky-900">EGP {selectedTrip.total_price}</p>
+                      <p className="text-2xl font-bold text-sky-900">EGP {(() => {
+                        const assoc = boatData?.boat.trips?.find(t => t.id === selectedTrip?.id) as { effective_price?: number } | undefined;
+                        return assoc?.effective_price ?? selectedTrip?.total_price;
+                      })()}</p>
                     </div>
                   </div>
                   <p className="text-gray-600 line-clamp-2 mb-4">{selectedTrip.description}</p>
@@ -1271,7 +1277,10 @@ export default function BoatDetailsPage() {
               onBookingRequest={handleRequestToBook}
               isTripBooking={!!selectedTrip}
               tripDuration={selectedTrip?.voyage_hours}
-              tripPrice={selectedTrip?.total_price}
+              tripPrice={(() => {
+                const assoc = boatData?.boat.trips?.find(t => t.id === selectedTrip?.id) as { effective_price?: number } | undefined;
+                return assoc?.effective_price ?? selectedTrip?.total_price;
+              })()}
               initialGuestCount={searchParams.get("guest_count") ? parseInt(searchParams.get("guest_count")!) : (searchParams.get("min_passengers") ? parseInt(searchParams.get("min_passengers")!) : 2)}
               locationUrl={boat.location_url}
               priceMode={boat.price_mode as "per_time" | "per_hour" | "per_day" | "per_person" | "per_person_per_time"}

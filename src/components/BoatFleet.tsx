@@ -18,6 +18,7 @@ const BoatFleet = () => {
         const response = await clientApi.getBoats(1, 6);
         if (response.success && response.data) {
           const validBoats = response.data.boats.filter(boat => {
+            if (boat.price_mode === 'per_trip') return false;
             const hasHourly = boat.price_per_hour !== null && boat.price_per_hour !== undefined;
             const hasDaily = boat.price_per_day !== null && boat.price_per_day !== undefined;
             return hasHourly || hasDaily;

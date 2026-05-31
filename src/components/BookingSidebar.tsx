@@ -285,7 +285,8 @@ export default function BookingSidebar({
 
     // Helper to check if a time overlaps with any booked slot
     const isTimeBooked = (time: string, isEndTime: boolean = false): boolean => {
-        const timeHour = parseInt(time.split(":")[0]);
+        const [timeH, timeM] = time.split(":").map(Number);
+        const timeTotalMinutes = timeH * 60 + timeM;
 
         // Special validation for Trip Booking
         if (rentalType === "trip") {
@@ -296,8 +297,8 @@ export default function BookingSidebar({
             const [h, m] = time.split(':');
             tripStart.setHours(parseInt(h), parseInt(m), 0, 0);
 
-            const tripEnd = new Date(tripStart);
-            tripEnd.setHours(tripStart.getHours() + Number(tripDuration));
+            // Compute end date based on fractional trip duration
+            const tripEnd = new Date(tripStart.getTime() + Number(tripDuration) * 60 * 60 * 1000);
 
             // Check against all booked slots
             for (const slot of bookedSlots) {
@@ -340,21 +341,21 @@ export default function BookingSidebar({
 
                 // If hourly booking on the same day, check hours
                 // Need to parse hours relative to the day
-                const slotStartHour = parseInt(slot.start.split(":")[0]);
-                const slotEndHour = parseInt(slot.end.split(":")[0]);
-
-                // Adjust for multi-day hourly bookings? (Unlikely for 'hourly' rental type booking to be multi-day but backend supports it)
-                // Assuming hourly bookings are within a day for comparison simplicty on frontend map
+                const [slotStartH, slotStartM] = slot.start.split(":").map(Number);
+                const [slotEndH, slotEndM] = slot.end.split(":").map(Number);
+                const slotStartTotalMinutes = slotStartH * 60 + slotStartM;
+                const slotEndTotalMinutes = slotEndH * 60 + slotEndM;
 
                 if (isEndTime) {
                     if (startTime) {
-                        const selectedStart = parseInt(startTime.split(":")[0]);
-                        if (selectedStart < slotEndHour && timeHour > slotStartHour) {
+                        const [startH, startM] = startTime.split(":").map(Number);
+                        const selectedStartTotalMinutes = startH * 60 + startM;
+                        if (selectedStartTotalMinutes < slotEndTotalMinutes && timeTotalMinutes > slotStartTotalMinutes) {
                             return true;
                         }
                     }
                 } else {
-                    if (timeHour >= slotStartHour && timeHour < slotEndHour) {
+                    if (timeTotalMinutes >= slotStartTotalMinutes && timeTotalMinutes < slotEndTotalMinutes) {
                         return true;
                     }
                 }
@@ -367,11 +368,12 @@ export default function BookingSidebar({
     const getEndTimeOptions = () => {
         if (!startTime) return [];
 
-        const startHour = parseInt(startTime.split(":")[0]);
+        const [startH, startM] = startTime.split(":").map(Number);
+        const startTotalMinutes = startH * 60 + startM;
         const endOptions: string[] = [];
 
         // Find the next booked slot after the start time on the same day
-        let maxEndHour = 24;
+        let maxEndTotalMinutes = 24 * 60;
 
         if (selectedDates.length > 0) {
             const sd = selectedDates[0];
@@ -384,16 +386,19 @@ export default function BookingSidebar({
                 // Only care about slots on this day
                 if (slot.start_date && slot.end_date && (slot.start_date > selectedDateStr || slot.end_date < selectedDateStr)) continue;
 
-                const slotStart = parseInt(slot.start.split(":")[0]);
-                if (slotStart > startHour && slotStart < maxEndHour) {
-                    maxEndHour = slotStart;
+                const [slotStartH, slotStartM] = slot.start.split(":").map(Number);
+                const slotStartTotalMinutes = slotStartH * 60 + slotStartM;
+                if (slotStartTotalMinutes > startTotalMinutes && slotStartTotalMinutes < maxEndTotalMinutes) {
+                    maxEndTotalMinutes = slotStartTotalMinutes;
                 }
             }
         }
 
-        // Generate end time options from start+1 to maxEndHour
-        for (let h = startHour + 1; h <= maxEndHour; h++) {
-            endOptions.push(`${h.toString().padStart(2, "0")}:00`);
+        // Generate end time options from start+30m to maxEndTotalMinutes
+        for (let m = startTotalMinutes + 30; m <= maxEndTotalMinutes; m += 30) {
+            const hour = Math.floor(m / 60).toString().padStart(2, "0");
+            const minute = (m % 60).toString().padStart(2, "0");
+            endOptions.push(`${hour}:${minute}`);
         }
 
         return endOptions;
@@ -431,10 +436,11 @@ export default function BookingSidebar({
     }, [startTime, bookedSlots]);
 
 
-    // Generate time options (24h format, e.g., "08:00", "09:00")
-    const timeOptions = Array.from({ length: 24 }, (_, i) => {
-        const hour = i.toString().padStart(2, "0");
-        return `${hour}:00`;
+    // Generate time options in 30-minute intervals (24h format, e.g., "08:00", "08:30")
+    const timeOptions = Array.from({ length: 48 }, (_, i) => {
+        const hour = Math.floor(i / 2).toString().padStart(2, "0");
+        const minute = (i % 2 === 0) ? "00" : "30";
+        return `${hour}:${minute}`;
     });
 
     // Helper to check if a date should be disabled (today or past)
@@ -461,10 +467,12 @@ export default function BookingSidebar({
             calculatedHours = tripDuration;
         } else if (rentalType === "hour") {
             if (startTime && endTime) {
-                const startHour = parseInt(startTime.split(":")[0]);
-                const endHour = parseInt(endTime.split(":")[0]);
-                if (endHour > startHour) {
-                    calculatedHours = endHour - startHour;
+                const [startH, startM] = startTime.split(":").map(Number);
+                const [endH, endM] = endTime.split(":").map(Number);
+                const startTotalMinutes = startH * 60 + startM;
+                const endTotalMinutes = endH * 60 + endM;
+                if (endTotalMinutes > startTotalMinutes) {
+                    calculatedHours = (endTotalMinutes - startTotalMinutes) / 60;
 
                     if (priceMode === 'per_person') {
                         basePrice = (pricePerHour || 0) * guestCount;
@@ -656,9 +664,11 @@ export default function BookingSidebar({
                 toast.error("Please select start and end time");
                 return;
             }
-            const startHour = parseInt(startTime.split(":")[0]);
-            const endHour = parseInt(endTime.split(":")[0]);
-            if (endHour <= startHour) {
+            const [startH, startM] = startTime.split(":").map(Number);
+            const [endH, endM] = endTime.split(":").map(Number);
+            const startTotalMinutes = startH * 60 + startM;
+            const endTotalMinutes = endH * 60 + endM;
+            if (endTotalMinutes <= startTotalMinutes) {
                 toast.error("End time must be after start time");
                 return;
             }
@@ -714,11 +724,15 @@ export default function BookingSidebar({
             }
             // End time validity (check if range overlaps)
             // Simplified: if getting end time options respects bookings, then just checking valid range helps
-            // But let's be safe: iterate hours between start and end
-            const startH = parseInt(startTime.split(':')[0]);
-            const endH = parseInt(endTime.split(':')[0]);
-            for (let h = startH; h < endH; h++) {
-                const timeStr = `${h.toString().padStart(2, '0')}:00`;
+            // But let's be safe: iterate 30-minute intervals between start and end
+            const [startH, startM] = startTime.split(':').map(Number);
+            const [endH, endM] = endTime.split(':').map(Number);
+            const startTotalMinutes = startH * 60 + startM;
+            const endTotalMinutes = endH * 60 + endM;
+            for (let m = startTotalMinutes; m < endTotalMinutes; m += 30) {
+                const hour = Math.floor(m / 60).toString().padStart(2, '0');
+                const minute = (m % 60).toString().padStart(2, '0');
+                const timeStr = `${hour}:${minute}`;
                 if (isTimeBooked(timeStr)) {
                     toast.error("Selected time range overlaps with existing bookings.");
                     return;
@@ -826,9 +840,11 @@ export default function BookingSidebar({
     // Reset end time if it becomes invalid when start time changes
     useEffect(() => {
         if (startTime && endTime) {
-            const startHour = parseInt(startTime.split(":")[0]);
-            const endHour = parseInt(endTime.split(":")[0]);
-            if (endHour <= startHour) {
+            const [startH, startM] = startTime.split(":").map(Number);
+            const [endH, endM] = endTime.split(":").map(Number);
+            const startTotalMinutes = startH * 60 + startM;
+            const endTotalMinutes = endH * 60 + endM;
+            if (endTotalMinutes <= startTotalMinutes) {
                 setEndTime(""); // Clear invalid end time
             }
         }
