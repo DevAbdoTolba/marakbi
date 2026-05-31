@@ -376,18 +376,26 @@ export interface HomeData {
 
 // Profile Types
 export interface CustomerProfile {
-  bio: string;
-  phone: string;
-  address: string;
-}
-
-export interface ProfileResponse {
-  user_id: number;
-  username: string;
-  email: string;
   bio?: string;
   phone?: string;
   address?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface ProfileResponse {
+  id: number;
+  user_id: number;
+  bio?: string;
+  phone?: string;
+  address?: string;
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+    first_name?: string | null;
+    last_name?: string | null;
+  };
 }
 
 // Voyage Types
@@ -972,6 +980,13 @@ export const customerApi = {
     return apiRequest<{ message: string }>('/customer/profile', {
       method: 'PUT',
       body: JSON.stringify(profileData)
+    });
+  },
+
+  changePassword: async (passwordData: Record<string, string>): Promise<ApiResponse<{ message: string }>> => {
+    return apiRequest<{ message: string }>('/customer/change-password', {
+      method: 'POST',
+      body: JSON.stringify(passwordData)
     });
   },
 

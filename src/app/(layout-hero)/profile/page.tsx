@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { storage } from "@/lib/api";
+import { customerApi, storage } from "@/lib/api";
 import Image from "next/image";
 
 export default function ProfilePage() {
@@ -18,6 +18,7 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    username: "",
     email: "",
     address: "",
     currentPassword: "",
@@ -28,17 +29,45 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState("");
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        // Check if user is authenticated
-        if (!storage.getToken()) {
-          console.log("No token found, redirecting to login");
-          router.push("/login");
-          return;
-        }
+  const fetchProfile = async () => {
+    try {
+      if (!storage.getToken()) {
+        console.log("No token found, redirecting to login");
+        router.push("/login");
+        return;
+      }
 
-        // Get user from storage first
+      const response = await customerApi.getProfile();
+      if (response.success && response.data) {
+        const profile = response.data;
+        const u = profile.user;
+
+        const firstName = u?.first_name || "";
+        const lastName = u?.last_name || "";
+        const email = u?.email || "";
+        const username = u?.username || "";
+        const address = profile.address || "";
+        const fullName = `${firstName} ${lastName}`.trim() || u?.username || "User";
+
+        setUser({
+          id: profile.user_id.toString(),
+          fullName,
+          email,
+          role: "user",
+        });
+
+        setFormData({
+          firstName,
+          lastName,
+          username,
+          email,
+          address,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      } else {
+        // Fallback to local storage user details if profile endpoint fails
         const storedUser = storage.getUser();
         if (storedUser) {
           setUser({
@@ -47,52 +76,27 @@ export default function ProfilePage() {
             email: storedUser.email || "",
             role: "user",
           });
-        }
-
-        // Profile API is not available on server, use stored user data
-        if (storedUser) {
-          // Try to load saved profile data from localStorage
-          const savedProfile = localStorage.getItem("userProfile");
-          let profileData = null;
-
-          if (savedProfile) {
-            try {
-              profileData = JSON.parse(savedProfile);
-            } catch (error) {
-              console.error("Error parsing saved profile:", error);
-            }
-          }
 
           setFormData({
-            firstName:
-              profileData?.bio?.split(" ")[0] ||
-              storedUser.username?.split(" ")[0] ||
-              "",
-            lastName:
-              profileData?.bio?.split(" ").slice(1).join(" ") ||
-              storedUser.username?.split(" ").slice(1).join(" ") ||
-              "",
-            email: profileData?.phone || storedUser.email || "",
-            address: profileData?.address || "",
+            firstName: storedUser.username?.split(" ")[0] || "",
+            lastName: storedUser.username?.split(" ").slice(1).join(" ") || "",
+            username: storedUser.username || "",
+            email: storedUser.email || "",
+            address: "",
             currentPassword: "",
             newPassword: "",
             confirmPassword: "",
           });
         }
-
-        // Load profile image from localStorage
-        const savedImage = localStorage.getItem("profileImage");
-        if (savedImage) {
-          setProfileImage(savedImage);
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        // If profile doesn't exist, we'll create it when user saves
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProfile();
   }, [router]);
 
@@ -109,47 +113,57 @@ export default function ProfilePage() {
     setError("");
     setSuccess("");
 
-    // Validation
-    if (
-      formData.newPassword &&
-      formData.newPassword !== formData.confirmPassword
-    ) {
-      setError("New passwords do not match");
-      return;
-    }
-
-    if (formData.newPassword && formData.newPassword.length < 6) {
-      setError("New password must be at least 6 characters long");
-      return;
+    if (formData.newPassword) {
+      if (!formData.currentPassword) {
+        setError("Current password is required to set a new password");
+        return;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        setError("New passwords do not match");
+        return;
+      }
+      if (formData.newPassword.length < 6) {
+        setError("New password must be at least 6 characters long");
+        return;
+      }
     }
 
     try {
-      // Profile API is not available, save to localStorage
-      try {
-        // Save profile data to localStorage
-        const profileData = {
-          bio: `${formData.firstName} ${formData.lastName}`.trim(),
-          phone: formData.email, // Using email as phone for now
-          address: formData.address,
-        };
+      setLoading(true);
 
-        localStorage.setItem("userProfile", JSON.stringify(profileData));
-        setSuccess("Profile updated successfully!");
-      } catch (error) {
-        console.error("Error saving profile:", error);
-        setError("Failed to save profile. Please try again.");
+      // 1. Update profile details on backend
+      const profileResponse = await customerApi.updateProfile({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        address: formData.address,
+      });
+
+      if (!profileResponse.success) {
+        setError(profileResponse.error || "Failed to update profile");
+        setLoading(false);
         return;
       }
 
-      // Update local user data
-      const updatedUser = {
-        id: user?.id || "1",
-        fullName: `${formData.firstName} ${formData.lastName}`.trim(),
-        email: formData.email,
-        role: (user?.role as "user" | "boat_owner" | "admin") || "user",
-      };
+      // 2. Change password if fields are filled
+      if (formData.newPassword) {
+        const passwordResponse = await customerApi.changePassword({
+          current_password: formData.currentPassword,
+          new_password: formData.newPassword,
+          confirm_password: formData.confirmPassword,
+        });
 
-      setUser(updatedUser);
+        if (!passwordResponse.success) {
+          setError(passwordResponse.error || "Profile updated, but password change failed");
+          setLoading(false);
+          return;
+        }
+      }
+
+      setSuccess("Profile updated successfully!");
+      setIsEditing(false);
+
+      // Re-fetch profile to sync state
+      await fetchProfile();
 
       // Clear password fields
       setFormData((prev) => ({
@@ -159,18 +173,13 @@ export default function ProfilePage() {
         confirmPassword: "",
       }));
 
-      // Exit edit mode after successful save
-      setIsEditing(false);
-
       // Hide success message after 3 seconds
       setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
       console.error("Profile update error:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to save profile. Please try again."
-      );
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -211,6 +220,7 @@ export default function ProfilePage() {
       ...prev,
       firstName: user?.fullName?.split(" ")[0] || "",
       lastName: user?.fullName?.split(" ").slice(1).join(" ") || "",
+      username: user?.fullName || "",
       email: user?.email || "",
       currentPassword: "",
       newPassword: "",
@@ -242,7 +252,7 @@ export default function ProfilePage() {
           className="absolute inset-0 bg-cover bg-center opacity-60"
           style={{ backgroundImage: "url('/images/Rectangle 3463878.webp')" }}
         >
-          
+
         </div>
       </div>
 
@@ -265,66 +275,12 @@ export default function ProfilePage() {
               <div className="flex justify-center mb-6">
                 <div className="relative">
                   <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden relative">
-                    {profileImage ? (
-                      <Image
-                        src={profileImage}
-                        alt="Profile"
-                        fill
-                        className="object-cover rounded-full"
-                      />
-                    ) : (
-                      <span className="text-4xl font-bold text-gray-500 font-poppins">
-                        {user.fullName
-                          ?.split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase() || "U"}
-                      </span>
-                    )}
+                    <span className="text-4xl font-bold text-gray-500 font-poppins">
+                      {formData.firstName
+                        ? formData.firstName.charAt(0).toUpperCase()
+                        : (user.fullName?.charAt(0).toUpperCase() || "U")}
+                    </span>
                   </div>
-
-                  {/* Edit icon when in edit mode */}
-                  {isEditing && (
-                    <div className="absolute -bottom-1 -right-1">
-                      <label
-                        htmlFor="profileImageInput"
-                        className="cursor-pointer"
-                      >
-                        <Image
-                          src="/icons/iconamoon_edit-fill.svg"
-                          alt="Edit"
-                          width={20}
-                          height={20}
-                          className="w-5 h-5 text-blue-500 drop-shadow-lg"
-                          style={{
-                            filter:
-                              "brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)",
-                          }}
-                        />
-                      </label>
-                      <input
-                        id="profileImageInput"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </div>
-                  )}
-
-                  {/* Click to upload when in edit mode */}
-                  {isEditing && (
-                    <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 rounded-full transition-all duration-200 cursor-pointer">
-                      <label
-                        htmlFor="profileImageInput"
-                        className="w-full h-full flex items-center justify-center cursor-pointer"
-                      >
-                        <span className="text-white text-sm font-poppins opacity-0 hover:opacity-100 transition-opacity">
-                          Click to upload
-                        </span>
-                      </label>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -360,18 +316,6 @@ export default function ProfilePage() {
                   >
                     Profile
                   </a>
-                  <a
-                    href="/manage-account"
-                    className=" py-5 px-4 block text-gray-600 font-poppins text-base hover:text-[#0C4A8C] transition-colors text-left"
-                  >
-                    Manage My Account
-                  </a>
-                  <a
-                    href="/payment-options"
-                    className=" py-5 px-4 block text-gray-600 font-poppins text-base hover:text-[#0C4A8C] transition-colors text-left"
-                  >
-                    My Payment Options
-                  </a>
                 </nav>
               </div>
             </div>
@@ -397,11 +341,10 @@ export default function ProfilePage() {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       disabled={!isEditing}
-                      className={`w-full px-4 py-3 rounded-lg font-poppins ${
-                        isEditing
+                      className={`w-full px-4 py-3 rounded-lg font-poppins ${isEditing
                           ? "bg-white border border-gray-300 focus:ring-2 focus:ring-[#0C4A8C] focus:border-[#0C4A8C]"
                           : "bg-gray-100 border border-gray-200 text-gray-500"
-                      }`}
+                        }`}
                       placeholder="First Name"
                       required
                     />
@@ -417,11 +360,10 @@ export default function ProfilePage() {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       disabled={!isEditing}
-                      className={`w-full px-4 py-3 rounded-lg font-poppins ${
-                        isEditing
+                      className={`w-full px-4 py-3 rounded-lg font-poppins ${isEditing
                           ? "bg-white border border-gray-300 focus:ring-2 focus:ring-[#0C4A8C] focus:border-[#0C4A8C]"
                           : "bg-gray-100 border border-gray-200 text-gray-500"
-                      }`}
+                        }`}
                       placeholder="Last Name"
                       required
                     />
@@ -435,14 +377,24 @@ export default function ProfilePage() {
                       type="email"
                       name="email"
                       value={formData.email}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className={`w-full px-4 py-3 rounded-lg font-poppins ${
-                        isEditing
-                          ? "bg-white border border-gray-300 focus:ring-2 focus:ring-[#0C4A8C] focus:border-[#0C4A8C]"
-                          : "bg-gray-100 border border-gray-200 text-gray-500"
-                      }`}
+                      disabled={true}
+                      className="w-full px-4 py-3 rounded-lg font-poppins bg-gray-100 border border-gray-200 text-gray-500 cursor-not-allowed outline-none"
                       placeholder="Email"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 font-poppins">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={formData.username || ""}
+                      disabled={true}
+                      className="w-full px-4 py-3 rounded-lg font-poppins bg-gray-100 border border-gray-200 text-gray-500 cursor-not-allowed outline-none"
+                      placeholder="Username"
                       required
                     />
                   </div>
@@ -457,11 +409,10 @@ export default function ProfilePage() {
                       value={formData.address}
                       onChange={handleInputChange}
                       disabled={!isEditing}
-                      className={`w-full px-4 py-3 rounded-lg font-poppins ${
-                        isEditing
+                      className={`w-full px-4 py-3 rounded-lg font-poppins ${isEditing
                           ? "bg-white border border-gray-300 focus:ring-2 focus:ring-[#0C4A8C] focus:border-[#0C4A8C]"
                           : "bg-gray-100 border border-gray-200 text-gray-500"
-                      }`}
+                        }`}
                       placeholder="Address"
                     />
                   </div>
@@ -482,11 +433,10 @@ export default function ProfilePage() {
                         value={formData.currentPassword}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        className={`w-full px-4 py-3 rounded-lg font-poppins ${
-                          isEditing
+                        className={`w-full px-4 py-3 rounded-lg font-poppins ${isEditing
                             ? "bg-white border border-gray-300 focus:ring-2 focus:ring-[#0C4A8C] focus:border-[#0C4A8C]"
                             : "bg-gray-100 border border-gray-200 text-gray-500"
-                        }`}
+                          }`}
                         placeholder="Current Password"
                       />
                     </div>
@@ -499,11 +449,10 @@ export default function ProfilePage() {
                         value={formData.newPassword}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        className={`w-full px-4 py-3 rounded-lg font-poppins ${
-                          isEditing
+                        className={`w-full px-4 py-3 rounded-lg font-poppins ${isEditing
                             ? "bg-white border border-gray-300 focus:ring-2 focus:ring-[#0C4A8C] focus:border-[#0C4A8C]"
                             : "bg-gray-100 border border-gray-200 text-gray-500"
-                        }`}
+                          }`}
                         placeholder="New Password"
                       />
                     </div>
@@ -515,11 +464,10 @@ export default function ProfilePage() {
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        className={`w-full px-4 py-3 rounded-lg font-poppins ${
-                          isEditing
+                        className={`w-full px-4 py-3 rounded-lg font-poppins ${isEditing
                             ? "bg-white border border-gray-300 focus:ring-2 focus:ring-[#0C4A8C] focus:border-[#0C4A8C]"
                             : "bg-gray-100 border border-gray-200 text-gray-500"
-                        }`}
+                          }`}
                         placeholder="Confirm New Password"
                       />
                     </div>
@@ -545,22 +493,20 @@ export default function ProfilePage() {
                     type="button"
                     onClick={handleCancel}
                     disabled={!isEditing}
-                    className={`px-6 py-3 font-medium font-poppins transition-colors ${
-                      isEditing
+                    className={`px-6 py-3 font-medium font-poppins transition-colors ${isEditing
                         ? "text-gray-700 hover:text-gray-900 cursor-pointer"
                         : "text-gray-400 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={!isEditing}
-                    className={`px-8 py-3 font-medium rounded-lg transition-colors font-poppins ${
-                      isEditing
+                    className={`px-8 py-3 font-medium rounded-lg transition-colors font-poppins ${isEditing
                         ? "bg-[#0C4A8C] text-white hover:bg-[#0A3D7A] cursor-pointer"
                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     Save Changes
                   </button>
