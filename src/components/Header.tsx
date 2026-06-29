@@ -398,6 +398,7 @@ const Header = ({ variant = 'transparent' }: HeaderProps) => {
             <Link href="/boat-market" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>Buy/Sell</Link>
             <Link href="/our-team" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>Our Team</Link>
             <Link href="/contact" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>Contact</Link>
+            <Link href="https://daffa-splash-fest.lovable.app/" target="_blank" rel="noopener noreferrer" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>Events</Link>
             {user && (
               <Link href="/my-bookings" className={`${textColor} text-base font-normal font-poppins ${hoverColor} transition-colors`}>My Bookings</Link>
             )}
@@ -554,6 +555,7 @@ const Header = ({ variant = 'transparent' }: HeaderProps) => {
               <Link href="/boat-market" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Buy/Sell</Link>
               <Link href="/our-team" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Our Team</Link>
               <Link href="/contact" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Contact</Link>
+              <Link href="https://daffa-splash-fest.lovable.app/" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">Events</Link>
               {user && (
                 <Link href="/my-bookings" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 rounded-lg text-gray-800 text-base font-medium font-poppins hover:bg-blue-50 hover:text-blue-600 transition-colors">My Trips</Link>
               )}
